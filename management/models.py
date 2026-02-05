@@ -8,6 +8,7 @@ class User(AbstractUser):
     address = models.TextField(verbose_name="Address")
     contact = models.CharField(max_length=20, verbose_name="Contact Number")
     license = models.CharField(max_length=100, blank=True, null=True, verbose_name="License")
+    currency_symbol = models.CharField(max_length=10, default='Rs.', verbose_name="Currency Symbol")
 
     def __str__(self):
         return f"{self.username} - {self.org_name}"

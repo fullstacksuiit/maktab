@@ -2,28 +2,46 @@
 
 {% block title %}{{ action }} Staff - Finetouch{% endblock %}
 
+{% block breadcrumb %}
+<nav class="breadcrumb-container" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="fas fa-home me-1"></i>Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'staff_list' %}">Staff</a></li>
+        <li class="breadcrumb-item active">{{ action }} Staff</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <div>
-        <h1><i class="fas fa-users me-3"></i>{{ action }} Staff Member</h1>
+        <h1><i class="fas fa-users-cog me-3"></i>{{ action }} Staff Member</h1>
         <p class="text-muted mb-0">Fill in the staff details below</p>
     </div>
-    <a href="{% url 'staff_list' %}" class="btn btn-outline-secondary">
+    <a href="{% url 'staff_list' %}" class="btn btn-outline-secondary" style="border-radius: 10px; font-weight: 600;">
         <i class="fas fa-arrow-left me-2"></i>Back to List
     </a>
 </div>
 
 <div class="row">
     <div class="col-lg-10 mx-auto">
-        <div class="card" style="border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: none;">
+        <div class="card" style="border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border: none;">
+            <div class="card-header" style="background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%); color: white; border-radius: 15px 15px 0 0; padding: 18px 25px;">
+                <h5 class="mb-0"><i class="fas fa-id-badge me-2"></i>Staff Information</h5>
+            </div>
             <div class="card-body p-4">
                 <form method="post" novalidate>
                     {% csrf_token %}
 
+                    <!-- Role & Identity Section -->
+                    <h6 class="fw-bold mb-3" style="color: #0d6b4e;">
+                        <i class="fas fa-fingerprint me-2"></i>Identity & Role
+                    </h6>
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.staff_id.id_for_label }}" class="form-label">
-                                <i class="fas fa-id-card me-2"></i>Staff ID *
+                            <label for="{{ form.staff_id.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-hashtag me-2" style="color: #0d6b4e;"></i>Staff ID *
                             </label>
                             {{ form.staff_id }}
                             {% if form.staff_id.errors %}
@@ -36,8 +54,8 @@
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.role.id_for_label }}" class="form-label">
-                                <i class="fas fa-user-tag me-2"></i>Role *
+                            <label for="{{ form.role.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-user-tag me-2" style="color: #c9a84c;"></i>Role *
                             </label>
                             {{ form.role }}
                             {% if form.role.errors %}
@@ -50,10 +68,17 @@
                         </div>
                     </div>
 
+                    <hr style="border-color: #e8f5e9; margin: 20px 0;">
+
+                    <!-- Personal Details Section -->
+                    <h6 class="fw-bold mb-3" style="color: #0d6b4e;">
+                        <i class="fas fa-user me-2"></i>Personal Details
+                    </h6>
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.first_name.id_for_label }}" class="form-label">
-                                <i class="fas fa-user me-2"></i>First Name *
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-user me-2" style="color: #0d6b4e;"></i>First Name *
                             </label>
                             {{ form.first_name }}
                             {% if form.first_name.errors %}
@@ -66,8 +91,8 @@
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.last_name.id_for_label }}" class="form-label">
-                                <i class="fas fa-user me-2"></i>Last Name *
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-user me-2" style="color: #0d6b4e;"></i>Last Name *
                             </label>
                             {{ form.last_name }}
                             {% if form.last_name.errors %}
@@ -82,8 +107,8 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.email.id_for_label }}" class="form-label">
-                                <i class="fas fa-envelope me-2"></i>Email *
+                            <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-envelope me-2" style="color: #0d6b4e;"></i>Email *
                             </label>
                             {{ form.email }}
                             {% if form.email.errors %}
@@ -96,8 +121,8 @@
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.phone.id_for_label }}" class="form-label">
-                                <i class="fas fa-phone me-2"></i>Phone *
+                            <label for="{{ form.phone.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-phone me-2" style="color: #0d6b4e;"></i>Phone *
                             </label>
                             {{ form.phone }}
                             {% if form.phone.errors %}
@@ -112,8 +137,8 @@
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">
-                                <i class="fas fa-calendar me-2"></i>Date of Birth *
+                            <label for="{{ form.date_of_birth.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-calendar me-2" style="color: #0d6b4e;"></i>Date of Birth *
                             </label>
                             {{ form.date_of_birth }}
                             {% if form.date_of_birth.errors %}
@@ -126,8 +151,8 @@
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <label for="{{ form.gender.id_for_label }}" class="form-label">
-                                <i class="fas fa-venus-mars me-2"></i>Gender *
+                            <label for="{{ form.gender.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-venus-mars me-2" style="color: #0d6b4e;"></i>Gender *
                             </label>
                             {{ form.gender }}
                             {% if form.gender.errors %}
@@ -140,8 +165,8 @@
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <label for="{{ form.joining_date.id_for_label }}" class="form-label">
-                                <i class="fas fa-calendar-check me-2"></i>Joining Date *
+                            <label for="{{ form.joining_date.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-calendar-check me-2" style="color: #c9a84c;"></i>Joining Date *
                             </label>
                             {{ form.joining_date }}
                             {% if form.joining_date.errors %}
@@ -154,10 +179,17 @@
                         </div>
                     </div>
 
+                    <hr style="border-color: #e8f5e9; margin: 20px 0;">
+
+                    <!-- Work Details Section -->
+                    <h6 class="fw-bold mb-3" style="color: #0d6b4e;">
+                        <i class="fas fa-briefcase me-2"></i>Work Details
+                    </h6>
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.department.id_for_label }}" class="form-label">
-                                <i class="fas fa-building me-2"></i>Department *
+                            <label for="{{ form.department.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-building me-2" style="color: #0d6b4e;"></i>Department *
                             </label>
                             {{ form.department }}
                             {% if form.department.errors %}
@@ -170,8 +202,8 @@
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.salary.id_for_label }}" class="form-label">
-                                <i class="fas fa-dollar-sign me-2"></i>Salary *
+                            <label for="{{ form.salary.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-coins me-2" style="color: #c9a84c;"></i>Salary *
                             </label>
                             {{ form.salary }}
                             {% if form.salary.errors %}
@@ -185,8 +217,8 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="{{ form.address.id_for_label }}" class="form-label">
-                            <i class="fas fa-map-marker-alt me-2"></i>Address *
+                        <label for="{{ form.address.id_for_label }}" class="form-label fw-semibold">
+                            <i class="fas fa-map-marker-alt me-2" style="color: #0d6b4e;"></i>Address *
                         </label>
                         {{ form.address }}
                         {% if form.address.errors %}
@@ -198,7 +230,9 @@
                         {% endif %}
                     </div>
 
-                    <div class="d-grid gap-2 mt-4">
+                    <hr style="border-color: #e8f5e9; margin: 25px 0;">
+
+                    <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-save me-2"></i>{{ action }} Staff Member
                         </button>

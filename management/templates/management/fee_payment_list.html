@@ -1,0 +1,181 @@
+{% extends 'management/dashboard_base.html' %}
+
+{% block title %}Fee Payments - Finetouch{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-wrapper {
+        position: relative;
+    }
+    .search-wrapper i {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #aaa;
+        font-size: 14px;
+    }
+    .search-input {
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 10px 15px 10px 40px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        min-width: 280px;
+    }
+    .search-input:focus {
+        border-color: #0d6b4e;
+        box-shadow: 0 0 0 0.2rem rgba(13, 107, 78, 0.15);
+    }
+    .method-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .method-cash {
+        background: rgba(13, 107, 78, 0.1);
+        color: #0d6b4e;
+    }
+    .method-bank-transfer {
+        background: rgba(13, 107, 78, 0.1);
+        color: #0d6b4e;
+    }
+    .method-online {
+        background: rgba(201, 168, 76, 0.15);
+        color: #c9a84c;
+    }
+    .student-avatar-sm {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 11px;
+        font-weight: 600;
+        margin-right: 8px;
+        flex-shrink: 0;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb-container" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="fas fa-home me-1"></i>Dashboard</a></li>
+        <li class="breadcrumb-item active">Fee Payments</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-money-bill-wave me-3"></i>Fee Payments</h1>
+        <p class="text-muted mb-0">Manage student fee payments</p>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <div class="search-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="paymentSearch" class="form-control search-input" placeholder="Search payments...">
+        </div>
+        <a href="{% url 'fee_payment_add' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Record Payment
+        </a>
+    </div>
+</div>
+
+<!-- Payments Table -->
+<div class="card" style="border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: none;">
+    <div class="card-body p-0">
+        {% if payments %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="paymentsTable">
+                <thead style="background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%); color: white;">
+                    <tr>
+                        <th style="border: none; padding: 15px 20px;">Receipt #</th>
+                        <th style="border: none; padding: 15px 20px;">Student</th>
+                        <th style="border: none; padding: 15px 20px;">Course</th>
+                        <th style="border: none; padding: 15px 20px;">Amount</th>
+                        <th style="border: none; padding: 15px 20px;">Date</th>
+                        <th style="border: none; padding: 15px 20px;">Method</th>
+                        <th style="border: none; padding: 15px 20px;">Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr class="payment-row">
+                        <td style="padding: 15px 20px; vertical-align: middle;">
+                            <strong style="color: #0d6b4e;">{{ payment.receipt_number }}</strong>
+                        </td>
+                        <td style="padding: 15px 20px; vertical-align: middle;">
+                            <div class="d-flex align-items-center">
+                                <span class="student-avatar-sm">
+                                    {{ payment.student.first_name|first }}{{ payment.student.last_name|first }}
+                                </span>
+                                <span style="font-size: 14px; font-weight: 500;" class="student-name">{{ payment.student.first_name }} {{ payment.student.last_name }}</span>
+                            </div>
+                        </td>
+                        <td style="padding: 15px 20px; vertical-align: middle; font-size: 13px;">
+                            {% if payment.course %}
+                                <span class="badge bg-success">{{ payment.course.course_code }}</span>
+                                {{ payment.course.course_name }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 15px 20px; vertical-align: middle;">
+                            <strong style="color: #28a745; font-size: 15px;">{{ currency_symbol }} {{ payment.amount }}</strong>
+                        </td>
+                        <td style="padding: 15px 20px; vertical-align: middle; font-size: 13px;">
+                            {{ payment.payment_date }}
+                        </td>
+                        <td style="padding: 15px 20px; vertical-align: middle;">
+                            {% if payment.payment_method == 'Cash' %}
+                                <span class="method-badge method-cash">
+                                    <i class="fas fa-money-bill me-1"></i>Cash
+                                </span>
+                            {% elif payment.payment_method == 'Bank Transfer' %}
+                                <span class="method-badge method-bank-transfer">
+                                    <i class="fas fa-university me-1"></i>Bank Transfer
+                                </span>
+                            {% elif payment.payment_method == 'Online' %}
+                                <span class="method-badge method-online">
+                                    <i class="fas fa-globe me-1"></i>Online
+                                </span>
+                            {% else %}
+                                <span class="method-badge" style="background: rgba(108,117,125,0.1); color: #6c757d;">
+                                    {{ payment.payment_method }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 15px 20px; vertical-align: middle; font-size: 13px; color: #777;">
+                            {{ payment.notes|default:"-" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-money-bill-wave" style="font-size: 64px; color: #ddd;"></i>
+            <h4 class="mt-3 text-muted">No Payments Yet</h4>
+            <p class="text-muted">Start by recording your first fee payment</p>
+            <a href="{% url 'fee_payment_add' %}" class="btn btn-primary mt-3">
+                <i class="fas fa-plus me-2"></i>Record First Payment
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>FT.initSearch('paymentSearch', '.payment-row');</script>
+{% endblock %}

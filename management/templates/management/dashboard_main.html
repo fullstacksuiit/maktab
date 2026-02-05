@@ -3,165 +3,682 @@
 {% block title %}Dashboard - Finetouch{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <h1><i class="fas fa-tachometer-alt me-3"></i>Dashboard</h1>
-        <p class="text-muted mb-0">Welcome back, {{ user.username }}! Here's your overview.</p>
-    </div>
+<style>
+    /* ===== Stat Cards ===== */
+    .stat-card {
+        background: white;
+        padding: 25px 20px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        text-align: center;
+        height: 100%;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, #0d6b4e 0%, #1a9e6f 100%);
+        border-radius: 4px 0 0 4px;
+    }
+
+    .stat-card.gold::before {
+        background: linear-gradient(180deg, #c9a84c 0%, #d4af37 100%);
+    }
+
+    .stat-card.red::before {
+        background: linear-gradient(180deg, #dc3545 0%, #c82333 100%);
+    }
+
+    .stat-card.green::before {
+        background: linear-gradient(180deg, #0d6b4e 0%, #28a745 100%);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-card .icon-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
+    }
+
+    .stat-card .icon-circle.gold-icon {
+        background: linear-gradient(135deg, #c9a84c 0%, #d4af37 100%);
+    }
+
+    .stat-card .icon-circle.red-icon {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+
+    .stat-card .icon-circle.green-icon {
+        background: linear-gradient(135deg, #0d6b4e 0%, #28a745 100%);
+    }
+
+    .stat-card .icon-circle i {
+        font-size: 22px;
+        color: white;
+    }
+
+    .stat-card .stat-title {
+        font-size: 13px;
+        color: #888;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        margin-bottom: 6px;
+    }
+
+    .stat-card .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: #2c3e50;
+        line-height: 1.2;
+        margin-bottom: 12px;
+    }
+
+    .stat-card .stat-link {
+        font-size: 13px;
+        font-weight: 500;
+        color: #0d6b4e;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .stat-card .stat-link:hover {
+        color: #1a9e6f;
+        text-decoration: underline;
+    }
+
+    .stat-card .stat-link.gold-link {
+        color: #c9a84c;
+    }
+
+    .stat-card .stat-link.gold-link:hover {
+        color: #d4af37;
+    }
+
+    /* ===== Page Header ===== */
+    .dashboard-header {
+        background: white;
+        padding: 30px 35px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 5px;
+        height: 100%;
+        background: linear-gradient(180deg, #c9a84c 0%, #d4af37 100%);
+    }
+
+    .dashboard-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0 0 5px 0;
+    }
+
+    .dashboard-header .subtitle {
+        font-size: 15px;
+        color: #888;
+        margin: 0;
+        font-weight: 400;
+    }
+
+    .dashboard-header .subtitle strong {
+        color: #c9a84c;
+        font-weight: 600;
+    }
+
+    /* ===== Quick Actions ===== */
+    .quick-actions-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+        padding: 25px 30px;
+        margin-bottom: 30px;
+    }
+
+    .quick-actions-card h5 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 20px;
+    }
+
+    .quick-actions-card h5 i {
+        color: #c9a84c;
+        margin-right: 8px;
+    }
+
+    .quick-actions-card .btn {
+        padding: 10px 20px;
+        font-weight: 600;
+        font-size: 13px;
+        border-radius: 10px;
+        border-width: 2px;
+        transition: all 0.3s ease;
+    }
+
+    .quick-actions-card .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* ===== Recent Activity Cards ===== */
+    .activity-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .activity-card .card-header-custom {
+        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
+        color: white;
+        padding: 18px 25px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .activity-card .card-header-custom i {
+        margin-right: 10px;
+        color: #c9a84c;
+    }
+
+    .activity-card .card-body-custom {
+        padding: 0;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: center;
+        padding: 15px 25px;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background 0.2s ease;
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-item:hover {
+        background: #f8fdf8;
+    }
+
+    .activity-item .avatar-circle {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-right: 15px;
+    }
+
+    .activity-item .avatar-circle i {
+        color: white;
+        font-size: 16px;
+    }
+
+    .activity-item .avatar-circle.payment-icon {
+        background: linear-gradient(135deg, #c9a84c 0%, #d4af37 100%);
+    }
+
+    .activity-item .activity-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .activity-item .activity-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .activity-item .activity-detail {
+        font-size: 12px;
+        color: #999;
+    }
+
+    .activity-item .activity-badge {
+        flex-shrink: 0;
+        margin-left: 10px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #bbb;
+    }
+
+    .empty-state i {
+        font-size: 40px;
+        margin-bottom: 12px;
+        display: block;
+        color: #ddd;
+    }
+
+    .empty-state p {
+        font-size: 14px;
+        margin: 0;
+    }
+
+    /* ===== Profile Information Card ===== */
+    .profile-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        margin-top: 30px;
+    }
+
+    .profile-card .profile-header {
+        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
+        color: white;
+        padding: 20px 25px;
+        font-size: 17px;
+        font-weight: 600;
+    }
+
+    .profile-card .profile-header i {
+        margin-right: 10px;
+        color: #c9a84c;
+    }
+
+    .profile-card .profile-body {
+        padding: 25px;
+    }
+
+    .info-box {
+        background: #f8fdf8;
+        padding: 15px 18px;
+        border-radius: 10px;
+        border-left: 4px solid #0d6b4e;
+        transition: all 0.3s ease;
+    }
+
+    .info-box:hover {
+        background: #eef8f0;
+        transform: translateX(3px);
+    }
+
+    .info-box .info-label {
+        font-size: 12px;
+        color: #999;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .info-box .info-label i {
+        color: #c9a84c;
+        margin-right: 6px;
+        width: 16px;
+        text-align: center;
+    }
+
+    .info-box .info-value {
+        font-size: 15px;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .info-box.gold-border {
+        border-left-color: #c9a84c;
+    }
+
+    /* ===== Staggered Entrance Animations ===== */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .dashboard-header {
+        opacity: 0;
+        animation: fadeInUp 0.4s ease-out 0.05s forwards;
+    }
+
+    .stat-card {
+        opacity: 0;
+        animation: fadeInUp 0.4s ease-out forwards;
+    }
+
+    /* Row 1 stat cards stagger */
+    .row:nth-of-type(1) .col-md-4:nth-child(1) .stat-card { animation-delay: 0.1s; }
+    .row:nth-of-type(1) .col-md-4:nth-child(2) .stat-card { animation-delay: 0.15s; }
+    .row:nth-of-type(1) .col-md-4:nth-child(3) .stat-card { animation-delay: 0.2s; }
+
+    /* Row 2 stat cards stagger */
+    .row:nth-of-type(2) .col-md-4:nth-child(1) .stat-card { animation-delay: 0.25s; }
+    .row:nth-of-type(2) .col-md-4:nth-child(2) .stat-card { animation-delay: 0.3s; }
+    .row:nth-of-type(2) .col-md-4:nth-child(3) .stat-card { animation-delay: 0.35s; }
+
+    .stat-card:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+    }
+
+    .quick-actions-card {
+        opacity: 0;
+        animation: fadeInUp 0.4s ease-out 0.4s forwards;
+    }
+
+    .activity-card {
+        opacity: 0;
+        animation: fadeInUp 0.4s ease-out 0.45s forwards;
+    }
+
+    .profile-card {
+        opacity: 0;
+        animation: fadeInUp 0.4s ease-out 0.5s forwards;
+    }
+
+    /* Mobile quick actions stack */
+    @media (max-width: 767.98px) {
+        .quick-actions-card .d-flex {
+            flex-direction: column;
+        }
+        .quick-actions-card .btn {
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 15px;
+            text-align: left;
+        }
+        .stat-card .stat-value { font-size: 26px; }
+        .dashboard-header h1 { font-size: 22px; }
+    }
+</style>
+
+<!-- ===== Page Header with Greeting ===== -->
+<div class="dashboard-header">
+    <h1><i class="fas fa-mosque me-2"></i>Assalamu Alaikum, {{ user.username }}!</h1>
+    <p class="subtitle">Managing <strong>{{ user.org_name }}</strong> — Here's your overview for today</p>
 </div>
 
+<!-- ===== Row 1: Stat Cards (Courses, Students, Staff) ===== -->
 <div class="row mb-4">
+    <!-- Total Courses -->
     <div class="col-md-4 mb-3">
         <div class="stat-card">
-            <div class="icon">
-                <i class="fas fa-book"></i>
+            <div class="icon-circle">
+                <i class="fas fa-book-quran"></i>
             </div>
-            <h3>Total Courses</h3>
-            <div class="value">{{ total_courses|default:0 }}</div>
-            <a href="{% url 'course_list' %}" class="btn btn-sm btn-outline-primary mt-3">
-                <i class="fas fa-eye me-2"></i>View Courses
+            <div class="stat-title">Total Courses</div>
+            <div class="stat-value">{{ total_courses|default:0 }}</div>
+            <a href="{% url 'course_list' %}" class="stat-link">
+                <i class="fas fa-arrow-right me-1"></i>View Courses
             </a>
         </div>
     </div>
+
+    <!-- Total Students -->
     <div class="col-md-4 mb-3">
         <div class="stat-card">
-            <div class="icon">
+            <div class="icon-circle">
                 <i class="fas fa-user-graduate"></i>
             </div>
-            <h3>Total Students</h3>
-            <div class="value">{{ total_students|default:0 }}</div>
-            <a href="{% url 'student_list' %}" class="btn btn-sm btn-outline-primary mt-3">
-                <i class="fas fa-eye me-2"></i>View Students
+            <div class="stat-title">Total Students</div>
+            <div class="stat-value">{{ total_students|default:0 }}</div>
+            <a href="{% url 'student_list' %}" class="stat-link">
+                <i class="fas fa-arrow-right me-1"></i>View Students
             </a>
         </div>
     </div>
+
+    <!-- Total Staff -->
     <div class="col-md-4 mb-3">
         <div class="stat-card">
-            <div class="icon">
-                <i class="fas fa-users"></i>
+            <div class="icon-circle">
+                <i class="fas fa-users-cog"></i>
             </div>
-            <h3>Total Staff</h3>
-            <div class="value">{{ total_staff|default:0 }}</div>
-            <a href="{% url 'staff_list' %}" class="btn btn-sm btn-outline-primary mt-3">
-                <i class="fas fa-eye me-2"></i>View Staff
+            <div class="stat-title">Total Staff</div>
+            <div class="stat-value">{{ total_staff|default:0 }}</div>
+            <a href="{% url 'staff_list' %}" class="stat-link">
+                <i class="fas fa-arrow-right me-1"></i>View Staff
             </a>
         </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-lg-12">
-        <div class="card" style="border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: none;">
-            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px 15px 0 0; padding: 20px;">
-                <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>Profile Information</h4>
+<!-- ===== Row 2: Stat Cards (Revenue, Pending, Attendance) ===== -->
+<div class="row mb-4">
+    <!-- Total Revenue -->
+    <div class="col-md-4 mb-3">
+        <div class="stat-card gold">
+            <div class="icon-circle gold-icon">
+                <i class="fas fa-coins"></i>
             </div>
-            <div class="card-body p-4">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <div class="info-box" style="background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 4px solid #667eea;">
-                            <small class="text-muted d-block mb-1">
-                                <i class="fas fa-building me-2"></i>Organization
-                            </small>
-                            <strong style="font-size: 16px;">{{ user.org_name }}</strong>
+            <div class="stat-title">Total Revenue</div>
+            <div class="stat-value" style="color: #c9a84c;">{{ currency_symbol }} {{ total_revenue|default:0 }}</div>
+            <a href="{% url 'fee_payment_list' %}" class="stat-link gold-link">
+                <i class="fas fa-arrow-right me-1"></i>View Payments
+            </a>
+        </div>
+    </div>
+
+    <!-- Pending Fees -->
+    <div class="col-md-4 mb-3">
+        {% if total_pending > 0 %}
+        <div class="stat-card red">
+            <div class="icon-circle red-icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="stat-title">Pending Fees</div>
+            <div class="stat-value" style="color: #dc3545;">{{ currency_symbol }} {{ total_pending|default:0 }}</div>
+            <a href="{% url 'fee_payment_list' %}" class="stat-link" style="color: #dc3545;">
+                <i class="fas fa-arrow-right me-1"></i>View Pending
+            </a>
+        </div>
+        {% else %}
+        <div class="stat-card green">
+            <div class="icon-circle green-icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="stat-title">Pending Fees</div>
+            <div class="stat-value" style="color: #0d6b4e;">{{ currency_symbol }} {{ total_pending|default:0 }}</div>
+            <a href="{% url 'fee_payment_list' %}" class="stat-link">
+                <i class="fas fa-arrow-right me-1"></i>View Payments
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Today's Attendance -->
+    <div class="col-md-4 mb-3">
+        <div class="stat-card">
+            <div class="icon-circle">
+                <i class="fas fa-clipboard-check"></i>
+            </div>
+            <div class="stat-title">Today's Attendance</div>
+            <div class="stat-value">{{ today_present|default:0 }} / {{ today_total|default:0 }}</div>
+            <a href="{% url 'attendance_list' %}" class="stat-link">
+                <i class="fas fa-arrow-right me-1"></i>View Attendance
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Quick Actions ===== -->
+<div class="quick-actions-card">
+    <h5><i class="fas fa-bolt"></i>Quick Actions</h5>
+    <div class="d-flex flex-wrap gap-3">
+        <a href="{% url 'student_add' %}" class="btn btn-outline-success">
+            <i class="fas fa-user-plus me-2"></i>Add Student
+        </a>
+        <a href="{% url 'attendance_mark' %}" class="btn btn-outline-primary">
+            <i class="fas fa-clipboard-check me-2"></i>Mark Attendance
+        </a>
+        <a href="{% url 'fee_payment_add' %}" class="btn btn-outline-warning text-dark">
+            <i class="fas fa-money-bill-wave me-2"></i>Record Payment
+        </a>
+        <a href="{% url 'course_add' %}" class="btn btn-outline-info">
+            <i class="fas fa-book-medical me-2"></i>Add Course
+        </a>
+    </div>
+</div>
+
+<!-- ===== Recent Activity: Two Column Layout ===== -->
+<div class="row mb-4">
+    <!-- Recent Enrollments -->
+    <div class="col-md-6 mb-3">
+        <div class="activity-card">
+            <div class="card-header-custom">
+                <i class="fas fa-user-graduate"></i>Recent Enrollments
+            </div>
+            <div class="card-body-custom">
+                {% if recent_students %}
+                    {% for student in recent_students %}
+                    <div class="activity-item">
+                        <div class="avatar-circle">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="activity-info">
+                            <div class="activity-name">{{ student.first_name }} {{ student.last_name }}</div>
+                            <div class="activity-detail">
+                                <i class="fas fa-id-badge me-1"></i>{{ student.student_id }}
+                                <span class="mx-1">|</span>
+                                <i class="fas fa-calendar-alt me-1"></i>{{ student.enrollment_date|date:"d M Y" }}
+                            </div>
+                        </div>
+                        <div class="activity-badge">
+                            <span class="badge" style="background: linear-gradient(135deg, #0d6b4e, #1a9e6f); font-size: 11px; padding: 5px 10px; border-radius: 20px;">
+                                New
+                            </span>
                         </div>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="info-box" style="background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 4px solid #667eea;">
-                            <small class="text-muted d-block mb-1">
-                                <i class="fas fa-user me-2"></i>Username
-                            </small>
-                            <strong style="font-size: 16px;">{{ user.username }}</strong>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-user-graduate"></i>
+                        <p>No recent enrollments</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Payments -->
+    <div class="col-md-6 mb-3">
+        <div class="activity-card">
+            <div class="card-header-custom">
+                <i class="fas fa-money-bill-wave"></i>Recent Payments
+            </div>
+            <div class="card-body-custom">
+                {% if recent_payments %}
+                    {% for payment in recent_payments %}
+                    <div class="activity-item">
+                        <div class="avatar-circle payment-icon">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <div class="activity-info">
+                            <div class="activity-name">{{ payment.student.first_name }} {{ payment.student.last_name }}</div>
+                            <div class="activity-detail">
+                                <i class="fas fa-hashtag me-1"></i>{{ payment.receipt_number }}
+                                <span class="mx-1">|</span>
+                                <i class="fas fa-calendar-alt me-1"></i>{{ payment.payment_date|date:"d M Y" }}
+                            </div>
+                        </div>
+                        <div class="activity-badge">
+                            <span class="badge" style="background: linear-gradient(135deg, #c9a84c, #d4af37); color: #fff; font-size: 11px; padding: 5px 12px; border-radius: 20px; font-weight: 600;">
+                                {{ currency_symbol }} {{ payment.amount }}
+                            </span>
                         </div>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="info-box" style="background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 4px solid #667eea;">
-                            <small class="text-muted d-block mb-1">
-                                <i class="fas fa-phone me-2"></i>Contact
-                            </small>
-                            <strong style="font-size: 16px;">{{ user.contact }}</strong>
-                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <p>No recent payments</p>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="info-box" style="background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 4px solid #667eea;">
-                            <small class="text-muted d-block mb-1">
-                                <i class="fas fa-map-marker-alt me-2"></i>Address
-                            </small>
-                            <strong style="font-size: 16px;">{{ user.address }}</strong>
-                        </div>
-                    </div>
-                    {% if user.license %}
-                    <div class="col-md-12 mb-3">
-                        <div class="info-box" style="background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 4px solid #667eea;">
-                            <small class="text-muted d-block mb-1">
-                                <i class="fas fa-certificate me-2"></i>License
-                            </small>
-                            <strong style="font-size: 16px;">{{ user.license }}</strong>
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<style>
-.stat-card {
-    background: white;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    text-align: center;
-}
-
-.stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
-}
-
-.stat-card .icon {
-    width: 60px;
-    height: 60px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 15px;
-}
-
-.stat-card .icon i {
-    font-size: 28px;
-    color: white;
-}
-
-.stat-card h3 {
-    font-size: 14px;
-    color: #666;
-    font-weight: 500;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.stat-card .value {
-    font-size: 36px;
-    font-weight: 700;
-    color: #333;
-    margin-bottom: 10px;
-}
-</style>
+<!-- ===== Profile Information ===== -->
+<div class="profile-card">
+    <div class="profile-header">
+        <i class="fas fa-building"></i>Profile Information
+    </div>
+    <div class="profile-body">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="info-box gold-border">
+                    <div class="info-label">
+                        <i class="fas fa-building"></i>Organization
+                    </div>
+                    <div class="info-value">{{ user.org_name }}</div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="info-box">
+                    <div class="info-label">
+                        <i class="fas fa-user"></i>Username
+                    </div>
+                    <div class="info-value">{{ user.username }}</div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="info-box">
+                    <div class="info-label">
+                        <i class="fas fa-phone"></i>Contact
+                    </div>
+                    <div class="info-value">{{ user.contact }}</div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="info-box">
+                    <div class="info-label">
+                        <i class="fas fa-map-marker-alt"></i>Address
+                    </div>
+                    <div class="info-value">{{ user.address }}</div>
+                </div>
+            </div>
+            {% if user.license %}
+            <div class="col-md-12 mb-3">
+                <div class="info-box gold-border">
+                    <div class="info-label">
+                        <i class="fas fa-certificate"></i>License
+                    </div>
+                    <div class="info-value">{{ user.license }}</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 {% endblock %}

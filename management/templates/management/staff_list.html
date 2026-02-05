@@ -1,24 +1,40 @@
 {% extends 'management/dashboard_base.html' %}
 
-{% block title %}Staff List - Finetouch{% endblock %}
+{% block title %}Staff - Finetouch{% endblock %}
+
+{% block breadcrumb %}
+<nav class="breadcrumb-container" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="fas fa-home me-1"></i>Dashboard</a></li>
+        <li class="breadcrumb-item active">Staff</li>
+    </ol>
+</nav>
+{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <div>
-        <h1><i class="fas fa-users me-3"></i>Staff Members</h1>
-        <p class="text-muted mb-0">Manage your staff</p>
+        <h1><i class="fas fa-users-cog me-3"></i>Staff Members</h1>
+        <p class="text-muted mb-0">Manage your staff and administration</p>
     </div>
-    <a href="{% url 'staff_add' %}" class="btn btn-primary">
-        <i class="fas fa-plus me-2"></i>Add New Staff
-    </a>
+    <div class="d-flex align-items-center gap-2">
+        <div class="input-group" style="width: 250px;">
+            <span class="input-group-text" style="background: #0d6b4e; color: white; border: none; border-radius: 10px 0 0 10px;"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control" id="searchInput" placeholder="Search staff..." style="border-radius: 0 10px 10px 0;">
+        </div>
+        <a href="{% url 'export_staff' %}" class="btn btn-outline-success" style="border-radius: 10px; font-weight: 600;">
+            <i class="fas fa-file-excel me-2"></i>Export
+        </a>
+        <a href="{% url 'staff_add' %}" class="btn btn-primary"><i class="fas fa-plus me-2"></i>Add Staff</a>
+    </div>
 </div>
 
-<div class="card" style="border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: none;">
+<div class="card" style="border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border: none;">
     <div class="card-body p-0">
         {% if staff_members %}
         <div class="table-responsive">
             <table class="table table-hover mb-0">
-                <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <thead style="background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%); color: white;">
                     <tr>
                         <th style="border: none; padding: 15px 20px;">Staff ID</th>
                         <th style="border: none; padding: 15px 20px;">Name</th>
@@ -32,23 +48,40 @@
                     {% for staff in staff_members %}
                     <tr>
                         <td style="padding: 15px 20px; vertical-align: middle;">
-                            <strong style="color: #667eea;">{{ staff.staff_id }}</strong>
+                            <strong style="color: #0d6b4e;">{{ staff.staff_id }}</strong>
                         </td>
-                        <td style="padding: 15px 20px; vertical-align: middle;">{{ staff.first_name }} {{ staff.last_name }}</td>
-                        <td style="padding: 15px 20px; vertical-align: middle;">{{ staff.email }}</td>
                         <td style="padding: 15px 20px; vertical-align: middle;">
-                            <span class="badge bg-primary">{{ staff.role }}</span>
+                            <div class="d-flex align-items-center">
+                                <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; margin-right: 12px; flex-shrink: 0;">
+                                    {{ staff.first_name|first }}
+                                </div>
+                                <div>
+                                    <span class="fw-semibold">{{ staff.first_name }} {{ staff.last_name }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 15px 20px; vertical-align: middle;">
+                            <span class="text-muted">{{ staff.email }}</span>
+                        </td>
+                        <td style="padding: 15px 20px; vertical-align: middle;">
+                            {% if staff.role == 'Teacher' %}
+                                <span class="badge" style="background: #0d6b4e; font-size: 11px;">{{ staff.role }}</span>
+                            {% elif staff.role == 'Administrator' %}
+                                <span class="badge" style="background: #c9a84c; font-size: 11px;">{{ staff.role }}</span>
+                            {% elif staff.role == 'Support' %}
+                                <span class="badge" style="background: #17a2b8; font-size: 11px;">{{ staff.get_role_display }}</span>
+                            {% else %}
+                                <span class="badge" style="background: #6c757d; font-size: 11px;">{{ staff.get_role_display }}</span>
+                            {% endif %}
                         </td>
                         <td style="padding: 15px 20px; vertical-align: middle;">{{ staff.department }}</td>
                         <td style="padding: 15px 20px; vertical-align: middle; text-align: center;">
-                            <a href="{% url 'staff_edit' staff.pk %}" class="btn btn-sm btn-outline-primary me-2">
-                                <i class="fas fa-edit"></i> Edit
-                            </a>
-                            <a href="{% url 'staff_delete' staff.pk %}"
-                               class="btn btn-sm btn-outline-danger"
-                               onclick="return confirm('Are you sure you want to delete this staff member?')">
-                                <i class="fas fa-trash"></i> Delete
-                            </a>
+                            <a href="{% url 'staff_detail' staff.pk %}" class="btn btn-sm btn-outline-info me-1" title="View Details"><i class="fas fa-eye"></i></a>
+                            <a href="{% url 'staff_edit' staff.pk %}" class="btn btn-sm btn-outline-success me-1" title="Edit"><i class="fas fa-edit"></i></a>
+                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"
+                                    data-delete-url="{% url 'staff_delete' staff.pk %}" data-delete-name="{{ staff.first_name }} {{ staff.last_name }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -57,14 +90,17 @@
         </div>
         {% else %}
         <div class="text-center py-5">
-            <i class="fas fa-users" style="font-size: 64px; color: #ddd;"></i>
+            <i class="fas fa-users-cog" style="font-size: 64px; color: #c8e6c9;"></i>
             <h4 class="mt-3 text-muted">No Staff Members Yet</h4>
             <p class="text-muted">Start by adding your first staff member</p>
-            <a href="{% url 'staff_add' %}" class="btn btn-primary mt-3">
-                <i class="fas fa-plus me-2"></i>Add Your First Staff Member
-            </a>
+            <a href="{% url 'staff_add' %}" class="btn btn-primary mt-2"><i class="fas fa-plus me-2"></i>Add Your First Staff Member</a>
         </div>
         {% endif %}
     </div>
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>FT.initSearch('searchInput', 'tbody tr');</script>
 {% endblock %}

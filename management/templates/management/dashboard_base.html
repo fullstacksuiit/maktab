@@ -1,3 +1,4 @@
+{% load tz %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,22 +9,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Poppins', sans-serif;
-            background: #f0f2f5;
+            background: #f0f4f0;
             min-height: 100vh;
         }
 
         .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
             padding: 15px 0;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            z-index: 1040;
         }
 
         .navbar-brand {
@@ -44,10 +42,7 @@
             background: rgba(255,255,255,0.2);
         }
 
-        .user-info {
-            color: white;
-            margin-right: 15px;
-        }
+        .user-info { color: white; margin-right: 15px; }
 
         .btn-logout {
             background: rgba(255,255,255,0.2);
@@ -61,9 +56,10 @@
 
         .btn-logout:hover {
             background: white;
-            color: #667eea;
+            color: #0d6b4e;
         }
 
+        /* ── Desktop Sidebar ──────────────────────────── */
         .sidebar {
             background: white;
             min-height: calc(100vh - 76px);
@@ -71,53 +67,57 @@
             padding: 0;
         }
 
-        .sidebar-menu {
-            list-style: none;
-            padding: 20px 0;
-        }
+        .sidebar-menu { list-style: none; padding: 20px 0; }
+        .sidebar-menu li { margin: 2px 0; }
 
-        .sidebar-menu li {
-            margin: 5px 0;
+        .sidebar-section-title {
+            padding: 12px 25px 6px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #999;
+            font-weight: 600;
         }
 
         .sidebar-menu a {
             display: flex;
             align-items: center;
-            padding: 15px 25px;
-            color: #333;
+            padding: 12px 25px;
+            color: #555;
             text-decoration: none;
             transition: all 0.3s ease;
             border-left: 4px solid transparent;
+            font-size: 14px;
         }
 
         .sidebar-menu a:hover {
-            background: #f8f9fa;
-            border-left-color: #667eea;
-            color: #667eea;
+            background: #f0faf4;
+            border-left-color: #c9a84c;
+            color: #0d6b4e;
         }
 
         .sidebar-menu a.active {
-            background: linear-gradient(to right, rgba(102, 126, 234, 0.1), transparent);
-            border-left-color: #667eea;
-            color: #667eea;
+            background: linear-gradient(to right, rgba(13, 107, 78, 0.1), transparent);
+            border-left-color: #c9a84c;
+            color: #0d6b4e;
             font-weight: 600;
         }
 
         .sidebar-menu i {
-            margin-right: 15px;
+            margin-right: 12px;
             width: 20px;
             text-align: center;
+            font-size: 15px;
         }
 
-        .main-content {
-            padding: 30px;
-        }
+        .main-content { padding: 30px; }
 
+        /* ── Page Header ──────────────────────────────── */
         .page-header {
             background: white;
             padding: 25px 30px;
             border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
             margin-bottom: 30px;
             display: flex;
             justify-content: space-between;
@@ -125,54 +125,54 @@
         }
 
         .page-header h1 {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             margin: 0;
         }
 
+        /* ── Buttons ──────────────────────────────────── */
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
             border: none;
-            padding: 12px 25px;
+            padding: 10px 22px;
             font-weight: 600;
             border-radius: 10px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 15px rgba(13, 107, 78, 0.3);
+            font-size: 14px;
         }
 
         .btn-primary:hover {
-            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            background: linear-gradient(135deg, #1a9e6f 0%, #0d6b4e 100%);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+            box-shadow: 0 6px 20px rgba(13, 107, 78, 0.4);
         }
 
+        .btn-loading {
+            opacity: 0.85;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* ── Alerts & Toasts ──────────────────────────── */
         .alert {
-            border-radius: 12px;
-            border: none;
-            padding: 15px 20px;
-            font-size: 14px;
-            font-weight: 500;
+            border-radius: 12px; border: none;
+            padding: 15px 20px; font-size: 14px; font-weight: 500;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             animation: slideDown 0.3s ease-out;
         }
 
         @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .alert-success {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
             color: white;
         }
 
@@ -180,48 +180,369 @@
             background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
             color: white;
         }
+
+        /* ── Global Polish ────────────────────────────── */
+        .card { transition: all 0.3s ease; }
+        .btn { transition: all 0.2s ease; }
+        a { transition: color 0.2s ease; }
+
+        .form-control, textarea.form-control, select.form-control {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 10px 15px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, textarea.form-control:focus, select.form-control:focus {
+            border-color: #0d6b4e;
+            box-shadow: 0 0 0 3px rgba(13, 107, 78, 0.15);
+            outline: none;
+        }
+
+        /* Keyboard focus ring for accessibility */
+        *:focus-visible {
+            outline: 2px solid #0d6b4e;
+            outline-offset: 2px;
+        }
+        .btn:focus-visible {
+            box-shadow: 0 0 0 3px rgba(13, 107, 78, 0.3);
+            outline: none;
+        }
+        .form-control:focus-visible {
+            outline: none;
+        }
+
+        /* Better form labels and helper text */
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+        .form-text, small.form-text {
+            font-size: 13px;
+            color: #888;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .table thead th { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        tbody tr { transition: all 0.2s ease; }
+        tbody tr:nth-child(even) { background-color: #f8fdf8; }
+        tbody tr:hover { background-color: #e8f5e9 !important; }
+
+        /* ── Breadcrumbs ──────────────────────────────── */
+        .breadcrumb-container { margin-bottom: 20px; }
+        .breadcrumb-container .breadcrumb {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+            font-size: 13px;
+        }
+        .breadcrumb-container .breadcrumb-item a {
+            color: #0d6b4e;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .breadcrumb-container .breadcrumb-item a:hover {
+            color: #c9a84c;
+            text-decoration: underline;
+        }
+        .breadcrumb-container .breadcrumb-item.active {
+            color: #888;
+            font-weight: 500;
+        }
+        .breadcrumb-container .breadcrumb-item + .breadcrumb-item::before {
+            content: "\f054";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            font-size: 9px;
+            color: #ccc;
+            padding: 0 8px;
+        }
+
+        /* ── Search Result Count ──────────────────────── */
+        .search-result-count {
+            font-size: 13px;
+            color: #888;
+            margin-top: 8px;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        /* ── Content Entrance Animation ───────────────── */
+        @keyframes contentFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .main-content > *:not(.position-fixed):not(#scrollTopBtn) {
+            animation: contentFadeIn 0.4s ease-out;
+        }
+
+        /* ── Scroll-to-Top Button ─────────────────────── */
+        #scrollTopBtn {
+            display: none;
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1050;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(13, 107, 78, 0.4);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        #scrollTopBtn:hover {
+            transform: translateY(-3px) !important;
+            box-shadow: 0 6px 20px rgba(13, 107, 78, 0.5);
+        }
+
+        /* ── Mobile Offcanvas Sidebar ─────────────────── */
+        .offcanvas-sidebar .sidebar-menu {
+            list-style: none;
+            padding: 10px 0;
+        }
+        .offcanvas-sidebar .sidebar-menu li { margin: 1px 0; }
+        .offcanvas-sidebar .sidebar-section-title {
+            padding: 14px 20px 6px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #999;
+            font-weight: 600;
+        }
+        .offcanvas-sidebar .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 13px 20px;
+            color: #555;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border-left: 4px solid transparent;
+            font-size: 15px;
+            border-radius: 0;
+        }
+        .offcanvas-sidebar .sidebar-menu a:hover {
+            background: #f0faf4;
+            border-left-color: #c9a84c;
+            color: #0d6b4e;
+        }
+        .offcanvas-sidebar .sidebar-menu a.active {
+            background: linear-gradient(to right, rgba(13, 107, 78, 0.1), transparent);
+            border-left-color: #c9a84c;
+            color: #0d6b4e;
+            font-weight: 600;
+        }
+        .offcanvas-sidebar .sidebar-menu i {
+            margin-right: 12px;
+            width: 22px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        /* ── Mobile Responsive ────────────────────────── */
+        @media (max-width: 767.98px) {
+            .sidebar { display: none; }
+
+            .main-content {
+                padding: 15px !important;
+            }
+            .page-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+                padding: 20px;
+            }
+            .page-header h1 { font-size: 20px; }
+            .page-header .d-flex {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+            }
+            .navbar-brand { font-size: 18px; }
+
+            /* Larger touch targets on mobile */
+            .form-control, select.form-control, textarea.form-control {
+                font-size: 16px !important;
+                padding: 12px 15px;
+                min-height: 48px;
+            }
+            .btn-lg, .btn-primary.btn-lg {
+                padding: 14px;
+                font-size: 16px;
+                min-height: 52px;
+            }
+            .btn-primary, .btn-outline-secondary, .btn-danger {
+                padding: 10px 18px;
+                font-size: 14px;
+            }
+
+            /* Stack action buttons on mobile */
+            .page-header > a,
+            .page-header > div:last-child {
+                width: 100%;
+            }
+            .page-header > a.btn,
+            .page-header > div:last-child .btn {
+                width: 100%;
+            }
+
+            /* Better table on mobile */
+            .table-responsive { margin: 0 -1px; }
+            .table td, .table th { white-space: nowrap; }
+        }
+
+        @media (max-width: 991.98px) and (min-width: 768px) {
+            .sidebar-menu a { padding: 10px 15px; font-size: 13px; }
+            .sidebar-menu i { margin-right: 8px; font-size: 14px; }
+            .sidebar-section-title { padding: 10px 15px 4px; font-size: 10px; }
+        }
+
+        /* ── Print Styles ─────────────────────────────── */
+        @media print {
+            .navbar, .sidebar, .offcanvas, footer,
+            #scrollTopBtn, .btn, .page-header .btn,
+            .page-header > a, .page-header > div:last-child a {
+                display: none !important;
+            }
+            .main-content { padding: 0 !important; }
+            .col-md-10 { width: 100% !important; max-width: 100% !important; flex: 0 0 100% !important; }
+            .card { box-shadow: none !important; border: 1px solid #ddd !important; }
+            body { background: white !important; }
+            .page-header { box-shadow: none !important; border: none; }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand ms-3" href="{% url 'dashboard' %}">
-                <i class="fas fa-gem me-2"></i>Finetouch
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <!-- Mobile sidebar toggle -->
+            <button class="navbar-toggler d-md-none me-2" type="button"
+                    data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas"
+                    aria-controls="sidebarOffcanvas" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center me-3">
-                    <li class="nav-item">
-                        <span class="user-info">
-                            <i class="fas fa-user-circle me-2"></i>{{ user.username }}
-                        </span>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link btn-logout" href="{% url 'logout' %}">
-                            <i class="fas fa-sign-out-alt me-2"></i>Logout
-                        </a>
-                    </li>
-                </ul>
+            <a class="navbar-brand ms-md-3" href="{% url 'dashboard' %}">
+                <i class="fas fa-mosque me-2"></i>Finetouch
+            </a>
+            <div class="d-none d-md-flex ms-auto align-items-center me-3">
+                <span class="user-info">
+                    <i class="fas fa-user-circle me-2"></i>{{ user.username }}
+                </span>
+                <a class="nav-link btn-logout" href="{% url 'logout' %}">
+                    <i class="fas fa-sign-out-alt me-2"></i>Logout
+                </a>
             </div>
+            <!-- Mobile user actions -->
+            <a class="btn-logout d-md-none ms-auto" href="{% url 'logout' %}" style="font-size:13px; padding:6px 14px; text-decoration:none;">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
         </div>
     </nav>
 
+    <!-- Mobile Offcanvas Sidebar -->
+    <div class="offcanvas offcanvas-start offcanvas-sidebar d-md-none" tabindex="-1"
+         id="sidebarOffcanvas" style="width: 280px; background: white;">
+        <div class="offcanvas-header" style="background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%); padding: 18px 20px;">
+            <h5 class="offcanvas-title text-white" style="font-weight: 600;">
+                <i class="fas fa-mosque me-2"></i>Finetouch
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <!-- Mobile user info -->
+            <div style="padding: 15px 20px; background: #f8fdf8; border-bottom: 1px solid #e8e8e8;">
+                <div style="font-size: 14px; font-weight: 600; color: #0d6b4e;">
+                    <i class="fas fa-user-circle me-2"></i>{{ user.username }}
+                </div>
+                {% if user.org_name %}
+                <div style="font-size: 12px; color: #888; margin-top: 3px;">{{ user.org_name }}</div>
+                {% endif %}
+            </div>
+            <ul class="sidebar-menu">
+                <li class="sidebar-section-title">Main</li>
+                <li>
+                    <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-section-title">Academics</li>
+                <li>
+                    <a href="{% url 'course_list' %}" class="{% if 'course' in request.path %}active{% endif %}">
+                        <i class="fas fa-book-quran"></i>
+                        <span>Courses</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'student_list' %}" class="{% if 'student' in request.path %}active{% endif %}">
+                        <i class="fas fa-user-graduate"></i>
+                        <span>Students</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'attendance_list' %}" class="{% if 'attendance' in request.path %}active{% endif %}">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>Attendance</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-section-title">Finance</li>
+                <li>
+                    <a href="{% url 'fee_payment_list' %}" class="{% if 'payment' in request.path %}active{% endif %}">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Fee Payments</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-section-title">Administration</li>
+                <li>
+                    <a href="{% url 'staff_list' %}" class="{% if 'staff' in request.path %}active{% endif %}">
+                        <i class="fas fa-users-cog"></i>
+                        <span>Staff</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'settings' %}" class="{% if 'settings' in request.path %}active{% endif %}">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
     <div class="container-fluid">
         <div class="row">
-            <div class="col-md-2 sidebar">
+            <!-- Desktop Sidebar -->
+            <div class="col-md-2 sidebar d-none d-md-block">
                 <ul class="sidebar-menu">
+                    <li class="sidebar-section-title">Main</li>
                     <li>
                         <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                             <i class="fas fa-tachometer-alt"></i>
                             <span>Dashboard</span>
                         </a>
                     </li>
+
+                    <li class="sidebar-section-title">Academics</li>
                     <li>
                         <a href="{% url 'course_list' %}" class="{% if 'course' in request.path %}active{% endif %}">
-                            <i class="fas fa-book"></i>
+                            <i class="fas fa-book-quran"></i>
                             <span>Courses</span>
                         </a>
                     </li>
@@ -232,9 +553,31 @@
                         </a>
                     </li>
                     <li>
+                        <a href="{% url 'attendance_list' %}" class="{% if 'attendance' in request.path %}active{% endif %}">
+                            <i class="fas fa-clipboard-check"></i>
+                            <span>Attendance</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-section-title">Finance</li>
+                    <li>
+                        <a href="{% url 'fee_payment_list' %}" class="{% if 'payment' in request.path %}active{% endif %}">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <span>Fee Payments</span>
+                        </a>
+                    </li>
+
+                    <li class="sidebar-section-title">Administration</li>
+                    <li>
                         <a href="{% url 'staff_list' %}" class="{% if 'staff' in request.path %}active{% endif %}">
-                            <i class="fas fa-users"></i>
+                            <i class="fas fa-users-cog"></i>
                             <span>Staff</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'settings' %}" class="{% if 'settings' in request.path %}active{% endif %}">
+                            <i class="fas fa-cog"></i>
+                            <span>Settings</span>
                         </a>
                     </li>
                 </ul>
@@ -242,20 +585,211 @@
 
             <div class="col-md-10 main-content">
                 {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle me-2"></i>{{ message }}
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                    <!-- Toast Notifications -->
+                    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+                        {% for message in messages %}
+                        <div class="toast align-items-center border-0 show mb-2" role="alert" data-bs-autohide="true" data-bs-delay="4000"
+                             style="background: {% if message.tags == 'success' %}linear-gradient(135deg, #0d6b4e, #1a9e6f){% elif message.tags == 'error' or message.tags == 'danger' %}linear-gradient(135deg, #dc3545, #c82333){% else %}linear-gradient(135deg, #0d6b4e, #1a9e6f){% endif %}; color: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); min-width: 300px;">
+                            <div class="d-flex">
+                                <div class="toast-body">
+                                    <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' or message.tags == 'danger' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} me-2"></i>
+                                    {{ message }}
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                            </div>
                         </div>
-                    {% endfor %}
+                        {% endfor %}
+                    </div>
                 {% endif %}
 
+                {% block breadcrumb %}{% endblock %}
                 {% block content %}{% endblock %}
+
+                <!-- Footer -->
+                <footer style="text-align: center; padding: 20px 0; color: #aaa; font-size: 12px; margin-top: 40px; border-top: 1px solid #e8e8e8;">
+                    <i class="fas fa-mosque me-1"></i> Finetouch Islamic Coaching Management System
+                </footer>
             </div>
         </div>
     </div>
 
+    <!-- Global Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content" style="border-radius: 15px; border: none; overflow: hidden;">
+                <div class="modal-body text-center py-4 px-4">
+                    <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(220, 53, 69, 0.1); display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                        <i class="fas fa-trash-alt" style="font-size: 24px; color: #dc3545;"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Delete Record?</h5>
+                    <p class="text-muted mb-1" style="font-size: 14px;">
+                        Are you sure you want to delete<br>
+                        <strong id="deleteItemName" style="color: #dc3545;"></strong>?
+                    </p>
+                    <p class="text-muted small mb-0">This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pt-0 pb-4">
+                    <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                    <a href="#" id="deleteConfirmBtn" class="btn btn-danger px-4">
+                        <i class="fas fa-trash me-1"></i>Delete
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scroll to Top Button -->
+    <button id="scrollTopBtn" title="Back to top">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    (function() {
+        // ── Auto-dismiss toasts ──────────────────────────
+        document.querySelectorAll('.toast').forEach(function(toast) {
+            var bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        });
+
+        // ── Close offcanvas on link click (mobile) ───────
+        var offcanvasEl = document.getElementById('sidebarOffcanvas');
+        if (offcanvasEl) {
+            offcanvasEl.querySelectorAll('.sidebar-menu a').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    var bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+                    if (bsOffcanvas) bsOffcanvas.hide();
+                });
+            });
+        }
+
+        // ── Global delete modal handler ──────────────────
+        var deleteModal = document.getElementById('deleteModal');
+        if (deleteModal) {
+            deleteModal.addEventListener('show.bs.modal', function(event) {
+                var button = event.relatedTarget;
+                if (!button) return;
+                var url = button.getAttribute('data-delete-url');
+                var name = button.getAttribute('data-delete-name');
+                document.getElementById('deleteConfirmBtn').href = url || '#';
+                document.getElementById('deleteItemName').textContent = name || '';
+            });
+        }
+
+        // ── Form loading states & double-submit prevention ─
+        document.querySelectorAll('form').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                var submitBtn = form.querySelector('button[type="submit"]');
+                if (!submitBtn) return;
+
+                if (submitBtn.dataset.submitting === 'true') {
+                    e.preventDefault();
+                    return;
+                }
+
+                submitBtn.dataset.submitting = 'true';
+                var originalHTML = submitBtn.innerHTML;
+                var originalWidth = submitBtn.offsetWidth;
+
+                submitBtn.style.minWidth = originalWidth + 'px';
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
+                submitBtn.disabled = true;
+                submitBtn.classList.add('btn-loading');
+
+                // Safety: re-enable after 10s for validation errors
+                setTimeout(function() {
+                    submitBtn.innerHTML = originalHTML;
+                    submitBtn.disabled = false;
+                    submitBtn.dataset.submitting = 'false';
+                    submitBtn.style.minWidth = '';
+                    submitBtn.classList.remove('btn-loading');
+                }, 10000);
+            });
+        });
+
+        // ── Auto-focus first visible form field ──────────
+        var form = document.querySelector('.main-content form');
+        if (form) {
+            var firstInput = form.querySelector(
+                'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([disabled]),' +
+                'select:not([disabled]),textarea:not([disabled])'
+            );
+            if (firstInput && firstInput.offsetParent !== null) {
+                firstInput.focus();
+            }
+        }
+
+        // ── Scroll-to-top button ─────────────────────────
+        var scrollBtn = document.getElementById('scrollTopBtn');
+        if (scrollBtn) {
+            var scrollVisible = false;
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 300 && !scrollVisible) {
+                    scrollVisible = true;
+                    scrollBtn.style.display = 'block';
+                    setTimeout(function() {
+                        scrollBtn.style.opacity = '1';
+                        scrollBtn.style.transform = 'translateY(0)';
+                    }, 10);
+                } else if (window.scrollY <= 300 && scrollVisible) {
+                    scrollVisible = false;
+                    scrollBtn.style.opacity = '0';
+                    scrollBtn.style.transform = 'translateY(20px)';
+                    setTimeout(function() { scrollBtn.style.display = 'none'; }, 300);
+                }
+            });
+            scrollBtn.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+
+        // ── Global search utility with debounce + result count ─
+        window.FT = window.FT || {};
+        FT.initSearch = function(inputId, rowSelector) {
+            var input = document.getElementById(inputId);
+            if (!input) return;
+
+            var debounceTimer;
+            var allRows = document.querySelectorAll(rowSelector);
+            var totalRows = allRows.length;
+
+            // Create result count element
+            var countEl = document.createElement('div');
+            countEl.className = 'search-result-count';
+            if (totalRows > 0) {
+                countEl.textContent = 'Showing all ' + totalRows + ' records';
+            }
+
+            var wrapper = input.closest('.search-wrapper') || input.closest('.input-group') || input.parentElement;
+            if (wrapper && wrapper.parentElement) {
+                wrapper.parentElement.insertBefore(countEl, wrapper.nextSibling);
+            }
+
+            input.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(function() {
+                    var filter = input.value.toLowerCase().trim();
+                    var visibleCount = 0;
+
+                    allRows.forEach(function(row) {
+                        var text = row.textContent.toLowerCase();
+                        var match = !filter || text.indexOf(filter) > -1;
+                        row.style.display = match ? '' : 'none';
+                        if (match) visibleCount++;
+                    });
+
+                    if (filter) {
+                        countEl.textContent = 'Showing ' + visibleCount + ' of ' + totalRows + ' records';
+                        countEl.style.color = visibleCount > 0 ? '#0d6b4e' : '#dc3545';
+                    } else {
+                        countEl.textContent = 'Showing all ' + totalRows + ' records';
+                        countEl.style.color = '#888';
+                    }
+                }, 300);
+            });
+        };
+    })();
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -2,28 +2,46 @@
 
 {% block title %}{{ action }} Student - Finetouch{% endblock %}
 
+{% block breadcrumb %}
+<nav class="breadcrumb-container" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="fas fa-home me-1"></i>Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'student_list' %}">Students</a></li>
+        <li class="breadcrumb-item active">{{ action }} Student</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <div>
         <h1><i class="fas fa-user-graduate me-3"></i>{{ action }} Student</h1>
         <p class="text-muted mb-0">Fill in the student details below</p>
     </div>
-    <a href="{% url 'student_list' %}" class="btn btn-outline-secondary">
+    <a href="{% url 'student_list' %}" class="btn btn-outline-secondary" style="border-radius: 10px; font-weight: 600;">
         <i class="fas fa-arrow-left me-2"></i>Back to List
     </a>
 </div>
 
 <div class="row">
     <div class="col-lg-10 mx-auto">
-        <div class="card" style="border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: none;">
+        <div class="card" style="border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border: none;">
+            <div class="card-header" style="background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%); color: white; border-radius: 15px 15px 0 0; padding: 18px 25px;">
+                <h5 class="mb-0"><i class="fas fa-id-card me-2"></i>Student Information</h5>
+            </div>
             <div class="card-body p-4">
                 <form method="post" novalidate>
                     {% csrf_token %}
 
+                    <!-- Identity Section -->
+                    <h6 class="fw-bold mb-3" style="color: #0d6b4e;">
+                        <i class="fas fa-fingerprint me-2"></i>Identity
+                    </h6>
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.student_id.id_for_label }}" class="form-label">
-                                <i class="fas fa-id-card me-2"></i>Student ID *
+                            <label for="{{ form.student_id.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-hashtag me-2" style="color: #0d6b4e;"></i>Student ID *
                             </label>
                             {{ form.student_id }}
                             {% if form.student_id.errors %}
@@ -33,11 +51,14 @@
                                     {% endfor %}
                                 </div>
                             {% endif %}
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>Leave blank for auto-generation
+                            </small>
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.courses.id_for_label }}" class="form-label">
-                                <i class="fas fa-book me-2"></i>Enrolled Courses <small class="text-muted">(Hold Ctrl/Cmd to select multiple)</small>
+                            <label for="{{ form.courses.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-book-quran me-2" style="color: #0d6b4e;"></i>Enrolled Courses <small class="text-muted">(Hold Ctrl/Cmd to select multiple)</small>
                             </label>
                             {{ form.courses }}
                             {% if form.courses.errors %}
@@ -53,10 +74,17 @@
                         </div>
                     </div>
 
+                    <hr style="border-color: #e8f5e9; margin: 20px 0;">
+
+                    <!-- Personal Details Section -->
+                    <h6 class="fw-bold mb-3" style="color: #0d6b4e;">
+                        <i class="fas fa-user me-2"></i>Personal Details
+                    </h6>
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.first_name.id_for_label }}" class="form-label">
-                                <i class="fas fa-user me-2"></i>First Name *
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-user me-2" style="color: #0d6b4e;"></i>First Name *
                             </label>
                             {{ form.first_name }}
                             {% if form.first_name.errors %}
@@ -69,8 +97,8 @@
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.last_name.id_for_label }}" class="form-label">
-                                <i class="fas fa-user me-2"></i>Last Name *
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-user me-2" style="color: #0d6b4e;"></i>Last Name *
                             </label>
                             {{ form.last_name }}
                             {% if form.last_name.errors %}
@@ -85,8 +113,8 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.email.id_for_label }}" class="form-label">
-                                <i class="fas fa-envelope me-2"></i>Email *
+                            <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-envelope me-2" style="color: #0d6b4e;"></i>Email *
                             </label>
                             {{ form.email }}
                             {% if form.email.errors %}
@@ -99,8 +127,8 @@
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.phone.id_for_label }}" class="form-label">
-                                <i class="fas fa-phone me-2"></i>Phone *
+                            <label for="{{ form.phone.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-phone me-2" style="color: #0d6b4e;"></i>Phone *
                             </label>
                             {{ form.phone }}
                             {% if form.phone.errors %}
@@ -115,8 +143,8 @@
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">
-                                <i class="fas fa-calendar me-2"></i>Date of Birth *
+                            <label for="{{ form.date_of_birth.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-calendar me-2" style="color: #0d6b4e;"></i>Date of Birth *
                             </label>
                             {{ form.date_of_birth }}
                             {% if form.date_of_birth.errors %}
@@ -129,8 +157,8 @@
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <label for="{{ form.gender.id_for_label }}" class="form-label">
-                                <i class="fas fa-venus-mars me-2"></i>Gender *
+                            <label for="{{ form.gender.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-venus-mars me-2" style="color: #0d6b4e;"></i>Gender *
                             </label>
                             {{ form.gender }}
                             {% if form.gender.errors %}
@@ -143,8 +171,8 @@
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <label for="{{ form.enrollment_date.id_for_label }}" class="form-label">
-                                <i class="fas fa-calendar-check me-2"></i>Enrollment Date *
+                            <label for="{{ form.enrollment_date.id_for_label }}" class="form-label fw-semibold">
+                                <i class="fas fa-calendar-check me-2" style="color: #c9a84c;"></i>Enrollment Date *
                             </label>
                             {{ form.enrollment_date }}
                             {% if form.enrollment_date.errors %}
@@ -158,8 +186,8 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="{{ form.address.id_for_label }}" class="form-label">
-                            <i class="fas fa-map-marker-alt me-2"></i>Address *
+                        <label for="{{ form.address.id_for_label }}" class="form-label fw-semibold">
+                            <i class="fas fa-map-marker-alt me-2" style="color: #0d6b4e;"></i>Address *
                         </label>
                         {{ form.address }}
                         {% if form.address.errors %}
@@ -171,7 +199,9 @@
                         {% endif %}
                     </div>
 
-                    <div class="d-grid gap-2 mt-4">
+                    <hr style="border-color: #e8f5e9; margin: 25px 0;">
+
+                    <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-save me-2"></i>{{ action }} Student
                         </button>

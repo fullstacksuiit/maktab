@@ -239,6 +239,31 @@ class AttendanceFilterForm(forms.Form):
     )
 
 
+class SettingsForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['org_name', 'contact', 'address', 'currency_symbol']
+        widgets = {
+            'org_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Organization Name'
+            }),
+            'contact': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Contact Number'
+            }),
+            'address': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Address',
+                'rows': 3
+            }),
+            'currency_symbol': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Rs., $, ₹, €'
+            }),
+        }
+
+
 class FeePaymentForm(forms.ModelForm):
     payment_date = forms.DateField(
         widget=forms.DateInput(attrs={
