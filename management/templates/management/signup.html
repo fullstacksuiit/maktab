@@ -1,0 +1,129 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Sign Up - Finetouch{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-header">
+        <div class="logo">
+            <i class="fas fa-building"></i>
+        </div>
+        <h2>Create Account</h2>
+        <p>Join Finetouch and start managing your business</p>
+    </div>
+
+    <form method="post" novalidate id="signupForm">
+        {% csrf_token %}
+
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label for="{{ form.org_name.id_for_label }}" class="form-label">
+                    <i class="fas fa-building me-2"></i>Organization Name *
+                </label>
+                {{ form.org_name }}
+                {% if form.org_name.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in form.org_name.errors %}
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-12 mb-3">
+                <label for="{{ form.username.id_for_label }}" class="form-label">
+                    <i class="fas fa-user me-2"></i>Username *
+                </label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in form.username.errors %}
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-12 mb-3">
+                <label for="{{ form.address.id_for_label }}" class="form-label">
+                    <i class="fas fa-map-marker-alt me-2"></i>Address *
+                </label>
+                {{ form.address }}
+                {% if form.address.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in form.address.errors %}
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-12 mb-3">
+                <label for="{{ form.contact.id_for_label }}" class="form-label">
+                    <i class="fas fa-phone me-2"></i>Contact Number *
+                </label>
+                {{ form.contact }}
+                {% if form.contact.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in form.contact.errors %}
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-12 mb-3">
+                <label for="{{ form.license.id_for_label }}" class="form-label">
+                    <i class="fas fa-certificate me-2"></i>License <span class="text-muted">(Optional)</span>
+                </label>
+                {{ form.license }}
+                {% if form.license.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in form.license.errors %}
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-12 mb-3">
+                <label for="{{ form.password1.id_for_label }}" class="form-label">
+                    <i class="fas fa-lock me-2"></i>Password *
+                </label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in form.password1.errors %}
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-12 mb-3">
+                <label for="{{ form.password2.id_for_label }}" class="form-label">
+                    <i class="fas fa-lock me-2"></i>Confirm Password *
+                </label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in form.password2.errors %}
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="d-grid mb-3">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="fas fa-user-plus me-2"></i>Create Account
+            </button>
+        </div>
+
+        <div class="auth-footer">
+            <p class="mb-0">Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+        </div>
+    </form>
+</div>
+{% endblock %}

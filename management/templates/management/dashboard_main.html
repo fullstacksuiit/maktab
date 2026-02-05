@@ -1,0 +1,167 @@
+{% extends 'management/dashboard_base.html' %}
+
+{% block title %}Dashboard - Finetouch{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-tachometer-alt me-3"></i>Dashboard</h1>
+        <p class="text-muted mb-0">Welcome back, {{ user.username }}! Here's your overview.</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="stat-card">
+            <div class="icon">
+                <i class="fas fa-book"></i>
+            </div>
+            <h3>Total Courses</h3>
+            <div class="value">{{ total_courses|default:0 }}</div>
+            <a href="{% url 'course_list' %}" class="btn btn-sm btn-outline-primary mt-3">
+                <i class="fas fa-eye me-2"></i>View Courses
+            </a>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="stat-card">
+            <div class="icon">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            <h3>Total Students</h3>
+            <div class="value">{{ total_students|default:0 }}</div>
+            <a href="{% url 'student_list' %}" class="btn btn-sm btn-outline-primary mt-3">
+                <i class="fas fa-eye me-2"></i>View Students
+            </a>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="stat-card">
+            <div class="icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <h3>Total Staff</h3>
+            <div class="value">{{ total_staff|default:0 }}</div>
+            <a href="{% url 'staff_list' %}" class="btn btn-sm btn-outline-primary mt-3">
+                <i class="fas fa-eye me-2"></i>View Staff
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card" style="border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: none;">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 15px 15px 0 0; padding: 20px;">
+                <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>Profile Information</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="info-box" style="background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 4px solid #667eea;">
+                            <small class="text-muted d-block mb-1">
+                                <i class="fas fa-building me-2"></i>Organization
+                            </small>
+                            <strong style="font-size: 16px;">{{ user.org_name }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="info-box" style="background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 4px solid #667eea;">
+                            <small class="text-muted d-block mb-1">
+                                <i class="fas fa-user me-2"></i>Username
+                            </small>
+                            <strong style="font-size: 16px;">{{ user.username }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="info-box" style="background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 4px solid #667eea;">
+                            <small class="text-muted d-block mb-1">
+                                <i class="fas fa-phone me-2"></i>Contact
+                            </small>
+                            <strong style="font-size: 16px;">{{ user.contact }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="info-box" style="background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 4px solid #667eea;">
+                            <small class="text-muted d-block mb-1">
+                                <i class="fas fa-map-marker-alt me-2"></i>Address
+                            </small>
+                            <strong style="font-size: 16px;">{{ user.address }}</strong>
+                        </div>
+                    </div>
+                    {% if user.license %}
+                    <div class="col-md-12 mb-3">
+                        <div class="info-box" style="background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 4px solid #667eea;">
+                            <small class="text-muted d-block mb-1">
+                                <i class="fas fa-certificate me-2"></i>License
+                            </small>
+                            <strong style="font-size: 16px;">{{ user.license }}</strong>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-card {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+}
+
+.stat-card .icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+}
+
+.stat-card .icon i {
+    font-size: 28px;
+    color: white;
+}
+
+.stat-card h3 {
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-card .value {
+    font-size: 36px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 10px;
+}
+</style>
+{% endblock %}

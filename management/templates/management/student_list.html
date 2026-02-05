@@ -1,0 +1,80 @@
+{% extends 'management/dashboard_base.html' %}
+
+{% block title %}Student List - Finetouch{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="fas fa-user-graduate me-3"></i>Students</h1>
+        <p class="text-muted mb-0">Manage your students</p>
+    </div>
+    <a href="{% url 'student_add' %}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Add New Student
+    </a>
+</div>
+
+<div class="card" style="border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: none;">
+    <div class="card-body p-0">
+        {% if students %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <tr>
+                        <th style="border: none; padding: 15px 20px;">Student ID</th>
+                        <th style="border: none; padding: 15px 20px;">Name</th>
+                        <th style="border: none; padding: 15px 20px;">Email</th>
+                        <th style="border: none; padding: 15px 20px;">Phone</th>
+                        <th style="border: none; padding: 15px 20px;">Enrolled Courses</th>
+                        <th style="border: none; padding: 15px 20px;">Total Fees</th>
+                        <th style="border: none; padding: 15px 20px; text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td style="padding: 15px 20px; vertical-align: middle;">
+                            <strong style="color: #667eea;">{{ student.student_id }}</strong>
+                        </td>
+                        <td style="padding: 15px 20px; vertical-align: middle;">{{ student.first_name }} {{ student.last_name }}</td>
+                        <td style="padding: 15px 20px; vertical-align: middle;">{{ student.email }}</td>
+                        <td style="padding: 15px 20px; vertical-align: middle;">{{ student.phone }}</td>
+                        <td style="padding: 15px 20px; vertical-align: middle;">
+                            {% if student.courses.exists %}
+                                {% for course in student.courses.all %}
+                                    <span class="badge bg-success mb-1">{{ course.course_code }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="badge bg-secondary">Not Enrolled</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 15px 20px; vertical-align: middle;">
+                            <strong style="color: #11998e;">${{ student.get_total_fees }}</strong>
+                        </td>
+                        <td style="padding: 15px 20px; vertical-align: middle; text-align: center;">
+                            <a href="{% url 'student_edit' student.pk %}" class="btn btn-sm btn-outline-primary me-2">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a href="{% url 'student_delete' student.pk %}"
+                               class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('Are you sure you want to delete this student?')">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-user-graduate" style="font-size: 64px; color: #ddd;"></i>
+            <h4 class="mt-3 text-muted">No Students Yet</h4>
+            <p class="text-muted">Start by adding your first student</p>
+            <a href="{% url 'student_add' %}" class="btn btn-primary mt-3">
+                <i class="fas fa-plus me-2"></i>Add Your First Student
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
