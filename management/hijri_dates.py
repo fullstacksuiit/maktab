@@ -1,5 +1,5 @@
 from datetime import date
-from hijri_converter import Hijri, Gregorian
+from hijridate import Hijri, Gregorian
 
 
 ISLAMIC_EVENTS = [
