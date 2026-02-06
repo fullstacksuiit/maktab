@@ -9,6 +9,7 @@ from .widgets import (
     styled_select, styled_select_multiple, searchable_select,
     searchable_select_multiple, TAILWIND_INPUT, TAILWIND_SELECT
 )
+from .indian_cities import STATE_CHOICES, get_city_choices, get_coordinates
 
 
 class SignUpForm(UserCreationForm):
@@ -31,13 +32,13 @@ class SignUpForm(UserCreationForm):
         required=True,
         widget=styled_textarea('Street / Area', rows=2)
     )
-    city = forms.CharField(
-        max_length=100, required=False,
-        widget=styled_text_input('City')
+    state = forms.ChoiceField(
+        choices=STATE_CHOICES, required=False,
+        widget=forms.Select(attrs={'class': TAILWIND_SELECT, 'id': 'id_state'})
     )
-    state = forms.CharField(
-        max_length=100, required=False,
-        widget=styled_text_input('State')
+    city = forms.ChoiceField(
+        choices=[('', 'Select City')], required=False,
+        widget=forms.Select(attrs={'class': TAILWIND_SELECT, 'id': 'id_city'})
     )
     pin_code = forms.CharField(
         max_length=10, required=False,
@@ -64,6 +65,16 @@ class SignUpForm(UserCreationForm):
         model = User
         fields = ['username', 'email', 'password1', 'password2']
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Populate city choices if state was submitted
+        if self.data.get('state'):
+            self.fields['city'].choices = get_city_choices(self.data['state'])
+
+    def clean_city(self):
+        """Allow any city value submitted (from dynamic dropdown)."""
+        return self.cleaned_data.get('city', '')
+
     def clean_contact(self):
         """Validate contact number format."""
         contact = self.cleaned_data.get('contact')
@@ -74,13 +85,18 @@ class SignUpForm(UserCreationForm):
     def save(self, commit=True):
         """Create organization and admin user."""
         user = super().save(commit=False)
+        state = self.cleaned_data.get('state', '')
+        city = self.cleaned_data.get('city', '')
+        coords = get_coordinates(state, city)
         # Create organization first
         organization = Organization.objects.create(
             org_name=self.cleaned_data['org_name'],
             address=self.cleaned_data['address'],
-            city=self.cleaned_data.get('city', ''),
-            state=self.cleaned_data.get('state', ''),
+            city=city,
+            state=state,
             pin_code=self.cleaned_data.get('pin_code', ''),
+            latitude=coords[0] if coords else None,
+            longitude=coords[1] if coords else None,
             contact=self.cleaned_data['contact'],
             license=self.cleaned_data.get('license', ''),
         )
@@ -288,17 +304,24 @@ class AttendanceFilterForm(forms.Form):
 
 class SettingsForm(forms.ModelForm):
     """Form for editing organization settings (admin only)."""
+    state = forms.ChoiceField(
+        choices=STATE_CHOICES, required=False,
+        widget=forms.Select(attrs={'class': TAILWIND_SELECT, 'id': 'id_state'})
+    )
+    city = forms.ChoiceField(
+        choices=[('', 'Select City')], required=False,
+        widget=forms.Select(attrs={'class': TAILWIND_SELECT, 'id': 'id_city'})
+    )
+
     class Meta:
         model = Organization
-        fields = ['org_name', 'contact', 'address', 'city', 'state', 'pin_code',
+        fields = ['org_name', 'contact', 'address', 'state', 'city', 'pin_code',
                   'currency_symbol',
                   'bank_name', 'account_number', 'ifsc_code', 'account_holder', 'upi_id']
         widgets = {
             'org_name': styled_text_input('Organization Name'),
             'contact': styled_text_input('Contact Number'),
             'address': styled_textarea('Street / Area', rows=2),
-            'city': styled_text_input('City'),
-            'state': styled_text_input('State'),
             'pin_code': styled_text_input('Pin Code'),
             'currency_symbol': styled_text_input('e.g., Rs., $, ₹, €'),
             'bank_name': styled_text_input('e.g., State Bank of India'),
@@ -308,12 +331,32 @@ class SettingsForm(forms.ModelForm):
             'upi_id': styled_text_input('e.g., yourname@upi'),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Populate city choices from existing instance or submitted data
+        state = self.data.get('state') if self.data else (self.instance.state if self.instance else None)
+        if state:
+            self.fields['city'].choices = get_city_choices(state)
+
+    def clean_city(self):
+        """Allow any city value submitted (from dynamic dropdown)."""
+        return self.cleaned_data.get('city', '')
+
     def clean_contact(self):
         """Validate contact number format."""
         contact = self.cleaned_data.get('contact')
         if contact and not re.match(r'^[\d\s\-\+\(\)]{7,20}$', contact):
             raise forms.ValidationError('Please enter a valid contact number (7-20 digits).')
         return contact
+
+    def save(self, commit=True):
+        org = super().save(commit=False)
+        coords = get_coordinates(org.state, org.city)
+        org.latitude = coords[0] if coords else None
+        org.longitude = coords[1] if coords else None
+        if commit:
+            org.save()
+        return org
 
 
 class FeePaymentForm(forms.ModelForm):

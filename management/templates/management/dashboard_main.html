@@ -6,12 +6,12 @@
 {% block content %}
 <div class="animate-[slideUp_0.4s_ease-out]">
     <!-- Welcome Section - Mobile Optimized -->
-    <div class="bg-gradient-to-br from-primary via-secondary to-primary rounded-2xl sm:rounded-3xl p-5 sm:p-8 mb-6 sm:mb-8 text-white relative overflow-hidden shadow-xl shadow-primary/30">
+    <div class="bg-gradient-to-br from-primary via-secondary to-primary rounded-2xl sm:rounded-3xl mb-6 sm:mb-8 text-white relative overflow-hidden shadow-xl shadow-primary/30">
         <div class="absolute top-0 right-0 -mr-16 -mt-16 w-48 sm:w-64 h-48 sm:h-64 bg-white/10 rounded-full blur-3xl"></div>
         <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-32 sm:w-48 h-32 sm:h-48 bg-gold/20 rounded-full blur-3xl"></div>
         <div class="absolute top-1/2 right-1/4 w-20 h-20 bg-white/5 rounded-full blur-2xl"></div>
 
-        <div class="relative z-10">
+        <div class="relative z-10 p-5 sm:p-8">
             <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2 flex items-center gap-2 sm:gap-3">
                 <i class="fas fa-mosque text-gold"></i>
                 <span>Assalamu Alaikum, {{ user.username }}!</span>
@@ -20,6 +20,31 @@
                 Here's what's happening at <strong class="text-gold">{{ user.organization.org_name }}</strong> today.
             </p>
         </div>
+
+        <!-- Hadith of the Hour - Marquee -->
+        <div class="relative z-10 border-t border-white/15">
+            <div class="flex items-center h-9 sm:h-10 overflow-hidden">
+                <div class="flex-shrink-0 flex items-center gap-1.5 pl-4 sm:pl-6 pr-3 h-full bg-white/10 border-r border-white/10">
+                    <i class="fas fa-quran text-gold text-[10px] sm:text-xs"></i>
+                    <span class="text-[9px] sm:text-[10px] font-bold text-gold/90 uppercase tracking-wider whitespace-nowrap">Hadith</span>
+                </div>
+                <div class="flex-1 overflow-hidden relative">
+                    <div id="hadith-marquee" class="flex items-center gap-6 whitespace-nowrap animate-[marquee_30s_linear_infinite] pl-4">
+                        <span id="hadith-text-eng" class="text-xs sm:text-sm text-white/90 italic"></span>
+                        <span class="text-gold/50">|</span>
+                        <span id="hadith-text-urd" class="text-xs sm:text-sm text-white/75" style="font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif;"></span>
+                        <span class="text-gold/50">|</span>
+                        <span id="hadith-reference" class="text-[10px] sm:text-xs text-gold/70 font-semibold"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <style>
+            @keyframes marquee {
+                0% { transform: translateX(0%); }
+                100% { transform: translateX(-50%); }
+            }
+        </style>
     </div>
 
     <!-- Quick Stats Grid - Beautiful Cards -->
@@ -434,3 +459,93 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var marquee = document.getElementById('hadith-marquee');
+    var engEl = document.getElementById('hadith-text-eng');
+    var urdEl = document.getElementById('hadith-text-urd');
+    var refEl = document.getElementById('hadith-reference');
+    var API_BASE = 'https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/';
+
+    function getHadithNumber() {
+        var now = new Date();
+        var dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+        return ((dayOfYear * 24 + now.getHours()) % 7563) + 1;
+    }
+
+    function getCacheKey() {
+        var now = new Date();
+        return 'hadith_v2_' + now.getFullYear() + '_' + now.getMonth() + '_' + now.getDate() + '_' + now.getHours();
+    }
+
+    function buildMarquee(eng, urd, ref) {
+        var sep = '<span class="text-gold/50 mx-4">\u2022</span>';
+        var content = '<span class="italic text-white/90">\u201C' + eng + '\u201D</span>' + sep +
+            '<span style="font-family:\'Noto Nastaliq Urdu\',serif;" class="text-white/75">' + urd + '</span>' + sep +
+            '<span class="text-gold/70 font-semibold">' + ref + '</span>';
+        marquee.innerHTML = '<span class="inline-flex items-center gap-0">' + content + '</span>' +
+            '<span class="inline-flex items-center gap-0 ml-24">' + content + '</span>';
+    }
+
+    function displayHadith(data) {
+        var eng = data.eng.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        var urd = data.urd.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        var ref = '\u2014 Sahih al-Bukhari ' + data.num;
+        buildMarquee(eng, urd, ref);
+    }
+
+    function fetchHadith() {
+        var num = getHadithNumber();
+        var cacheKey = getCacheKey();
+
+        try {
+            var cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                displayHadith(JSON.parse(cached));
+                return;
+            }
+        } catch(e) {}
+
+        engEl.textContent = 'Loading hadith...';
+
+        Promise.all([
+            fetch(API_BASE + 'eng-bukhari/' + num + '.json').then(function(r) { return r.json(); }),
+            fetch(API_BASE + 'urd-bukhari/' + num + '.json').then(function(r) { return r.json(); })
+        ]).then(function(results) {
+            var engData = results[0];
+            var urdData = results[1];
+            if (engData && engData.hadiths && engData.hadiths.length > 0) {
+                var hadith = {
+                    eng: engData.hadiths[0].text,
+                    urd: (urdData && urdData.hadiths && urdData.hadiths.length > 0) ? urdData.hadiths[0].text : '',
+                    num: engData.hadiths[0].hadithnumber
+                };
+                try { localStorage.setItem(cacheKey, JSON.stringify(hadith)); } catch(e) {}
+                displayHadith(hadith);
+            } else {
+                showFallback();
+            }
+        }).catch(function() {
+            showFallback();
+        });
+    }
+
+    function showFallback() {
+        buildMarquee(
+            'Seeking knowledge is an obligation upon every Muslim.',
+            '\u0639\u0644\u0645 \u062D\u0627\u0635\u0644 \u06A9\u0631\u0646\u0627 \u06C1\u0631 \u0645\u0633\u0644\u0645\u0627\u0646 \u067E\u0631 \u0641\u0631\u0636 \u06C1\u06D2\u06D4',
+            '\u2014 Sunan Ibn Majah 224'
+        );
+    }
+
+    fetchHadith();
+    setInterval(function() {
+        var cacheKey = getCacheKey();
+        try { if (!localStorage.getItem(cacheKey)) fetchHadith(); } catch(e) { fetchHadith(); }
+    }, 60000);
+})();
+</script>
+{% endblock %}
+

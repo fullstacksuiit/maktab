@@ -83,24 +83,24 @@
                     {% if form.address.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.address.errors.0 }}</p>{% endif %}
                 </div>
 
-                <!-- City -->
+                <!-- State -->
                 <div>
-                     <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">City</label>
+                     <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">State</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                             <i class="fas fa-city"></i>
+                             <i class="fas fa-map"></i>
                         </div>
-                        {{ form.city }}
+                        {{ form.state }}
                     </div>
-                    {% if form.city.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.city.errors.0 }}</p>{% endif %}
+                    {% if form.state.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.state.errors.0 }}</p>{% endif %}
                 </div>
 
-                <!-- State & Pin Code -->
+                <!-- City & Pin Code -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                         <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">State</label>
-                        {{ form.state }}
-                        {% if form.state.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.state.errors.0 }}</p>{% endif %}
+                         <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">City</label>
+                        {{ form.city }}
+                        {% if form.city.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.city.errors.0 }}</p>{% endif %}
                     </div>
                     <div>
                          <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">Pin Code</label>
@@ -187,5 +187,52 @@
     /* Hide the sidebar and header for the login page */
     #sidebar, header { display: none !important; }
     main { margin-left: 0 !important; }
+    /* Style select dropdowns to match text inputs */
+    #signupForm select {
+        width: 100%;
+        padding: 0.5rem 0.75rem 0.5rem 0.75rem;
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        appearance: auto;
+    }
+    @media (min-width: 640px) {
+        #signupForm select {
+            padding: 0.65rem 1rem;
+            font-size: 0.95rem;
+        }
+    }
+    #signupForm select:focus {
+        outline: none;
+        border-color: #0d6b4e;
+        box-shadow: 0 0 0 4px rgba(13, 107, 78, 0.1);
+        background-color: #ffffff;
+    }
 </style>
+<script>
+(function() {
+    var stateSelect = document.getElementById('id_state');
+    var citySelect = document.getElementById('id_city');
+    if (!stateSelect || !citySelect) return;
+
+    stateSelect.addEventListener('change', function() {
+        var state = this.value;
+        citySelect.innerHTML = '<option value="">Select City</option>';
+        if (!state) return;
+
+        fetch('{% url "api_cities" %}?state=' + encodeURIComponent(state))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                data.cities.forEach(function(city) {
+                    var opt = document.createElement('option');
+                    opt.value = city;
+                    opt.textContent = city;
+                    citySelect.appendChild(opt);
+                });
+            });
+    });
+})();
+</script>
 {% endblock %}

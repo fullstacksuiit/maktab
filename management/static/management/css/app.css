@@ -1,0 +1,168 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f3f4f6;
+}
+
+/* PWA Standalone Mode Adjustments */
+@media all and (display-mode: standalone) {
+    body {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    /* Prevent pull-to-refresh on iOS */
+    html {
+        overscroll-behavior-y: contain;
+    }
+}
+
+/* Mobile: push main content below the fixed mobile header */
+@media (max-width: 767px) {
+    main {
+        padding-top: 3.5rem;
+    }
+}
+
+/* Safe area support for notched devices (iPhone X+, etc.) */
+@supports (padding-top: env(safe-area-inset-top)) {
+    #mobile-header {
+        padding-top: env(safe-area-inset-top);
+    }
+    @media (max-width: 767px) {
+        main {
+            padding-top: calc(env(safe-area-inset-top) + 3.5rem);
+        }
+        #sidebar {
+            padding-top: calc(env(safe-area-inset-top) + 4rem) !important;
+        }
+    }
+    #sidebar {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+    main .overflow-auto {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+/* Glassmorphism */
+.glass {
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+.glass-dark {
+    background: rgba(30, 30, 30, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Sidebar Active Link Gradient */
+.nav-link.active {
+    background: linear-gradient(90deg, rgba(13, 107, 78, 0.1) 0%, transparent 100%);
+    border-left: 4px solid #0d6b4e;
+    color: #0d6b4e;
+}
+.nav-link:hover {
+    background: linear-gradient(90deg, rgba(13, 107, 78, 0.05) 0%, transparent 100%);
+    color: #0d6b4e;
+}
+
+/* Loading States */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    color: transparent !important;
+}
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    top: calc(50% - 9px);
+    left: calc(50% - 9px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+.btn-loading-dark::after {
+    border-color: rgba(0, 0, 0, 0.2);
+    border-top-color: #0d6b4e;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Tom Select Custom Styling */
+.ts-wrapper.single .ts-control, .ts-wrapper.multi .ts-control {
+    border: 1px solid #d1d5db;
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    min-height: 42px;
+    background: white;
+    box-shadow: none;
+    font-family: 'Poppins', sans-serif;
+}
+.ts-wrapper.single .ts-control:hover, .ts-wrapper.multi .ts-control:hover {
+    border-color: #9ca3af;
+}
+.ts-wrapper.single.focus .ts-control, .ts-wrapper.multi.focus .ts-control {
+    border-color: #0d6b4e;
+    box-shadow: 0 0 0 2px rgba(13, 107, 78, 0.2);
+    outline: none;
+}
+.ts-dropdown {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    margin-top: 4px;
+    font-family: 'Poppins', sans-serif;
+}
+.ts-dropdown .option {
+    padding: 0.625rem 1rem;
+}
+.ts-dropdown .option.active {
+    background-color: rgba(13, 107, 78, 0.1);
+    color: #0d6b4e;
+}
+.ts-dropdown .option:hover {
+    background-color: rgba(13, 107, 78, 0.05);
+}
+.ts-wrapper.multi .ts-control > .item {
+    background: linear-gradient(135deg, #0d6b4e, #1a9e6f);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.875rem;
+}
+.ts-wrapper.multi .ts-control > .item .remove {
+    border: none;
+    color: rgba(255,255,255,0.7);
+}
+.ts-wrapper.multi .ts-control > .item .remove:hover {
+    color: white;
+    background: transparent;
+}
+.ts-control input {
+    font-family: 'Poppins', sans-serif;
+}
+.ts-dropdown .no-results {
+    padding: 0.625rem 1rem;
+    color: #6b7280;
+}

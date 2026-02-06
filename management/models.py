@@ -12,6 +12,8 @@ class Organization(models.Model):
     city = models.CharField(max_length=100, blank=True, default='', verbose_name="City")
     state = models.CharField(max_length=100, blank=True, default='', verbose_name="State")
     pin_code = models.CharField(max_length=10, blank=True, default='', verbose_name="Pin Code")
+    latitude = models.FloatField(blank=True, null=True, verbose_name="Latitude")
+    longitude = models.FloatField(blank=True, null=True, verbose_name="Longitude")
     contact = models.CharField(max_length=20, verbose_name="Contact Number")
     license = models.CharField(max_length=100, blank=True, null=True, verbose_name="License")
     currency_symbol = models.CharField(max_length=10, default='Rs.', verbose_name="Currency Symbol")
@@ -409,6 +411,7 @@ class Attendance(models.Model):
         ordering = ['-date', '-created_at']
         indexes = [
             models.Index(fields=['organization', 'date']),
+            models.Index(fields=['organization', 'batch', 'date']),
             models.Index(fields=['student', 'status']),
         ]
 

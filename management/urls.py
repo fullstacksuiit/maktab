@@ -58,6 +58,9 @@ urlpatterns = [
     # Settings
     path('settings/', views.settings_view, name='settings'),
 
+    # API
+    path('api/cities/', views.get_cities_for_state, name='api_cities'),
+
     # Export URLs
     path('export/students/', views.export_students_excel, name='export_students'),
     path('export/staff/', views.export_staff_excel, name='export_staff'),

@@ -22,11 +22,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-ge$eb+8(p&+=ije&ie0675zh&kpdlge%h#_6x0_0-v&$)rf2cf"
 
-# SECURITY WARNING: don't run with debug turned on in production!
+# SECURITY WARNING: don't run with debug turned on in production!ro
 DEBUG = False
 
 ALLOWED_HOSTS = ['*']
-
 
 # Application definition
 
@@ -42,6 +41,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -117,14 +117,19 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "static/"
 STATIC_URL = "/static/"
+STATIC_ROOT = str(BASE_DIR / "staticfiles")
 
 if DEBUG:
     STATICFILES_DIRS = [str(BASE_DIR / "static")]
 
+# WhiteNoise: compressed & forever-cacheable static files
 if not DEBUG:
-    STATIC_ROOT = str(BASE_DIR / "static")
+    STORAGES = {
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -133,6 +138,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Custom User Model
 AUTH_USER_MODEL = "management.User"
+
+# Session Settings
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # Logging Configuration
 LOGGING = {
@@ -162,3 +171,12 @@ LOGGING = {
         },
     },
 }
+
+# Email Configuration (Gmail SMTP)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'rahmantanshit@gmail.com'          # Replace with your Gmail address
+EMAIL_HOST_PASSWORD = 'vkxj yvqq liqj atfc'            # Replace with Gmail App Password
+DEFAULT_FROM_EMAIL = 'Maktab <your-noreply@gmail.com>'

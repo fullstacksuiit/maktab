@@ -8,13 +8,19 @@ from django.views.decorators.http import require_POST
 from django.db.models import Sum, Count, Q, Subquery, OuterRef, DecimalField
 from django.db.models.functions import Coalesce
 from django.core.paginator import Paginator
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from datetime import date
 import json
+import logging
+
+logger = logging.getLogger('management')
 
 from .forms import (SignUpForm, LoginForm, CourseForm, BatchForm, StudentForm, StaffForm,
                     AttendanceFilterForm, FeePaymentForm, SettingsForm, InviteUserForm, UserEditForm)
 from .models import User, Organization, Course, Batch, Student, Staff, Attendance, FeePayment
 from .decorators import role_required, admin_required, manager_or_admin_required
+from .indian_cities import CITY_DATA
 
 
 def get_org(request):
@@ -28,6 +34,23 @@ def signup_view(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
+
+            # Send welcome email
+            try:
+                html_message = render_to_string('management/emails/welcome.html', {
+                    'username': user.username,
+                    'org_name': user.organization.org_name,
+                })
+                send_mail(
+                    subject='Welcome to Maktab!',
+                    message=f'Assalamu Alaikum {user.username}, your account for {user.organization.org_name} has been created successfully.',
+                    from_email=None,  # uses DEFAULT_FROM_EMAIL
+                    recipient_list=[user.email],
+                    html_message=html_message,
+                )
+            except Exception as e:
+                logger.error(f'Failed to send welcome email to {user.email}: {e}')
+
             messages.success(request, 'Account created successfully!')
             return redirect('dashboard')
         else:
@@ -68,11 +91,21 @@ def logout_view(request):
 @login_required(login_url='login')
 def dashboard_view(request):
     org = get_org(request)
-    total_courses = Course.objects.filter(organization=org).count()
-    total_batches = Batch.objects.filter(organization=org, is_active=True).count()
-    total_students = Student.objects.filter(organization=org).count()
-    total_staff = Staff.objects.filter(organization=org).count()
 
+    # Single aggregate query for all counts instead of 4 separate COUNT queries
+    from django.db.models import Value, BooleanField
+    counts = Organization.objects.filter(pk=org.pk).aggregate(
+        total_courses=Count('courses', distinct=True),
+        total_batches=Count('batches', filter=Q(batches__is_active=True), distinct=True),
+        total_students=Count('students', distinct=True),
+        total_staff=Count('staff_members', distinct=True),
+    )
+    total_courses = counts['total_courses']
+    total_batches = counts['total_batches']
+    total_students = counts['total_students']
+    total_staff = counts['total_staff']
+
+    # Single query for revenue (used for both total_revenue and pending calc)
     total_revenue = FeePayment.objects.filter(
         organization=org
     ).aggregate(Sum('amount'))['amount__sum'] or 0
@@ -84,17 +117,16 @@ def dashboard_view(request):
         student_total_fees=Coalesce(Sum('batches__course__fees'), 0, output_field=DecimalField())
     ).aggregate(total=Sum('student_total_fees'))['total'] or 0
 
-    total_paid = FeePayment.objects.filter(
-        organization=org
-    ).aggregate(Sum('amount'))['amount__sum'] or 0
+    total_pending = total_fees_subquery - total_revenue
 
-    total_pending = total_fees_subquery - total_paid
-
+    # Single query for today's attendance with conditional count
     today = date.today()
-    today_total = Attendance.objects.filter(organization=org, date=today).count()
-    today_present = Attendance.objects.filter(
-        organization=org, date=today, status__in=['Present', 'Late']
-    ).count()
+    today_attendance = Attendance.objects.filter(organization=org, date=today).aggregate(
+        today_total=Count('id'),
+        today_present=Count('id', filter=Q(status__in=['Present', 'Late'])),
+    )
+    today_total = today_attendance['today_total']
+    today_present = today_attendance['today_present']
 
     recent_students = Student.objects.filter(organization=org).prefetch_related('batches__course').order_by('-created_at')[:5]
     recent_payments = FeePayment.objects.filter(organization=org).select_related('student', 'batch__course').order_by('-created_at')[:5]
@@ -558,23 +590,34 @@ def attendance_mark(request):
         attendance_date = request.POST.get('date')
         batch = get_object_or_404(Batch, pk=batch_id, organization=org)
 
-        students = batch.students.filter(organization=org)
-        marked_count = 0
+        students = list(batch.students.filter(organization=org))
+        existing = {
+            a.student_id: a for a in Attendance.objects.filter(
+                date=attendance_date, batch=batch, organization=org,
+                student__in=students
+            )
+        }
+        to_create = []
+        to_update = []
         for student in students:
             status = request.POST.get(f'status_{student.pk}', 'Absent')
             notes = request.POST.get(f'notes_{student.pk}', '')
-            Attendance.objects.update_or_create(
-                date=attendance_date,
-                student=student,
-                batch=batch,
-                organization=org,
-                defaults={
-                    'status': status,
-                    'marked_by': request.user,
-                    'notes': notes,
-                }
-            )
-            marked_count += 1
+            if student.pk in existing:
+                att = existing[student.pk]
+                att.status = status
+                att.marked_by = request.user
+                att.notes = notes
+                to_update.append(att)
+            else:
+                to_create.append(Attendance(
+                    date=attendance_date, student=student, batch=batch,
+                    organization=org, status=status, marked_by=request.user, notes=notes,
+                ))
+        if to_create:
+            Attendance.objects.bulk_create(to_create)
+        if to_update:
+            Attendance.objects.bulk_update(to_update, ['status', 'marked_by', 'notes'])
+        marked_count = len(students)
 
         messages.success(request, f'Attendance marked for {marked_count} students!')
         return redirect('attendance_list')
@@ -708,21 +751,31 @@ def mark_all_present(request):
         attendance_date = data.get('date')
 
         batch = get_object_or_404(Batch, pk=batch_id, organization=org)
-        students = batch.students.filter(organization=org)
-
-        count = 0
-        for student in students:
-            Attendance.objects.update_or_create(
-                date=attendance_date,
-                student=student,
-                batch=batch,
-                organization=org,
-                defaults={
-                    'status': 'Present',
-                    'marked_by': request.user,
-                }
+        students = list(batch.students.filter(organization=org))
+        existing = {
+            a.student_id: a for a in Attendance.objects.filter(
+                date=attendance_date, batch=batch, organization=org,
+                student__in=students
             )
-            count += 1
+        }
+        to_create = []
+        to_update = []
+        for student in students:
+            if student.pk in existing:
+                att = existing[student.pk]
+                att.status = 'Present'
+                att.marked_by = request.user
+                to_update.append(att)
+            else:
+                to_create.append(Attendance(
+                    date=attendance_date, student=student, batch=batch,
+                    organization=org, status='Present', marked_by=request.user,
+                ))
+        if to_create:
+            Attendance.objects.bulk_create(to_create)
+        if to_update:
+            Attendance.objects.bulk_update(to_update, ['status', 'marked_by'])
+        count = len(students)
 
         return JsonResponse({
             'success': True,
@@ -744,21 +797,31 @@ def mark_all_absent(request):
         attendance_date = data.get('date')
 
         batch = get_object_or_404(Batch, pk=batch_id, organization=org)
-        students = batch.students.filter(organization=org)
-
-        count = 0
-        for student in students:
-            Attendance.objects.update_or_create(
-                date=attendance_date,
-                student=student,
-                batch=batch,
-                organization=org,
-                defaults={
-                    'status': 'Absent',
-                    'marked_by': request.user,
-                }
+        students = list(batch.students.filter(organization=org))
+        existing = {
+            a.student_id: a for a in Attendance.objects.filter(
+                date=attendance_date, batch=batch, organization=org,
+                student__in=students
             )
-            count += 1
+        }
+        to_create = []
+        to_update = []
+        for student in students:
+            if student.pk in existing:
+                att = existing[student.pk]
+                att.status = 'Absent'
+                att.marked_by = request.user
+                to_update.append(att)
+            else:
+                to_create.append(Attendance(
+                    date=attendance_date, student=student, batch=batch,
+                    organization=org, status='Absent', marked_by=request.user,
+                ))
+        if to_create:
+            Attendance.objects.bulk_create(to_create)
+        if to_update:
+            Attendance.objects.bulk_update(to_update, ['status', 'marked_by'])
+        count = len(students)
 
         return JsonResponse({
             'success': True,
@@ -870,6 +933,15 @@ def print_receipt(request, pk):
     org = get_org(request)
     payment = get_object_or_404(FeePayment, pk=pk, organization=org)
     return render(request, 'management/receipt_print.html', {'payment': payment, 'organization': org})
+
+
+# ─── API: Cities by State ────────────────────────────────────────────────────
+
+def get_cities_for_state(request):
+    """Return cities for a given state as JSON (used by dynamic dropdowns)."""
+    state = request.GET.get('state', '')
+    cities = sorted(CITY_DATA.get(state, {}).keys())
+    return JsonResponse({'cities': cities})
 
 
 # ─── Settings ────────────────────────────────────────────────────────────────

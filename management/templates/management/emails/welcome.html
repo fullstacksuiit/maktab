@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #0d6b4e, #10b981); padding: 32px 40px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">Maktab</h1>
+                            <p style="margin: 8px 0 0; color: rgba(255,255,255,0.85); font-size: 14px;">Management System</p>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <h2 style="margin: 0 0 16px; color: #1f2937; font-size: 22px;">Assalamu Alaikum, {{ username }}!</h2>
+                            <p style="margin: 0 0 20px; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                Your account for <strong>{{ org_name }}</strong> has been created successfully. You can now manage your students, staff, courses, attendance, and fees all in one place.
+                            </p>
+
+                            <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 24px 0; width: 100%; background-color: #f9fafb; border-radius: 12px;">
+                                <tr>
+                                    <td style="padding: 20px 24px;">
+                                        <p style="margin: 0 0 8px; color: #6b7280; font-size: 12px; text-transform: uppercase; font-weight: 600;">Your Details</p>
+                                        <p style="margin: 0 0 4px; color: #1f2937; font-size: 14px;"><strong>Username:</strong> {{ username }}</p>
+                                        <p style="margin: 0; color: #1f2937; font-size: 14px;"><strong>Organization:</strong> {{ org_name }}</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
+                                JazakAllah Khair for choosing Maktab. If you have any questions, feel free to reach out.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 24px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; text-align: center;">
+                            <p style="margin: 0; color: #9ca3af; font-size: 12px;">This is an automated message. Please do not reply to this email.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

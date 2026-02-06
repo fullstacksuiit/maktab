@@ -34,6 +34,17 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="apple-touch-startup-image" href="{% static 'management/icons/icon-512x512.png' %}">
 
+    <!-- DNS Prefetch & Preconnect for CDNs -->
+    <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
     <!-- Tailwind Play CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -54,12 +65,15 @@
             }
         }
     </script>
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Tom Select for searchable dropdowns -->
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <!-- Fonts - swap ensures text is visible while font loads -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome - load async to not block rendering -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
+    <!-- Tom Select for searchable dropdowns - CSS async, JS deferred -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css"></noscript>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js" defer></script>
     
     <style>
         body {
@@ -79,6 +93,13 @@
             }
         }
 
+        /* Mobile: push main content below the fixed mobile header */
+        @media (max-width: 767px) {
+            main {
+                padding-top: 3.5rem; /* matches mobile header height */
+            }
+        }
+
         /* Safe area support for notched devices (iPhone X+, etc.) */
         @supports (padding-top: env(safe-area-inset-top)) {
             /* Mobile header - extend background into notch, push content below */
@@ -86,10 +107,10 @@
                 padding-top: env(safe-area-inset-top);
             }
 
-            /* Main content on mobile - offset for the taller mobile header */
+            /* Main content on mobile - offset for mobile header + safe area */
             @media (max-width: 767px) {
                 main {
-                    padding-top: env(safe-area-inset-top);
+                    padding-top: calc(env(safe-area-inset-top) + 3.5rem);
                 }
                 #sidebar {
                     padding-top: calc(env(safe-area-inset-top) + 4rem) !important;
@@ -240,6 +261,32 @@
 </head>
 <body class="bg-gray-50 text-gray-800 antialiased h-screen flex overflow-hidden">
 
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black transition-opacity duration-700">
+        <div class="flex flex-col items-center gap-5 animate-[splashIn_0.8s_ease-out]">
+            <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-2xl shadow-primary/40">
+                <i class="fas fa-mosque text-5xl text-white"></i>
+            </div>
+            <h1 class="text-4xl font-bold text-white tracking-wide">Maktab</h1>
+            <p class="text-gray-500 text-sm font-light tracking-widest uppercase">Management System</p>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            var splash = document.getElementById('splash-screen');
+            if (sessionStorage.getItem('splashShown')) {
+                splash.remove();
+                return;
+            }
+            sessionStorage.setItem('splashShown', '1');
+            setTimeout(function() {
+                splash.style.opacity = '0';
+                setTimeout(function() { splash.remove(); }, 700);
+            }, 1800);
+        })();
+    </script>
+
     <!-- Mobile Header -->
     <div id="mobile-header" class="md:hidden fixed top-0 w-full z-50 glass border-b border-gray-200 flex items-center justify-between px-4 py-3">
         <div class="text-xl font-bold text-primary flex items-center gap-2">
@@ -340,9 +387,9 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden relative bg-gray-50/50 pt-14 md:pt-0">
+    <main class="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden relative bg-gray-50/50">
         <!-- Top Navbar -->
-        <header class="h-20 flex items-center justify-between px-4 md:px-8 z-30 transition-all duration-300">
+        <header class="h-20 shrink-0 flex items-center justify-between px-4 md:px-8 z-30 transition-all duration-300">
              <!-- Page Title -->
             <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
                 {% block header_title %}Dashboard{% endblock %}
