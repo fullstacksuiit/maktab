@@ -50,6 +50,7 @@ class User(AbstractUser):
         ('admin', 'Admin'),
         ('manager', 'Manager'),
         ('staff', 'Staff'),
+        ('parent', 'Parent'),
     ]
 
     organization = models.ForeignKey(
@@ -87,6 +88,9 @@ class User(AbstractUser):
 
     def is_staff_role(self):
         return self.role == 'staff'
+
+    def is_parent(self):
+        return self.role == 'parent'
 
     def can_manage_users(self):
         return self.role == 'admin'

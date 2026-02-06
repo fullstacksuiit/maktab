@@ -47,6 +47,32 @@ def manager_or_admin_required(view_func):
     return wrapper
 
 
+def parent_required(view_func):
+    """Decorator to restrict view access to parent users only."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if not request.user.is_parent():
+            messages.error(request, 'This page is for parent/student accounts only.')
+            return redirect('dashboard')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def internal_user_required(view_func):
+    """Decorator to block parent users from accessing internal management views.
+    Redirects parent users to their own portal."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if request.user.is_parent():
+            return redirect('parent_dashboard')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
 def get_user_organization(user):
     """Helper to get user's organization."""
     return user.organization if user.is_authenticated and user.organization else None

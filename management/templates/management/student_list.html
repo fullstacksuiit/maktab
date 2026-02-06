@@ -20,6 +20,9 @@
             {% endif %}
         </form>
         <div class="flex gap-2">
+            <a href="{% url 'import_students' %}" class="px-4 py-2 bg-white border border-blue-600 text-blue-700 rounded-xl hover:bg-blue-50 font-medium transition-colors flex items-center gap-2">
+                <i class="fas fa-file-import"></i> Import
+            </a>
             <a href="{% url 'export_students' %}" class="px-4 py-2 bg-white border border-green-600 text-green-700 rounded-xl hover:bg-green-50 font-medium transition-colors flex items-center gap-2">
                 <i class="fas fa-file-excel"></i> Export
             </a>

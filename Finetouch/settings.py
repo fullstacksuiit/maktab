@@ -131,6 +131,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Custom User Model
 AUTH_USER_MODEL = "management.User"
 
+# Authentication Backends
+AUTHENTICATION_BACKENDS = [
+    'management.backends.PhoneOrUsernameBackend',
+]
+
 # Session Settings
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False

@@ -22,6 +22,8 @@ urlpatterns = [
     # Student URLs
     path('students/', views.student_list, name='student_list'),
     path('students/add/', views.student_add, name='student_add'),
+    path('students/import/', views.import_students, name='import_students'),
+    path('students/import/template/', views.download_student_template, name='download_student_template'),
     path('students/<int:pk>/', views.student_detail, name='student_detail'),
     path('students/edit/<int:pk>/', views.student_edit, name='student_edit'),
     path('students/delete/<int:pk>/', views.student_delete, name='student_delete'),
@@ -60,6 +62,10 @@ urlpatterns = [
 
     # API
     path('api/cities/', views.get_cities_for_state, name='api_cities'),
+
+    # Parent Portal URLs
+    path('parent/', views.parent_dashboard, name='parent_dashboard'),
+    path('parent/change-password/', views.parent_change_password, name='parent_change_password'),
 
     # Export URLs
     path('export/students/', views.export_students_excel, name='export_students'),

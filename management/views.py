@@ -10,17 +10,19 @@ from django.db.models.functions import Coalesce
 from django.core.paginator import Paginator
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
-from datetime import date
+from datetime import date, datetime
 import json
 import logging
+import re
 
 logger = logging.getLogger('management')
 
 from .forms import (SignUpForm, LoginForm, CourseForm, BatchForm, StudentForm, StaffForm,
                     AttendanceFilterForm, FeePaymentForm, SettingsForm, InviteUserForm, UserEditForm)
 from .models import User, Organization, Course, Batch, Student, Staff, Attendance, FeePayment
-from .decorators import role_required, admin_required, manager_or_admin_required
+from .decorators import role_required, admin_required, manager_or_admin_required, parent_required, internal_user_required
 from .indian_cities import CITY_DATA
+from .hijri_dates import get_upcoming_islamic_dates
 
 
 def get_org(request):
@@ -69,7 +71,10 @@ def login_view(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                messages.success(request, f'Assalamu Alaikum, {username}!')
+                display_name = user.first_name or username
+                messages.success(request, f'Assalamu Alaikum, {display_name}!')
+                if user.is_parent():
+                    return redirect('parent_dashboard')
                 return redirect('dashboard')
             else:
                 messages.error(request, 'Invalid username or password.')
@@ -89,6 +94,7 @@ def logout_view(request):
 # ─── Dashboard ───────────────────────────────────────────────────────────────
 
 @login_required(login_url='login')
+@internal_user_required
 def dashboard_view(request):
     org = get_org(request)
 
@@ -167,6 +173,7 @@ def dashboard_view(request):
         'cash_total': cash_total,
         'bank_total': bank_total,
         'online_total': online_total,
+        'islamic_dates': get_upcoming_islamic_dates(),
     }
     return render(request, 'management/dashboard_main.html', context)
 
@@ -174,6 +181,7 @@ def dashboard_view(request):
 # ─── Course Views ────────────────────────────────────────────────────────────
 
 @login_required(login_url='login')
+@internal_user_required
 def course_list(request):
     org = get_org(request)
     courses_qs = Course.objects.filter(organization=org).annotate(
@@ -250,6 +258,7 @@ def course_delete(request, pk):
 # ─── Batch Views ─────────────────────────────────────────────────────────────
 
 @login_required(login_url='login')
+@internal_user_required
 def batch_list(request):
     org = get_org(request)
     batches_qs = Batch.objects.filter(organization=org).select_related('course').annotate(
@@ -354,6 +363,7 @@ def batch_delete(request, pk):
 # ─── Student Views ───────────────────────────────────────────────────────────
 
 @login_required(login_url='login')
+@internal_user_required
 def student_list(request):
     org = get_org(request)
     students_qs = Student.objects.filter(organization=org).prefetch_related('batches__course', 'fee_payments')
@@ -433,6 +443,7 @@ def student_delete(request, pk):
 
 
 @login_required(login_url='login')
+@internal_user_required
 def student_detail(request, pk):
     org = get_org(request)
     student = get_object_or_404(Student, pk=pk, organization=org)
@@ -455,6 +466,7 @@ def student_detail(request, pk):
 
 
 @login_required(login_url='login')
+@internal_user_required
 def student_fee_history(request, pk):
     org = get_org(request)
     student = get_object_or_404(Student.objects.prefetch_related('batches__course'), pk=pk, organization=org)
@@ -472,6 +484,7 @@ def student_fee_history(request, pk):
 # ─── Staff Views ─────────────────────────────────────────────────────────────
 
 @login_required(login_url='login')
+@internal_user_required
 def staff_list(request):
     org = get_org(request)
     staff_qs = Staff.objects.filter(organization=org)
@@ -547,6 +560,7 @@ def staff_delete(request, pk):
 
 
 @login_required(login_url='login')
+@internal_user_required
 def staff_detail(request, pk):
     org = get_org(request)
     staff = get_object_or_404(Staff, pk=pk, organization=org)
@@ -556,6 +570,7 @@ def staff_detail(request, pk):
 # ─── Attendance Views ────────────────────────────────────────────────────────
 
 @login_required(login_url='login')
+@internal_user_required
 def attendance_list(request):
     org = get_org(request)
     attendances = Attendance.objects.filter(organization=org).select_related('student', 'batch__course')
@@ -583,6 +598,7 @@ def attendance_list(request):
 
 
 @login_required(login_url='login')
+@internal_user_required
 def attendance_mark(request):
     org = get_org(request)
     if request.method == 'POST':
@@ -656,6 +672,7 @@ def attendance_mark(request):
 
 
 @login_required(login_url='login')
+@internal_user_required
 def quick_attendance(request, batch_id):
     """Quick attendance view - tap to toggle attendance status"""
     org = get_org(request)
@@ -692,6 +709,7 @@ def quick_attendance(request, batch_id):
 
 
 @login_required(login_url='login')
+@internal_user_required
 @require_POST
 def toggle_attendance(request):
     """AJAX endpoint to toggle attendance status"""
@@ -741,6 +759,7 @@ def toggle_attendance(request):
 
 
 @login_required(login_url='login')
+@internal_user_required
 @require_POST
 def mark_all_present(request):
     """AJAX endpoint to mark all students present for a batch on a date"""
@@ -787,6 +806,7 @@ def mark_all_present(request):
 
 
 @login_required(login_url='login')
+@internal_user_required
 @require_POST
 def mark_all_absent(request):
     """AJAX endpoint to mark all students absent for a batch on a date"""
@@ -835,6 +855,7 @@ def mark_all_absent(request):
 # ─── Fee Payment Views ───────────────────────────────────────────────────────
 
 @login_required(login_url='login')
+@internal_user_required
 def fee_payment_list(request):
     org = get_org(request)
     payments_qs = FeePayment.objects.filter(organization=org).select_related('student', 'batch__course')
@@ -929,6 +950,7 @@ def fee_payment_delete(request, pk):
 
 
 @login_required(login_url='login')
+@internal_user_required
 def print_receipt(request, pk):
     org = get_org(request)
     payment = get_object_or_404(FeePayment, pk=pk, organization=org)
@@ -1209,3 +1231,376 @@ def export_fee_payments_excel(request):
     response['Content-Disposition'] = 'attachment; filename="fee_payments.xlsx"'
     wb.save(response)
     return response
+
+
+# ─── Student Import ──────────────────────────────────────────────────────────
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def download_student_template(request):
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Student Import"
+
+    header_font = Font(bold=True, color="FFFFFF", size=12)
+    header_fill = PatternFill(start_color="0D6B4E", end_color="0D6B4E", fill_type="solid")
+
+    headers = [
+        'Student ID', 'First Name', 'Last Name', 'Email', 'Phone',
+        'Gender', 'Date of Birth', 'Address', 'City', 'State',
+        'Pin Code', 'Enrollment Date', 'Batches'
+    ]
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center')
+
+    # Sample data row
+    sample = [
+        '', 'Ahmed', 'Khan', 'ahmed@example.com', '9876543210',
+        'M', '2005-03-15', '123 Main Street', 'Mumbai', 'Maharashtra',
+        '400001', '2024-01-15', 'BTH0001, BTH0002'
+    ]
+    hint_font = Font(italic=True, color="808080")
+    for col, value in enumerate(sample, 1):
+        cell = ws.cell(row=2, column=col, value=value)
+        cell.font = hint_font
+
+    # Instructions sheet
+    ins = wb.create_sheet("Instructions")
+    instructions = [
+        ['Column', 'Required', 'Format / Notes'],
+        ['Student ID', 'No', 'Leave blank for auto-generation. If provided, must be unique.'],
+        ['First Name', 'Yes', 'Text, max 100 characters'],
+        ['Last Name', 'Yes', 'Text, max 100 characters'],
+        ['Email', 'No', 'Valid email format (e.g. name@example.com)'],
+        ['Phone', 'Yes', '7-20 characters. Digits, spaces, +, -, ( ) allowed'],
+        ['Gender', 'Yes', 'M or Male, F or Female, O or Other'],
+        ['Date of Birth', 'No', 'YYYY-MM-DD format. Cannot be in the future.'],
+        ['Address', 'Yes', 'Street / area text'],
+        ['City', 'No', 'Text'],
+        ['State', 'No', 'Text'],
+        ['Pin Code', 'No', 'Text, max 10 characters'],
+        ['Enrollment Date', 'Yes', 'YYYY-MM-DD format. Cannot be in the future.'],
+        ['Batches', 'No', 'Comma-separated batch codes (e.g. BTH0001, BTH0002)'],
+    ]
+    for row_idx, row_data in enumerate(instructions, 1):
+        for col_idx, value in enumerate(row_data, 1):
+            cell = ins.cell(row=row_idx, column=col_idx, value=value)
+            if row_idx == 1:
+                cell.font = header_font
+                cell.fill = header_fill
+
+    for sheet in [ws, ins]:
+        for col in sheet.columns:
+            max_length = max(len(str(cell.value or '')) for cell in col)
+            sheet.column_dimensions[col[0].column_letter].width = min(max_length + 2, 50)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="student_import_template.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def import_students(request):
+    org = get_org(request)
+    context = {'errors': [], 'success_count': 0, 'has_results': False}
+
+    if request.method == 'POST':
+        file = request.FILES.get('excel_file')
+        if not file:
+            messages.error(request, 'Please select an Excel file to upload.')
+            return render(request, 'management/student_import.html', context)
+
+        if not file.name.endswith('.xlsx'):
+            messages.error(request, 'Please upload a valid .xlsx file.')
+            return render(request, 'management/student_import.html', context)
+
+        if file.size > 5 * 1024 * 1024:
+            messages.error(request, 'File size exceeds 5MB limit.')
+            return render(request, 'management/student_import.html', context)
+
+        try:
+            import openpyxl
+            from django.core.validators import validate_email
+            from django.core.exceptions import ValidationError as DjangoValidationError
+            from django.db import transaction
+
+            wb = openpyxl.load_workbook(file, read_only=True, data_only=True)
+            ws = wb.active
+            rows = list(ws.iter_rows(min_row=2, values_only=True))
+            wb.close()
+
+            if not rows:
+                messages.error(request, 'The uploaded file contains no data rows.')
+                return render(request, 'management/student_import.html', context)
+
+            if len(rows) > 500:
+                messages.error(request, 'Maximum 500 rows allowed per import.')
+                return render(request, 'management/student_import.html', context)
+
+            # Pre-fetch lookups
+            org_batches = {
+                b.batch_code.strip().upper(): b
+                for b in Batch.objects.filter(organization=org, is_active=True)
+            }
+            existing_ids = set(
+                Student.objects.filter(organization=org).values_list('student_id', flat=True)
+            )
+            import_ids = set()
+
+            errors = []
+            students_data = []
+
+            def clean(val):
+                return '' if val is None else str(val).strip()
+
+            def parse_date(val, field_name):
+                if val is None or (isinstance(val, str) and val.strip() == ''):
+                    return None, None
+                if isinstance(val, (date, datetime)):
+                    return val if isinstance(val, date) and not isinstance(val, datetime) else val.date() if isinstance(val, datetime) else val, None
+                val_str = str(val).strip()
+                for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%d-%m-%Y'):
+                    try:
+                        return datetime.strptime(val_str, fmt).date(), None
+                    except ValueError:
+                        continue
+                return None, f'{field_name}: could not parse date "{val_str}". Use YYYY-MM-DD format.'
+
+            gender_map = {'m': 'M', 'male': 'M', 'f': 'F', 'female': 'F', 'o': 'O', 'other': 'O'}
+
+            for idx, row in enumerate(rows):
+                row_num = idx + 2
+                row_errors = []
+
+                if not row or all(cell is None or str(cell).strip() == '' for cell in row):
+                    continue
+
+                row = list(row) + [None] * max(0, 13 - len(row))
+
+                student_id = clean(row[0])
+                first_name = clean(row[1])
+                last_name = clean(row[2])
+                email = clean(row[3])
+                phone = clean(row[4])
+                gender_raw = clean(row[5])
+                dob_raw = row[6]
+                address = clean(row[7])
+                city = clean(row[8])
+                state = clean(row[9])
+                pin_code = clean(row[10])
+                enrollment_raw = row[11]
+                batches_raw = clean(row[12])
+
+                # Required fields
+                if not first_name:
+                    row_errors.append('First Name is required.')
+                if not last_name:
+                    row_errors.append('Last Name is required.')
+                if not phone:
+                    row_errors.append('Phone is required.')
+                if not gender_raw:
+                    row_errors.append('Gender is required.')
+                if not address:
+                    row_errors.append('Address is required.')
+                if not enrollment_raw:
+                    row_errors.append('Enrollment Date is required.')
+
+                # Student ID uniqueness
+                if student_id:
+                    if student_id in existing_ids:
+                        row_errors.append(f'Student ID "{student_id}" already exists.')
+                    elif student_id in import_ids:
+                        row_errors.append(f'Student ID "{student_id}" is duplicated in this file.')
+                    else:
+                        import_ids.add(student_id)
+
+                # Phone validation
+                if phone and not re.match(r'^[\d\s\-\+\(\)]{7,20}$', phone):
+                    row_errors.append('Phone: invalid format (7-20 chars, digits/spaces/+-() allowed).')
+
+                # Gender
+                gender = gender_map.get(gender_raw.lower()) if gender_raw else None
+                if gender_raw and not gender:
+                    row_errors.append(f'Gender "{gender_raw}" is invalid. Use M/Male, F/Female, or O/Other.')
+
+                # Dates
+                dob, dob_err = parse_date(dob_raw, 'Date of Birth')
+                if dob_err:
+                    row_errors.append(dob_err)
+                elif dob:
+                    if dob > date.today():
+                        row_errors.append('Date of Birth cannot be in the future.')
+                    if dob.year < 1900:
+                        row_errors.append('Date of Birth is not valid (before 1900).')
+
+                enrollment_date, enroll_err = parse_date(enrollment_raw, 'Enrollment Date')
+                if enroll_err:
+                    row_errors.append(enroll_err)
+                elif enrollment_date:
+                    if enrollment_date > date.today():
+                        row_errors.append('Enrollment Date cannot be in the future.')
+
+                if dob and enrollment_date and enrollment_date < dob:
+                    row_errors.append('Enrollment Date cannot be before Date of Birth.')
+
+                # Email
+                if email:
+                    try:
+                        validate_email(email)
+                    except DjangoValidationError:
+                        row_errors.append(f'Email "{email}" is not valid.')
+
+                # Batches
+                batch_objects = []
+                if batches_raw:
+                    for bc in [b.strip().upper() for b in batches_raw.split(',') if b.strip()]:
+                        batch_obj = org_batches.get(bc)
+                        if not batch_obj:
+                            row_errors.append(f'Batch "{bc}" not found or not active.')
+                        else:
+                            batch_objects.append(batch_obj)
+
+                if row_errors:
+                    errors.append({'row': row_num, 'errors': row_errors})
+                else:
+                    students_data.append({
+                        'student_id': student_id or '',
+                        'first_name': first_name,
+                        'last_name': last_name,
+                        'email': email,
+                        'phone': phone,
+                        'gender': gender,
+                        'date_of_birth': dob,
+                        'address': address,
+                        'city': city,
+                        'state': state,
+                        'pin_code': pin_code,
+                        'enrollment_date': enrollment_date,
+                        'batch_objects': batch_objects,
+                    })
+
+            if errors:
+                context['errors'] = errors
+                context['has_results'] = True
+                messages.error(request, f'Import failed: {len(errors)} row(s) have errors. No students were imported.')
+            elif not students_data:
+                messages.error(request, 'No valid data rows found in the file.')
+            else:
+                try:
+                    with transaction.atomic():
+                        for data in students_data:
+                            batch_objs = data.pop('batch_objects')
+                            student = Student(organization=org, **data)
+                            student.save()
+                            if batch_objs:
+                                student.batches.set(batch_objs)
+                    context['success_count'] = len(students_data)
+                    context['has_results'] = True
+                    messages.success(request, f'Successfully imported {len(students_data)} student(s)!')
+                except Exception as e:
+                    logger.error(f'Student import error: {e}')
+                    messages.error(request, f'An error occurred during import: {str(e)}')
+
+        except Exception as e:
+            logger.error(f'Student import file error: {e}')
+            messages.error(request, f'Could not read the file: {str(e)}')
+
+    return render(request, 'management/student_import.html', context)
+
+
+# ─── Parent Portal Views ────────────────────────────────────────────────────
+
+@login_required(login_url='login')
+@parent_required
+def parent_dashboard(request):
+    """Parent portal: show all students linked to this parent's phone number."""
+    from .utils import normalize_phone
+
+    user = request.user
+    org = user.organization
+
+    # Find all students whose normalized phone matches the parent's username
+    all_students = Student.objects.filter(
+        organization=org
+    ).prefetch_related('batches__course')
+
+    matched_students = [
+        s for s in all_students
+        if normalize_phone(s.phone) == user.username
+    ]
+
+    students_data = []
+    for student in matched_students:
+        attendances = Attendance.objects.filter(
+            student=student, organization=org
+        ).select_related('batch__course').order_by('-date')[:20]
+
+        fee_payments = FeePayment.objects.filter(
+            student=student, organization=org
+        ).select_related('batch__course').order_by('-payment_date')
+
+        # Attendance breakdown counts
+        all_att = student.attendances.all()
+        att_total = all_att.count()
+        att_present = all_att.filter(status='Present').count()
+        att_absent = all_att.filter(status='Absent').count()
+        att_late = all_att.filter(status='Late').count()
+
+        # Enrollment duration
+        days_enrolled = (date.today() - student.enrollment_date).days if student.enrollment_date else 0
+
+        students_data.append({
+            'student': student,
+            'attendances': attendances,
+            'fee_payments': fee_payments,
+            'attendance_percentage': student.get_attendance_percentage(),
+            'total_fees': student.get_total_fees(),
+            'total_paid': student.get_total_paid(),
+            'pending_fees': student.get_pending_fees(),
+            'att_present': att_present,
+            'att_absent': att_absent,
+            'att_late': att_late,
+            'att_total': att_total,
+            'days_enrolled': days_enrolled,
+        })
+
+    # Check if parent is still using the default password (phone number)
+    is_default_password = user.check_password(user.username)
+
+    context = {
+        'students_data': students_data,
+        'student_count': len(students_data),
+        'is_default_password': is_default_password,
+        'org': org,
+    }
+    return render(request, 'management/parent_dashboard.html', context)
+
+
+@login_required(login_url='login')
+@parent_required
+def parent_change_password(request):
+    """Allow parent users to change their password."""
+    from django.contrib.auth.forms import PasswordChangeForm
+    from django.contrib.auth import update_session_auth_hash
+
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Your password has been changed successfully!')
+            return redirect('parent_dashboard')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PasswordChangeForm(request.user)
+
+    return render(request, 'management/parent_change_password.html', {'form': form})

@@ -335,48 +335,6 @@
 
         <!-- Sidebar / Profile Column - Mobile Optimized -->
         <div class="lg:col-span-1 space-y-6 sm:space-y-8">
-            <!-- Profile Card -->
-            <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 overflow-hidden transition-shadow">
-                <div class="bg-gradient-to-br from-primary via-secondary to-primary p-5 sm:p-6 text-center text-white relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9zdmc+')] opacity-50"></div>
-                    <div class="relative z-10">
-                        <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-white rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold text-primary shadow-xl mb-3 border-4 border-white/30 ring-4 ring-white/10">
-                            {{ user.username|slice:":1"|upper }}
-                        </div>
-                        <h3 class="text-base sm:text-lg font-bold">{{ user.username }}</h3>
-                        <p class="text-white/80 text-xs sm:text-sm">{{ user.organization.org_name }}</p>
-                    </div>
-                </div>
-                <div class="p-4 sm:p-6">
-                    <h4 class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 sm:mb-4">Organization Details</h4>
-
-                    <div class="space-y-3 sm:space-y-4">
-                        <div class="flex items-center gap-3 text-xs sm:text-sm group">
-                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-gray-500 group-hover:from-primary/10 group-hover:to-primary/5 group-hover:text-primary transition-all">
-                                <i class="fas fa-building"></i>
-                            </div>
-                            <span class="text-gray-600 truncate flex-1">{{ user.organization.org_name }}</span>
-                        </div>
-                        <div class="flex items-center gap-3 text-xs sm:text-sm group">
-                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-gray-500 group-hover:from-primary/10 group-hover:to-primary/5 group-hover:text-primary transition-all">
-                                <i class="fas fa-map-marker-alt"></i>
-                            </div>
-                            <span class="text-gray-600 truncate flex-1">{{ user.organization.full_address }}</span>
-                        </div>
-                        <div class="flex items-center gap-3 text-xs sm:text-sm group">
-                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-gray-500 group-hover:from-primary/10 group-hover:to-primary/5 group-hover:text-primary transition-all">
-                                <i class="fas fa-phone"></i>
-                            </div>
-                            <span class="text-gray-600 truncate flex-1">{{ user.organization.contact }}</span>
-                        </div>
-                    </div>
-
-                    <a href="{% url 'settings' %}" class="mt-4 sm:mt-6 block w-full py-2 sm:py-2.5 text-center text-xs sm:text-sm font-semibold text-primary border-2 border-primary/20 rounded-xl hover:bg-gradient-to-r hover:from-primary hover:to-secondary hover:text-white hover:border-transparent transition-all duration-300 hover:shadow-lg hover:shadow-primary/20">
-                        <i class="fas fa-cog mr-1"></i> Edit Settings
-                    </a>
-                </div>
-            </div>
-
             <!-- Quick Attendance Widget -->
             <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 overflow-hidden transition-shadow">
                 <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-gold/10 to-transparent">
@@ -455,7 +413,95 @@
                     </a>
                 </div>
             </div>
+
         </div>
+    </div>
+
+    <!-- Salah Times & Islamic Calendar - Side by Side -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mt-6 sm:mt-8 mb-6 sm:mb-8">
+        <!-- Salah Times Widget -->
+        <div id="salah-widget" class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 overflow-hidden transition-shadow">
+            <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-r from-primary/10 to-transparent flex items-center justify-between">
+                <h3 class="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+                    <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-xs shadow-sm">
+                        <i class="fas fa-mosque"></i>
+                    </span>
+                    Salah Times
+                </h3>
+                <span id="salah-date-badge" class="text-[10px] sm:text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 sm:py-1 rounded-lg flex items-center gap-1">
+                    <i class="fas fa-clock text-[8px]"></i> Today
+                </span>
+            </div>
+
+            <!-- Loading State -->
+            <div id="salah-loading" class="p-6 text-center text-gray-400">
+                <div class="w-10 h-10 mx-auto mb-2 rounded-full bg-gray-50 flex items-center justify-center animate-pulse">
+                    <i class="fas fa-spinner fa-spin text-primary"></i>
+                </div>
+                <p class="text-xs">Loading prayer times...</p>
+            </div>
+
+            <!-- No Location State -->
+            <div id="salah-no-location" class="p-6 text-center text-gray-400 hidden">
+                <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-gray-50 flex items-center justify-center">
+                    <i class="fas fa-map-marker-alt text-xl text-gray-300"></i>
+                </div>
+                <p class="text-xs sm:text-sm">Location not configured</p>
+                {% if request.user.is_admin %}
+                <a href="{% url 'settings' %}" class="text-primary hover:underline text-xs sm:text-sm mt-1 inline-block font-medium">Configure in Settings</a>
+                {% endif %}
+            </div>
+
+            <!-- Prayer Times List -->
+            <div id="salah-times" class="divide-y divide-gray-50 hidden"></div>
+        </div>
+
+        <!-- Islamic Calendar Widget -->
+        {% if islamic_dates %}
+        <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 overflow-hidden transition-shadow">
+            <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-r from-emerald-600/10 to-transparent flex items-center justify-between">
+                <h3 class="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+                    <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 text-white flex items-center justify-center text-xs shadow-sm">
+                        <i class="fas fa-moon"></i>
+                    </span>
+                    Islamic Calendar
+                </h3>
+                <span class="text-[10px] sm:text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 sm:py-1 rounded-lg flex items-center gap-1">
+                    <i class="fas fa-star-and-crescent text-[8px]"></i> Upcoming
+                </span>
+            </div>
+            <div class="divide-y divide-gray-50">
+                {% for event in islamic_dates %}
+                <div class="p-3 sm:p-4 flex items-center gap-3 hover:bg-gradient-to-r hover:from-emerald-50/50 hover:to-white transition-colors group">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white flex items-center justify-center text-sm shadow-md group-hover:scale-110 transition-transform">
+                        <i class="fas {{ event.icon }}"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs sm:text-sm font-semibold text-gray-800 truncate">{{ event.name }}</p>
+                        <p class="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1">
+                            <i class="fas fa-calendar-alt text-gray-400"></i>
+                            {{ event.gregorian_date|date:"M d, Y" }}
+                        </p>
+                        <p class="text-[9px] sm:text-[10px] text-emerald-600/70 font-medium">{{ event.hijri_date }}</p>
+                    </div>
+                    {% if event.days_until == 0 %}
+                    <span class="bg-gradient-to-r from-gold to-yellow-500 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide shadow-sm animate-pulse">
+                        Today
+                    </span>
+                    {% elif event.days_until == 1 %}
+                    <span class="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                        Tomorrow
+                    </span>
+                    {% else %}
+                    <span class="bg-emerald-50 text-emerald-700 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                        {{ event.days_until }}d
+                    </span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -544,6 +590,130 @@
     setInterval(function() {
         var cacheKey = getCacheKey();
         try { if (!localStorage.getItem(cacheKey)) fetchHadith(); } catch(e) { fetchHadith(); }
+    }, 60000);
+})();
+</script>
+
+<script>
+(function() {
+    var LAT = {{ org_latitude|default:"null" }};
+    var LNG = {{ org_longitude|default:"null" }};
+
+    var PRAYERS = [
+        { key: 'Fajr',    name: 'Fajr',    arabic: '\u0641\u062C\u0631',                         icon: 'fa-cloud-sun',  gradient: 'from-indigo-500 to-indigo-600' },
+        { key: 'Dhuhr',   name: 'Zohar',   arabic: '\u0638\u06C1\u0631',                         icon: 'fa-sun',        gradient: 'from-yellow-500 to-yellow-600' },
+        { key: 'Asr',     name: 'Asr',     arabic: '\u0639\u0635\u0631',                         icon: 'fa-cloud-sun',  gradient: 'from-orange-500 to-orange-600' },
+        { key: 'Maghrib', name: 'Maghrib', arabic: '\u0645\u063A\u0631\u0628',                   icon: 'fa-cloud-moon', gradient: 'from-red-500 to-red-600' },
+        { key: 'Isha',    name: 'Isha',    arabic: '\u0639\u0634\u0627\u0621',                   icon: 'fa-moon',       gradient: 'from-gray-700 to-gray-800' }
+    ];
+
+    var loadingEl = document.getElementById('salah-loading');
+    var noLocEl   = document.getElementById('salah-no-location');
+    var timesEl   = document.getElementById('salah-times');
+
+    if (!LAT || !LNG) {
+        loadingEl.classList.add('hidden');
+        noLocEl.classList.remove('hidden');
+        return;
+    }
+
+    function getCacheKey() {
+        var d = new Date();
+        return 'salah_' + LAT.toFixed(2) + '_' + LNG.toFixed(2) + '_' + d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+    }
+
+    function formatDate() {
+        var d = new Date();
+        return ('0'+d.getDate()).slice(-2) + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + d.getFullYear();
+    }
+
+    function parseTime(timeStr) {
+        var parts = timeStr.split(' ')[0].split(':');
+        return { hours: parseInt(parts[0]), minutes: parseInt(parts[1]) };
+    }
+
+    function formatTo12h(timeStr) {
+        var t = parseTime(timeStr);
+        var suffix = t.hours >= 12 ? 'PM' : 'AM';
+        var h = t.hours % 12 || 12;
+        return h + ':' + ('0'+t.minutes).slice(-2) + ' ' + suffix;
+    }
+
+    function getNextPrayerIndex(timings) {
+        var now = new Date();
+        var nowMins = now.getHours() * 60 + now.getMinutes();
+        for (var i = 0; i < PRAYERS.length; i++) {
+            var t = parseTime(timings[PRAYERS[i].key]);
+            var prayerMins = t.hours * 60 + t.minutes;
+            if (nowMins < prayerMins) return i;
+        }
+        return -1;
+    }
+
+    function renderPrayers(timings) {
+        var nextIdx = getNextPrayerIndex(timings);
+        var html = '';
+        for (var i = 0; i < PRAYERS.length; i++) {
+            var p = PRAYERS[i];
+            var isNext = (i === nextIdx);
+            var isPast = (nextIdx === -1 || i < nextIdx);
+
+            var activeClass = isNext ? 'ring-2 ring-primary/20 bg-primary/5 rounded-xl mx-1 my-0.5' : '';
+            var timeColor = isPast && nextIdx !== -1 ? 'text-gray-400' : (isNext ? 'text-primary' : 'text-gray-800');
+            var dimClass = isPast && nextIdx !== -1 ? ' opacity-50' : '';
+
+            html += '<div class="p-3 sm:p-4 flex items-center gap-3 hover:bg-gradient-to-r hover:from-primary/5 hover:to-white transition-colors group ' + activeClass + '">';
+            html += '<div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br ' + p.gradient + ' text-white flex items-center justify-center text-sm shadow-md group-hover:scale-110 transition-transform' + dimClass + '">';
+            html += '<i class="fas ' + p.icon + '"></i></div>';
+            html += '<div class="flex-1 min-w-0">';
+            html += '<p class="text-xs sm:text-sm font-semibold ' + (isPast && nextIdx !== -1 ? 'text-gray-400' : 'text-gray-800') + '">' + p.name + '</p>';
+            html += '<p class="text-[10px] sm:text-xs text-gray-400">' + p.arabic + '</p>';
+            html += '</div>';
+            html += '<span class="text-sm sm:text-base font-bold ' + timeColor + ' bg-gray-50 px-2.5 py-1 rounded-lg">' + formatTo12h(timings[p.key]) + '</span>';
+            if (isNext) {
+                html += '<span class="bg-gradient-to-r from-primary to-secondary text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide shadow-sm animate-pulse">Next</span>';
+            }
+            html += '</div>';
+        }
+        loadingEl.classList.add('hidden');
+        timesEl.innerHTML = html;
+        timesEl.classList.remove('hidden');
+    }
+
+    function fetchSalahTimes() {
+        var cacheKey = getCacheKey();
+        try {
+            var cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                renderPrayers(JSON.parse(cached));
+                return;
+            }
+        } catch(e) {}
+
+        var url = 'https://api.aladhan.com/v1/timings/' + formatDate() + '?latitude=' + LAT + '&longitude=' + LNG + '&method=1';
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.data && data.data.timings) {
+                    var timings = data.data.timings;
+                    var stored = {};
+                    PRAYERS.forEach(function(p) { stored[p.key] = timings[p.key]; });
+                    try { localStorage.setItem(cacheKey, JSON.stringify(stored)); } catch(e) {}
+                    renderPrayers(stored);
+                }
+            })
+            .catch(function() {
+                loadingEl.innerHTML = '<p class="text-xs text-gray-400">Could not load prayer times</p>';
+            });
+    }
+
+    fetchSalahTimes();
+    setInterval(function() {
+        var cacheKey = getCacheKey();
+        try {
+            var cached = localStorage.getItem(cacheKey);
+            if (cached) renderPrayers(JSON.parse(cached));
+        } catch(e) {}
     }, 60000);
 })();
 </script>

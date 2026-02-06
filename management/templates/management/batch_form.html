@@ -108,6 +108,18 @@
                         </div>
                     </div>
 
+                    <!-- Prayer Time Overlap Warning -->
+                    <div id="salah-overlap-warning" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-white flex items-center justify-center text-sm shadow-sm flex-shrink-0 mt-0.5">
+                            <i class="fas fa-mosque"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-amber-800">Salah Time Overlap</p>
+                            <p id="salah-overlap-text" class="text-xs text-amber-700 mt-1"></p>
+                            <p class="text-[10px] text-amber-600 mt-1 italic">Consider adjusting the batch schedule to avoid prayer times.</p>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label for="{{ form.max_capacity.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
@@ -152,4 +164,113 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    var LAT = {{ org_latitude|default:"null" }};
+    var LNG = {{ org_longitude|default:"null" }};
+    var BUFFER_MINS = 15;
+
+    if (!LAT || !LNG) return;
+
+    var PRAYERS = {
+        'Fajr': 'Fajr', 'Dhuhr': 'Zohar', 'Asr': 'Asr', 'Maghrib': 'Maghrib', 'Isha': 'Isha'
+    };
+
+    var startInput = document.getElementById('id_start_time');
+    var endInput   = document.getElementById('id_end_time');
+    var warningDiv = document.getElementById('salah-overlap-warning');
+    var warningText = document.getElementById('salah-overlap-text');
+
+    if (!startInput || !endInput) return;
+
+    function getCacheKey() {
+        var d = new Date();
+        return 'salah_' + LAT.toFixed(2) + '_' + LNG.toFixed(2) + '_' + d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+    }
+
+    function formatDate() {
+        var d = new Date();
+        return ('0'+d.getDate()).slice(-2) + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + d.getFullYear();
+    }
+
+    function timeToMins(timeStr) {
+        var parts = timeStr.split(' ')[0].split(':');
+        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    }
+
+    function formatTo12h(hhmm) {
+        var parts = hhmm.split(':');
+        var h = parseInt(parts[0]);
+        var m = parts[1];
+        var suffix = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        return h + ':' + m + ' ' + suffix;
+    }
+
+    function checkOverlap(timings) {
+        var startVal = startInput.value;
+        var endVal   = endInput.value;
+        if (!startVal || !endVal) {
+            warningDiv.classList.add('hidden');
+            return;
+        }
+        var batchStart = timeToMins(startVal);
+        var batchEnd   = timeToMins(endVal);
+        var overlaps = [];
+
+        Object.keys(PRAYERS).forEach(function(key) {
+            if (!timings[key]) return;
+            var prayerMins = timeToMins(timings[key]);
+            var windowStart = prayerMins - BUFFER_MINS;
+            var windowEnd   = prayerMins + BUFFER_MINS;
+            if (batchStart < windowEnd && batchEnd > windowStart) {
+                overlaps.push(PRAYERS[key] + ' (' + formatTo12h(timings[key]) + ')');
+            }
+        });
+
+        if (overlaps.length > 0) {
+            warningText.textContent = 'The batch time (' + startVal + ' \u2013 ' + endVal + ') overlaps with: ' + overlaps.join(', ') + '. A ' + BUFFER_MINS + '-minute buffer is applied around each prayer time.';
+            warningDiv.classList.remove('hidden');
+        } else {
+            warningDiv.classList.add('hidden');
+        }
+    }
+
+    function loadAndCheck() {
+        var cacheKey = getCacheKey();
+        try {
+            var cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                checkOverlap(JSON.parse(cached));
+                return;
+            }
+        } catch(e) {}
+
+        var url = 'https://api.aladhan.com/v1/timings/' + formatDate() + '?latitude=' + LAT + '&longitude=' + LNG + '&method=1';
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.data && data.data.timings) {
+                    var timings = data.data.timings;
+                    var stored = {};
+                    Object.keys(PRAYERS).forEach(function(n) { stored[n] = timings[n]; });
+                    try { localStorage.setItem(cacheKey, JSON.stringify(stored)); } catch(e) {}
+                    checkOverlap(stored);
+                }
+            })
+            .catch(function() {});
+    }
+
+    startInput.addEventListener('change', loadAndCheck);
+    endInput.addEventListener('change', loadAndCheck);
+
+    // Check on page load for edit forms with pre-filled times
+    if (startInput.value && endInput.value) {
+        loadAndCheck();
+    }
+})();
+</script>
 {% endblock %}

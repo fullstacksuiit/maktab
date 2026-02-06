@@ -422,6 +422,10 @@ class InviteUserForm(forms.ModelForm):
     def __init__(self, *args, organization=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.organization = organization
+        # Exclude parent from manually assignable roles
+        self.fields['role'].choices = [
+            c for c in User.ROLE_CHOICES if c[0] != 'parent'
+        ]
         if organization:
             # Only show staff members without a linked user account
             self.fields['link_staff'].queryset = Staff.objects.filter(
@@ -468,6 +472,13 @@ class UserEditForm(forms.ModelForm):
             'role': styled_select(),
             'is_active': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-primary focus:ring-primary border-gray-300 rounded'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Exclude parent from manually assignable roles
+        self.fields['role'].choices = [
+            c for c in User.ROLE_CHOICES if c[0] != 'parent'
+        ]
 
 
 class UserProfileForm(forms.ModelForm):

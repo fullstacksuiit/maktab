@@ -309,8 +309,18 @@
         </div>
 
         <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1">
-            <!-- Main Menu items -->
-
+            {% if request.user.is_parent %}
+            <!-- Parent Portal Navigation -->
+            <a href="{% url 'parent_dashboard' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'parent' in request.path and 'change-password' not in request.path %}active{% endif %}">
+                <i class="fas fa-child w-6 text-center"></i>
+                <span>My Children</span>
+            </a>
+            <a href="{% url 'parent_change_password' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'change-password' in request.path %}active{% endif %}">
+                <i class="fas fa-key w-6 text-center"></i>
+                <span>Change Password</span>
+            </a>
+            {% else %}
+            <!-- Internal User Navigation -->
             <a href="{% url 'dashboard' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if request.path == '/' or 'dashboard' in request.path and 'student' not in request.path and 'staff' not in request.path and 'course' not in request.path and 'payment' not in request.path and 'attendance' not in request.path and 'settings' not in request.path %}active{% endif %}">
                 <i class="fas fa-th-large w-6 text-center"></i>
                 <span>Dashboard</span>
@@ -352,6 +362,7 @@
                 <i class="fas fa-user-shield w-6 text-center"></i>
                 <span>Users</span>
             </a>
+            {% endif %}
             {% endif %}
         </nav>
         
