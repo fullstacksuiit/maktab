@@ -263,12 +263,13 @@
 
         <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1">
             <!-- Main Menu items -->
-            
+
             <a href="{% url 'dashboard' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if request.path == '/' or 'dashboard' in request.path and 'student' not in request.path and 'staff' not in request.path and 'course' not in request.path and 'payment' not in request.path and 'attendance' not in request.path and 'settings' not in request.path %}active{% endif %}">
                 <i class="fas fa-th-large w-6 text-center"></i>
                 <span>Dashboard</span>
             </a>
-            
+
+            {% if request.user.can_create_edit %}
             <a href="{% url 'student_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'student' in request.path %}active{% endif %}">
                 <i class="fas fa-user-graduate w-6 text-center"></i>
                 <span>Students</span>
@@ -285,14 +286,20 @@
                 <i class="fas fa-layer-group w-6 text-center"></i>
                 <span>Batches</span>
             </a>
+            {% endif %}
+
             <a href="{% url 'attendance_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'attendance' in request.path %}active{% endif %}">
                 <i class="fas fa-clipboard-check w-6 text-center"></i>
                 <span>Attendance</span>
             </a>
+
+            {% if request.user.can_create_edit %}
             <a href="{% url 'fee_payment_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'payment' in request.path %}active{% endif %}">
                 <i class="fas fa-money-bill-wave w-6 text-center"></i>
                 <span>Fees</span>
             </a>
+            {% endif %}
+
             {% if request.user.is_admin %}
             <a href="{% url 'user_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'users' in request.path %}active{% endif %}">
                 <i class="fas fa-user-shield w-6 text-center"></i>
@@ -313,12 +320,14 @@
                 </div>
             </div>
 
-            <!-- Settings & Logout for Mobile -->
+            <!-- Settings & Logout -->
             <div class="flex gap-2">
+                {% if request.user.is_admin %}
                 <a href="{% url 'settings' %}" class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-600 hover:text-primary hover:border-primary/30 transition-all text-sm font-medium">
                     <i class="fas fa-cog"></i>
                     <span>Settings</span>
                 </a>
+                {% endif %}
                 <form action="{% url 'logout' %}" method="post" class="flex-1">
                     {% csrf_token %}
                     <button type="submit" class="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-xl text-red-600 hover:bg-red-100 hover:border-red-300 transition-all text-sm font-medium">
@@ -334,30 +343,13 @@
     <main class="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden relative bg-gray-50/50">
         <!-- Top Navbar -->
         <header class="h-20 flex items-center justify-between px-4 md:px-8 z-30 transition-all duration-300">
-             <!-- Breadcrumbs / Page Title Area -->
-            <div class="flex flex-col">
-                <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
-                    {% block header_title %}Dashboard{% endblock %}
-                </h2>
-                <div class="text-xs text-gray-500 font-medium hidden md:block mt-1">
-                    Manage your Islamic coaching center efficiently
-                </div>
-            </div>
+             <!-- Page Title -->
+            <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                {% block header_title %}Dashboard{% endblock %}
+            </h2>
             
             <!-- Right Actions -->
             <div class="flex items-center gap-4">
-                <!-- Search Bar (Desktop) -->
-                <div class="hidden md:flex items-center relative group">
-                    <i class="fas fa-search absolute left-3 text-gray-400 group-focus-within:text-primary transition-colors"></i>
-                    <input type="text" placeholder="Search..." class="pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary w-64 shadow-sm transition-all">
-                </div>
-
-                <!-- Notifications -->
-                <button class="relative w-10 h-10 bg-white border border-gray-200 rounded-xl flex items-center justify-center text-gray-500 hover:text-primary hover:border-primary/30 hover:shadow-md transition-all shadow-sm">
-                    <i class="fas fa-bell"></i>
-                    <span class="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-                </button>
-
                 <!-- Profile Dropdown (Hidden on mobile - use sidebar instead) -->
                 <div class="relative hidden md:block" id="profile-dropdown-container">
                     <button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white border border-gray-200 rounded-xl p-1.5 pr-4 hover:border-primary/30 hover:shadow-md transition-all shadow-sm group">
@@ -375,10 +367,11 @@
                             <p class="text-sm font-semibold text-gray-800 truncate">{{ request.user.username }}</p>
                         </div>
                         
+                        {% if request.user.is_admin %}
                         <a href="{% url 'settings' %}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors">
                             <i class="fas fa-cog w-5 text-gray-400"></i> Settings
                         </a>
-                        <!-- Add Profile Link if it exists or use Settings logic -->
+                        {% endif %}
 
                         <div class="border-t border-gray-50 my-1"></div>
                         

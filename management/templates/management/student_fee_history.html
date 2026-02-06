@@ -5,25 +5,16 @@
 
 {% block content %}
 <div class="animate-[slideUp_0.4s_ease-out]">
-    <!-- Page Header -->
-    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                <i class="fas fa-file-invoice-dollar text-primary"></i> {{ student.first_name }} {{ student.last_name }}
-            </h1>
-            <p class="text-gray-500 text-sm mt-1">Fee Payment History</p>
-        </div>
-        <div class="flex gap-3">
-            <a href="{% url 'student_detail' student.pk %}" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors flex items-center gap-2">
-                <i class="fas fa-arrow-left"></i> Back
-            </a>
-            <a href="javascript:window.print()" class="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium flex items-center gap-2">
-                <i class="fas fa-print"></i> Print
-            </a>
-            <a href="{% url 'fee_payment_add' %}?student={{ student.pk }}" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium flex items-center gap-2">
-                <i class="fas fa-plus"></i> Record Payment
-            </a>
-        </div>
+    <div class="mb-6 flex flex-wrap justify-end gap-3">
+        <a href="{% url 'student_detail' student.pk %}" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+        <a href="javascript:window.print()" class="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors font-medium flex items-center gap-2">
+            <i class="fas fa-print"></i> Print
+        </a>
+        <a href="{% url 'fee_payment_add' %}?student={{ student.pk }}" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium flex items-center gap-2">
+            <i class="fas fa-plus"></i> Record Payment
+        </a>
     </div>
 
     <!-- Summary Cards -->

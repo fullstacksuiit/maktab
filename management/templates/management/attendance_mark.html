@@ -5,24 +5,15 @@
 
 {% block content %}
 <div class="animate-[slideUp_0.4s_ease-out]">
-    <!-- Page Header -->
-    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                <i class="fas fa-clipboard-check text-primary"></i> Mark Attendance
-            </h1>
-            <p class="text-gray-500 text-sm mt-1">Select a batch and date, then mark attendance for students</p>
-        </div>
-        <div class="flex gap-2">
-            {% if selected_batch %}
-            <a href="{% url 'quick_attendance' selected_batch.pk %}?date={{ selected_date }}" class="px-4 py-2 bg-gradient-to-r from-gold to-yellow-500 text-white rounded-xl hover:shadow-lg font-medium shadow-lg shadow-gold/30 transition-all hover:-translate-y-0.5 flex items-center gap-2">
-                <i class="fas fa-bolt"></i> Quick Mode
-            </a>
-            {% endif %}
-            <a href="{% url 'attendance_list' %}" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors flex items-center gap-2">
-                <i class="fas fa-list"></i> View Attendance
-            </a>
-        </div>
+    <div class="mb-6 flex flex-wrap justify-end gap-2">
+        {% if selected_batch %}
+        <a href="{% url 'quick_attendance' selected_batch.pk %}?date={{ selected_date }}" class="px-4 py-2 bg-gradient-to-r from-gold to-yellow-500 text-white rounded-xl hover:shadow-lg font-medium shadow-lg shadow-gold/30 transition-all hover:-translate-y-0.5 flex items-center gap-2">
+            <i class="fas fa-bolt"></i> Quick Mode
+        </a>
+        {% endif %}
+        <a href="{% url 'attendance_list' %}" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors flex items-center gap-2">
+            <i class="fas fa-list"></i> View Attendance
+        </a>
     </div>
 
     <!-- Step 1: Filter Form -->
