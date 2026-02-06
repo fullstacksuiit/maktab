@@ -9,6 +9,9 @@ class Organization(models.Model):
     """Organization/Maktab that can have multiple users"""
     org_name = models.CharField(max_length=255, verbose_name="Organization Name")
     address = models.TextField(verbose_name="Address")
+    city = models.CharField(max_length=100, blank=True, default='', verbose_name="City")
+    state = models.CharField(max_length=100, blank=True, default='', verbose_name="State")
+    pin_code = models.CharField(max_length=10, blank=True, default='', verbose_name="Pin Code")
     contact = models.CharField(max_length=20, verbose_name="Contact Number")
     license = models.CharField(max_length=100, blank=True, null=True, verbose_name="License")
     currency_symbol = models.CharField(max_length=10, default='Rs.', verbose_name="Currency Symbol")
@@ -23,6 +26,17 @@ class Organization(models.Model):
 
     class Meta:
         ordering = ['org_name']
+
+    @property
+    def full_address(self):
+        parts = [self.address]
+        if self.city:
+            parts.append(self.city)
+        if self.state:
+            parts.append(self.state)
+        if self.pin_code:
+            parts.append(self.pin_code)
+        return ', '.join(parts)
 
     def __str__(self):
         return self.org_name
@@ -231,11 +245,14 @@ class Student(models.Model):
     student_id = models.CharField(max_length=50, unique=True, blank=True, verbose_name="Student ID")
     first_name = models.CharField(max_length=100, verbose_name="First Name")
     last_name = models.CharField(max_length=100, verbose_name="Last Name")
-    email = models.EmailField(verbose_name="Email Address")
+    email = models.EmailField(blank=True, default='', verbose_name="Email Address")
     phone = models.CharField(max_length=20, verbose_name="Phone Number")
-    date_of_birth = models.DateField(verbose_name="Date of Birth")
+    date_of_birth = models.DateField(blank=True, null=True, verbose_name="Date of Birth")
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name="Gender")
     address = models.TextField(verbose_name="Address")
+    city = models.CharField(max_length=100, blank=True, default='', verbose_name="City")
+    state = models.CharField(max_length=100, blank=True, default='', verbose_name="State")
+    pin_code = models.CharField(max_length=10, blank=True, default='', verbose_name="Pin Code")
     batches = models.ManyToManyField('Batch', related_name='students', verbose_name="Enrolled Batches", blank=True)
     enrollment_date = models.DateField(verbose_name="Enrollment Date")
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='students')
@@ -250,6 +267,17 @@ class Student(models.Model):
             models.Index(fields=['organization', 'email']),
             models.Index(fields=['enrollment_date']),
         ]
+
+    @property
+    def full_address(self):
+        parts = [self.address]
+        if self.city:
+            parts.append(self.city)
+        if self.state:
+            parts.append(self.state)
+        if self.pin_code:
+            parts.append(self.pin_code)
+        return ', '.join(parts)
 
     def __str__(self):
         return f"{self.student_id} - {self.first_name} {self.last_name}"
@@ -324,6 +352,9 @@ class Staff(models.Model):
     date_of_birth = models.DateField(verbose_name="Date of Birth")
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name="Gender")
     address = models.TextField(verbose_name="Address")
+    city = models.CharField(max_length=100, blank=True, default='', verbose_name="City")
+    state = models.CharField(max_length=100, blank=True, default='', verbose_name="State")
+    pin_code = models.CharField(max_length=10, blank=True, default='', verbose_name="Pin Code")
     staff_role = models.CharField(max_length=50, choices=ROLE_CHOICES, verbose_name="Staff Role")
     department = models.CharField(max_length=100, verbose_name="Department")
     joining_date = models.DateField(verbose_name="Joining Date")
@@ -341,6 +372,17 @@ class Staff(models.Model):
             models.Index(fields=['staff_role']),
             models.Index(fields=['department']),
         ]
+
+    @property
+    def full_address(self):
+        parts = [self.address]
+        if self.city:
+            parts.append(self.city)
+        if self.state:
+            parts.append(self.state)
+        if self.pin_code:
+            parts.append(self.pin_code)
+        return ', '.join(parts)
 
     def __str__(self):
         return f"{self.staff_id} - {self.first_name} {self.last_name}"

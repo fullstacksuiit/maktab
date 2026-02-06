@@ -73,7 +73,7 @@
 
                 <!-- Address -->
                 <div class="md:col-span-2">
-                     <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">Address *</label>
+                     <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">Street / Area *</label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                              <i class="fas fa-map-marker-alt"></i>
@@ -81,6 +81,32 @@
                         {{ form.address }}
                     </div>
                     {% if form.address.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.address.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- City -->
+                <div>
+                     <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">City</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                             <i class="fas fa-city"></i>
+                        </div>
+                        {{ form.city }}
+                    </div>
+                    {% if form.city.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.city.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- State & Pin Code -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                         <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">State</label>
+                        {{ form.state }}
+                        {% if form.state.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.state.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                         <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">Pin Code</label>
+                        {{ form.pin_code }}
+                        {% if form.pin_code.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.pin_code.errors.0 }}</p>{% endif %}
+                    </div>
                 </div>
 
                  <!-- License -->

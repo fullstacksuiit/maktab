@@ -40,9 +40,27 @@
                         </div>
                         <div class="md:col-span-2">
                             <label for="{{ form.address.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
-                                <i class="fas fa-map-marker-alt text-primary mr-1"></i> Address
+                                <i class="fas fa-map-marker-alt text-primary mr-1"></i> Street / Area
                             </label>
                             {{ form.address }}
+                        </div>
+                        <div>
+                            <label for="{{ form.city.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-city text-primary mr-1"></i> City
+                            </label>
+                            {{ form.city }}
+                        </div>
+                        <div>
+                            <label for="{{ form.state.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-map text-primary mr-1"></i> State
+                            </label>
+                            {{ form.state }}
+                        </div>
+                        <div>
+                            <label for="{{ form.pin_code.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-map-pin text-primary mr-1"></i> Pin Code
+                            </label>
+                            {{ form.pin_code }}
                         </div>
                     </div>
                 </div>

@@ -46,7 +46,7 @@
                 <i class="fas fa-mosque text-2xl"></i>
             </div>
             <h1 class="text-2xl font-bold uppercase tracking-widest text-primary">{{ user.organization.org_name|default:"Maktab Academy" }}</h1>
-            <p class="text-sm text-gray-500 mt-1 uppercase tracking-wider">{{ user.organization.address|default:"Educational Institute" }}</p>
+            <p class="text-sm text-gray-500 mt-1 uppercase tracking-wider">{{ user.organization.full_address|default:"Educational Institute" }}</p>
             <p class="text-sm text-gray-500">{{ user.organization.contact|default:"" }}</p>
         </div>
 

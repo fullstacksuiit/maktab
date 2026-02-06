@@ -29,7 +29,19 @@ class SignUpForm(UserCreationForm):
     )
     address = forms.CharField(
         required=True,
-        widget=styled_textarea('Address', rows=3)
+        widget=styled_textarea('Street / Area', rows=2)
+    )
+    city = forms.CharField(
+        max_length=100, required=False,
+        widget=styled_text_input('City')
+    )
+    state = forms.CharField(
+        max_length=100, required=False,
+        widget=styled_text_input('State')
+    )
+    pin_code = forms.CharField(
+        max_length=10, required=False,
+        widget=styled_text_input('Pin Code')
     )
     contact = forms.CharField(
         max_length=20,
@@ -66,6 +78,9 @@ class SignUpForm(UserCreationForm):
         organization = Organization.objects.create(
             org_name=self.cleaned_data['org_name'],
             address=self.cleaned_data['address'],
+            city=self.cleaned_data.get('city', ''),
+            state=self.cleaned_data.get('state', ''),
+            pin_code=self.cleaned_data.get('pin_code', ''),
             contact=self.cleaned_data['contact'],
             license=self.cleaned_data.get('license', ''),
         )
@@ -126,6 +141,7 @@ class BatchForm(forms.ModelForm):
 
 class StudentForm(forms.ModelForm):
     date_of_birth = forms.DateField(
+        required=False,
         widget=styled_date_input(max_date=date.today())
     )
     enrollment_date = forms.DateField(
@@ -135,7 +151,8 @@ class StudentForm(forms.ModelForm):
     class Meta:
         model = Student
         fields = ['student_id', 'first_name', 'last_name', 'email', 'phone',
-                  'date_of_birth', 'gender', 'address', 'batches', 'enrollment_date']
+                  'date_of_birth', 'gender', 'address', 'city', 'state', 'pin_code',
+                  'batches', 'enrollment_date']
         widgets = {
             'student_id': styled_text_input('Auto-generated if left blank'),
             'first_name': styled_text_input('Enter first name'),
@@ -143,7 +160,10 @@ class StudentForm(forms.ModelForm):
             'email': styled_email_input('Enter email address'),
             'phone': styled_text_input('Enter phone number'),
             'gender': styled_select(),
-            'address': styled_textarea('Enter address', rows=3),
+            'address': styled_textarea('Street / Area', rows=2),
+            'city': styled_text_input('City'),
+            'state': styled_text_input('State'),
+            'pin_code': styled_text_input('Pin Code'),
             'batches': searchable_select_multiple('Search batches...'),
         }
 
@@ -193,8 +213,8 @@ class StaffForm(forms.ModelForm):
     class Meta:
         model = Staff
         fields = ['staff_id', 'first_name', 'last_name', 'email', 'phone',
-                  'date_of_birth', 'gender', 'address', 'staff_role', 'department',
-                  'joining_date', 'salary']
+                  'date_of_birth', 'gender', 'address', 'city', 'state', 'pin_code',
+                  'staff_role', 'department', 'joining_date', 'salary']
         widgets = {
             'staff_id': styled_text_input('Enter staff ID (e.g., STF001)'),
             'first_name': styled_text_input('Enter first name'),
@@ -202,7 +222,10 @@ class StaffForm(forms.ModelForm):
             'email': styled_email_input('Enter email address'),
             'phone': styled_text_input('Enter phone number'),
             'gender': styled_select(),
-            'address': styled_textarea('Enter address', rows=3),
+            'address': styled_textarea('Street / Area', rows=2),
+            'city': styled_text_input('City'),
+            'state': styled_text_input('State'),
+            'pin_code': styled_text_input('Pin Code'),
             'staff_role': styled_select(),
             'department': styled_text_input('Enter department'),
             'salary': styled_number_input('Enter salary', step='0.01', min_val=0),
@@ -267,12 +290,16 @@ class SettingsForm(forms.ModelForm):
     """Form for editing organization settings (admin only)."""
     class Meta:
         model = Organization
-        fields = ['org_name', 'contact', 'address', 'currency_symbol',
+        fields = ['org_name', 'contact', 'address', 'city', 'state', 'pin_code',
+                  'currency_symbol',
                   'bank_name', 'account_number', 'ifsc_code', 'account_holder', 'upi_id']
         widgets = {
             'org_name': styled_text_input('Organization Name'),
             'contact': styled_text_input('Contact Number'),
-            'address': styled_textarea('Address', rows=3),
+            'address': styled_textarea('Street / Area', rows=2),
+            'city': styled_text_input('City'),
+            'state': styled_text_input('State'),
+            'pin_code': styled_text_input('Pin Code'),
             'currency_symbol': styled_text_input('e.g., Rs., $, ₹, €'),
             'bank_name': styled_text_input('e.g., State Bank of India'),
             'account_number': styled_text_input('Enter account number'),
