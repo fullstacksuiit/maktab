@@ -74,9 +74,9 @@
                             <span class="font-bold text-primary">{{ payment.receipt_number }}</span>
                         </td>
                         <td class="px-6 py-4 text-sm text-gray-600">
-                            {% if payment.course %}
-                                <span class="px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700 mr-2">{{ payment.course.course_code }}</span>
-                                {{ payment.course.course_name }}
+                            {% if payment.batch %}
+                                <span class="px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700 mr-2">{{ payment.batch.course.course_code }}</span>
+                                {{ payment.batch.course.course_name }}
                             {% else %}
                                 <span class="text-gray-400">-</span>
                             {% endif %}

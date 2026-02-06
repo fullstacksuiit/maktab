@@ -45,9 +45,9 @@
             <div class="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full text-primary mb-3">
                 <i class="fas fa-mosque text-2xl"></i>
             </div>
-            <h1 class="text-2xl font-bold uppercase tracking-widest text-primary">{{ user.org_name|default:"Maktab Academy" }}</h1>
-            <p class="text-sm text-gray-500 mt-1 uppercase tracking-wider">{{ user.address|default:"Educational Institute" }}</p>
-            <p class="text-sm text-gray-500">{{ user.contact|default:"" }}</p>
+            <h1 class="text-2xl font-bold uppercase tracking-widest text-primary">{{ user.organization.org_name|default:"Maktab Academy" }}</h1>
+            <p class="text-sm text-gray-500 mt-1 uppercase tracking-wider">{{ user.organization.address|default:"Educational Institute" }}</p>
+            <p class="text-sm text-gray-500">{{ user.organization.contact|default:"" }}</p>
         </div>
 
         <!-- Receipt Info -->
@@ -103,40 +103,40 @@
         {% endif %}
 
         <!-- Bank Details for Bank Transfer Payments -->
-        {% if user.bank_name or user.upi_id %}
+        {% if user.organization.bank_name or user.organization.upi_id %}
         <div class="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
             <p class="text-xs text-gray-500 uppercase font-bold mb-3 flex items-center gap-2">
                 <i class="fas fa-university"></i> Bank Details for Future Payments
             </p>
             <div class="grid grid-cols-2 gap-3 text-sm">
-                {% if user.bank_name %}
+                {% if user.organization.bank_name %}
                 <div>
                     <p class="text-[10px] text-gray-400 uppercase">Bank Name</p>
-                    <p class="font-medium text-gray-800">{{ user.bank_name }}</p>
+                    <p class="font-medium text-gray-800">{{ user.organization.bank_name }}</p>
                 </div>
                 {% endif %}
-                {% if user.account_holder %}
+                {% if user.organization.account_holder %}
                 <div>
                     <p class="text-[10px] text-gray-400 uppercase">Account Holder</p>
-                    <p class="font-medium text-gray-800">{{ user.account_holder }}</p>
+                    <p class="font-medium text-gray-800">{{ user.organization.account_holder }}</p>
                 </div>
                 {% endif %}
-                {% if user.account_number %}
+                {% if user.organization.account_number %}
                 <div>
                     <p class="text-[10px] text-gray-400 uppercase">Account No.</p>
-                    <p class="font-medium text-gray-800 font-mono">{{ user.account_number }}</p>
+                    <p class="font-medium text-gray-800 font-mono">{{ user.organization.account_number }}</p>
                 </div>
                 {% endif %}
-                {% if user.ifsc_code %}
+                {% if user.organization.ifsc_code %}
                 <div>
                     <p class="text-[10px] text-gray-400 uppercase">IFSC Code</p>
-                    <p class="font-medium text-gray-800 font-mono">{{ user.ifsc_code }}</p>
+                    <p class="font-medium text-gray-800 font-mono">{{ user.organization.ifsc_code }}</p>
                 </div>
                 {% endif %}
-                {% if user.upi_id %}
+                {% if user.organization.upi_id %}
                 <div class="col-span-2">
                     <p class="text-[10px] text-gray-400 uppercase">UPI ID</p>
-                    <p class="font-medium text-primary font-mono">{{ user.upi_id }}</p>
+                    <p class="font-medium text-primary font-mono">{{ user.organization.upi_id }}</p>
                 </div>
                 {% endif %}
             </div>

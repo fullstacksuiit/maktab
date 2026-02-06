@@ -100,7 +100,7 @@
                         <span class="text-gray-600">{{ payment.get_payment_method_display }}</span>
                     </td>
                     <td class="px-6 py-4 max-w-[120px] text-center last:pr-8">
-                        <div class="flex items-center justify-center gap-2 opacity-100 group-hover:opacity-100 transition-opacity">
+                        <div class="flex items-center justify-center gap-2">
                             <a href="{% url 'print_receipt' payment.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors" target="_blank" title="Print Receipt"><i class="fas fa-print"></i></a>
                             <a href="{% url 'fee_payment_edit' payment.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
                              <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"

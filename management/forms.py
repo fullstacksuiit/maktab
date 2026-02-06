@@ -79,7 +79,7 @@ class SignUpForm(UserCreationForm):
 
 class LoginForm(AuthenticationForm):
     username = forms.CharField(
-        widget=styled_password_input('Username', with_icon=True)
+        widget=styled_text_input('Username', with_icon=True)
     )
     password = forms.CharField(
         widget=styled_password_input('Password', with_icon=True)

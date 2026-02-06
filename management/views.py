@@ -144,7 +144,9 @@ def dashboard_view(request):
 @login_required(login_url='login')
 def course_list(request):
     org = get_org(request)
-    courses_qs = Course.objects.filter(organization=org)
+    courses_qs = Course.objects.filter(organization=org).annotate(
+        student_count=Count('batches__students', distinct=True)
+    )
 
     # Server-side search
     search_query = request.GET.get('q', '').strip()

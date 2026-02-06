@@ -22,9 +22,10 @@ TAILWIND_SELECT = (
 )
 
 
-def styled_text_input(placeholder='', **extra_attrs):
+def styled_text_input(placeholder='', with_icon=False, **extra_attrs):
     """Create a styled text input widget."""
-    attrs = {'class': TAILWIND_INPUT, 'placeholder': placeholder}
+    css_class = TAILWIND_INPUT_WITH_ICON if with_icon else TAILWIND_INPUT
+    attrs = {'class': css_class, 'placeholder': placeholder}
     attrs.update(extra_attrs)
     return forms.TextInput(attrs=attrs)
 

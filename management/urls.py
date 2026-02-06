@@ -49,6 +49,12 @@ urlpatterns = [
     path('payments/delete/<int:pk>/', views.fee_payment_delete, name='fee_payment_delete'),
     path('payments/print/<int:pk>/', views.print_receipt, name='print_receipt'),
 
+    # User Management URLs
+    path('users/', views.user_list, name='user_list'),
+    path('users/invite/', views.user_invite, name='user_invite'),
+    path('users/edit/<int:pk>/', views.user_edit, name='user_edit'),
+    path('users/delete/<int:pk>/', views.user_delete, name='user_delete'),
+
     # Settings
     path('settings/', views.settings_view, name='settings'),
 
