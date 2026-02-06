@@ -92,10 +92,16 @@ class Course(models.Model):
         ('yearly', 'Yearly'),
     ]
 
+    DURATION_UNIT_CHOICES = [
+        ('months', 'Months'),
+        ('years', 'Years'),
+    ]
+
     course_name = models.CharField(max_length=255, verbose_name="Course Name")
     course_code = models.CharField(max_length=50, unique=True, blank=True, verbose_name="Course Code")
     description = models.TextField(verbose_name="Description")
-    duration = models.CharField(max_length=100, verbose_name="Duration")
+    duration_value = models.PositiveIntegerField(default=1, verbose_name="Duration Value")
+    duration_unit = models.CharField(max_length=10, choices=DURATION_UNIT_CHOICES, default='months', verbose_name="Duration Unit")
     fees = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Course Fees")
     fee_period = models.CharField(max_length=20, choices=FEE_PERIOD_CHOICES, default='monthly', verbose_name="Fee Period")
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='courses')
@@ -109,6 +115,13 @@ class Course(models.Model):
             models.Index(fields=['organization', 'course_name']),
             models.Index(fields=['fee_period']),
         ]
+
+    @property
+    def duration_display(self):
+        unit = self.get_duration_unit_display()
+        if self.duration_value == 1:
+            unit = unit.rstrip('s')
+        return f"{self.duration_value} {unit}"
 
     def __str__(self):
         return f"{self.course_code} - {self.course_name}"

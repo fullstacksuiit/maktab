@@ -22,7 +22,7 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ['course_code', 'course_name', 'duration', 'fees', 'fee_period', 'organization', 'created_at']
+    list_display = ['course_code', 'course_name', 'duration_value', 'duration_unit', 'fees', 'fee_period', 'organization', 'created_at']
     list_filter = ['fee_period', 'created_at', 'organization']
     search_fields = ['course_code', 'course_name']
     readonly_fields = ['course_code']

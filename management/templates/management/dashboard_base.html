@@ -468,8 +468,8 @@
                 <div style="font-size: 14px; font-weight: 600; color: #0d6b4e;">
                     <i class="fas fa-user-circle me-2"></i>{{ user.username }}
                 </div>
-                {% if user.org_name %}
-                <div style="font-size: 12px; color: #888; margin-top: 3px;">{{ user.org_name }}</div>
+                {% if user.organization.org_name %}
+                <div style="font-size: 12px; color: #888; margin-top: 3px;">{{ user.organization.org_name }}</div>
                 {% endif %}
             </div>
             <ul class="sidebar-menu">

@@ -64,7 +64,7 @@
                         {{ course.course_name }}
                     </td>
                     <td class="px-6 py-4 text-gray-600">
-                        {{ course.duration }}
+                        {{ course.duration_value }} {{ course.get_duration_unit_display }}
                     </td>
                     <td class="px-6 py-4 font-bold text-gray-700">
                         {{ currency_symbol }} {{ course.fees }}

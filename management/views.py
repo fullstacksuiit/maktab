@@ -266,6 +266,7 @@ def batch_add(request):
     org = get_org(request)
     if request.method == 'POST':
         form = BatchForm(request.POST)
+        form.fields['course'].queryset = Course.objects.filter(organization=org)
         if form.is_valid():
             batch = form.save(commit=False)
             batch.organization = org
@@ -293,6 +294,7 @@ def batch_edit(request, pk):
     batch = get_object_or_404(Batch, pk=pk, organization=org)
     if request.method == 'POST':
         form = BatchForm(request.POST, instance=batch)
+        form.fields['course'].queryset = Course.objects.filter(organization=org)
         if form.is_valid():
             form.save()
             messages.success(request, 'Batch updated successfully!')
@@ -350,6 +352,7 @@ def student_add(request):
     org = get_org(request)
     if request.method == 'POST':
         form = StudentForm(request.POST)
+        form.fields['batches'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
         if form.is_valid():
             student = form.save(commit=False)
             student.organization = org
@@ -372,6 +375,7 @@ def student_edit(request, pk):
     student = get_object_or_404(Student, pk=pk, organization=org)
     if request.method == 'POST':
         form = StudentForm(request.POST, instance=student)
+        form.fields['batches'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
         if form.is_valid():
             form.save()
             messages.success(request, 'Student updated successfully!')
@@ -805,6 +809,8 @@ def fee_payment_add(request):
     org = get_org(request)
     if request.method == 'POST':
         form = FeePaymentForm(request.POST)
+        form.fields['student'].queryset = Student.objects.filter(organization=org)
+        form.fields['batch'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
         if form.is_valid():
             payment = form.save(commit=False)
             payment.organization = org
@@ -832,6 +838,8 @@ def fee_payment_edit(request, pk):
     payment = get_object_or_404(FeePayment, pk=pk, organization=org)
     if request.method == 'POST':
         form = FeePaymentForm(request.POST, instance=payment)
+        form.fields['student'].queryset = Student.objects.filter(organization=org)
+        form.fields['batch'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
         if form.is_valid():
             form.save()
             messages.success(request, f'Payment #{payment.receipt_number} updated!')
@@ -840,6 +848,8 @@ def fee_payment_edit(request, pk):
             messages.error(request, 'Please correct the errors below.')
     else:
         form = FeePaymentForm(instance=payment)
+        form.fields['student'].queryset = Student.objects.filter(organization=org)
+        form.fields['batch'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
     return render(request, 'management/fee_payment_add.html', {'form': form, 'action': 'Edit'})
 
 

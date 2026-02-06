@@ -89,12 +89,13 @@ class LoginForm(AuthenticationForm):
 class CourseForm(forms.ModelForm):
     class Meta:
         model = Course
-        fields = ['course_name', 'course_code', 'description', 'duration', 'fees', 'fee_period']
+        fields = ['course_name', 'course_code', 'description', 'duration_value', 'duration_unit', 'fees', 'fee_period']
         widgets = {
             'course_name': styled_text_input('Enter course name'),
             'course_code': styled_text_input('Auto-generated if left blank'),
             'description': styled_textarea('Enter course description', rows=4),
-            'duration': styled_text_input('e.g., 6 months, 1 year'),
+            'duration_value': styled_number_input('e.g., 6', step='1', min_val=1),
+            'duration_unit': styled_select(),
             'fees': styled_number_input('Enter course fees', step='0.01', min_val=0),
             'fee_period': styled_select(),
         }
