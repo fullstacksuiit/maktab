@@ -1,23 +1,29 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Course, Batch, Student, Staff, Attendance, FeePayment
+from .models import User, Organization, Course, Batch, Student, Staff, Attendance, FeePayment
+
+
+@admin.register(Organization)
+class OrganizationAdmin(admin.ModelAdmin):
+    list_display = ['org_name', 'contact', 'license', 'created_at']
+    search_fields = ['org_name', 'contact']
 
 
 class CustomUserAdmin(UserAdmin):
     model = User
-    list_display = ['username', 'org_name', 'contact', 'license', 'is_staff']
+    list_display = ['username', 'organization', 'role', 'is_staff']
     fieldsets = UserAdmin.fieldsets + (
-        ('Organization Info', {'fields': ('org_name', 'address', 'contact', 'license', 'currency_symbol')}),
+        ('Organization Info', {'fields': ('organization', 'role', 'staff_profile')}),
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
-        ('Organization Info', {'fields': ('org_name', 'address', 'contact', 'license')}),
+        ('Organization Info', {'fields': ('organization', 'role')}),
     )
 
 
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ['course_code', 'course_name', 'duration', 'fees', 'fee_period', 'created_by', 'created_at']
-    list_filter = ['fee_period', 'created_at', 'created_by']
+    list_display = ['course_code', 'course_name', 'duration', 'fees', 'fee_period', 'organization', 'created_at']
+    list_filter = ['fee_period', 'created_at', 'organization']
     search_fields = ['course_code', 'course_name']
     readonly_fields = ['course_code']
 
@@ -41,8 +47,8 @@ class StudentAdmin(admin.ModelAdmin):
 
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
-    list_display = ['staff_id', 'first_name', 'last_name', 'role', 'department', 'joining_date']
-    list_filter = ['role', 'department', 'gender']
+    list_display = ['staff_id', 'first_name', 'last_name', 'staff_role', 'department', 'joining_date']
+    list_filter = ['staff_role', 'department', 'gender']
     search_fields = ['staff_id', 'first_name', 'last_name', 'email']
 
 
