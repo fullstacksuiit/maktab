@@ -1,0 +1,345 @@
+{% extends 'management/base_tailwind.html' %}
+
+{% block title %}Quick Attendance - {{ batch.batch_name }}{% endblock %}
+{% block header_title %}{{ batch.batch_code }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Sticky Header -->
+    <div class="sticky top-0 z-40 -mx-4 px-4 pt-2 pb-4 bg-gray-50/95 backdrop-blur-sm">
+        <!-- Batch & Date Bar -->
+        <div class="bg-gradient-to-r from-primary to-secondary rounded-2xl p-4 text-white shadow-lg mb-4">
+            <div class="flex items-center justify-between gap-4">
+                <div class="min-w-0">
+                    <h1 class="font-bold text-lg truncate">{{ batch.course.course_name }} - {{ batch.batch_name }}</h1>
+                    <div class="flex items-center gap-2 mt-1">
+                        <i class="fas fa-calendar text-white/70"></i>
+                        <input type="date" id="attendanceDate" value="{{ attendance_date }}"
+                               class="bg-white/20 border-0 rounded-lg px-3 py-1 text-white font-semibold focus:outline-none focus:ring-2 focus:ring-white/50 cursor-pointer text-sm">
+                    </div>
+                </div>
+
+                <!-- Live Stats -->
+                <div class="flex gap-2 shrink-0">
+                    <div class="bg-green-500 rounded-xl px-3 py-2 text-center min-w-[60px]">
+                        <div id="presentCount" class="text-xl font-bold">{{ present_count }}</div>
+                        <div class="text-[10px] text-white/80 uppercase">Present</div>
+                    </div>
+                    <div class="bg-red-500 rounded-xl px-3 py-2 text-center min-w-[60px]">
+                        <div id="absentCount" class="text-xl font-bold">{{ absent_count }}</div>
+                        <div class="text-[10px] text-white/80 uppercase">Absent</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="flex gap-2">
+            <button id="markAllPresentBtn" class="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold shadow-lg shadow-green-500/30 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                <i class="fas fa-check-double"></i> All Present
+            </button>
+            <button id="markAllAbsentBtn" class="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-500/30 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                <i class="fas fa-times"></i> All Absent
+            </button>
+            <a href="{% url 'dashboard' %}" class="py-3 px-4 bg-white text-gray-600 rounded-xl font-bold border border-gray-200 active:scale-95 transition-transform flex items-center justify-center">
+                <i class="fas fa-home"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Instruction -->
+    <p class="text-center text-gray-500 text-sm mb-4 flex items-center justify-center gap-2">
+        <i class="fas fa-hand-pointer text-primary"></i>
+        Tap student to toggle <span class="text-green-600 font-semibold">Present</span> / <span class="text-red-600 font-semibold">Absent</span>
+    </p>
+
+    <!-- Student List -->
+    {% if students_data %}
+    <div class="space-y-2" id="studentsList">
+        {% for item in students_data %}
+        <div class="student-row bg-white rounded-2xl shadow-sm border-2 overflow-hidden active:scale-[0.98] transition-all duration-150 cursor-pointer select-none
+                    {% if item.status == 'Present' %}
+                        border-green-400 bg-green-50
+                    {% elif item.status == 'Absent' %}
+                        border-red-400 bg-red-50
+                    {% else %}
+                        border-gray-200
+                    {% endif %}"
+             data-student-id="{{ item.student.pk }}"
+             data-status="{{ item.status|default:'none' }}">
+
+            <div class="flex items-center p-3 gap-4">
+                <!-- Avatar with Status Indicator -->
+                <div class="relative">
+                    <div class="avatar w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold shadow-md transition-all
+                                {% if item.status == 'Present' %}
+                                    bg-green-500 text-white
+                                {% elif item.status == 'Absent' %}
+                                    bg-red-500 text-white
+                                {% else %}
+                                    bg-gradient-to-br from-primary to-secondary text-white
+                                {% endif %}">
+                        {{ item.student.first_name|first }}{{ item.student.last_name|first }}
+                    </div>
+                    <!-- Status Icon Overlay -->
+                    <div class="status-icon absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-md transition-all
+                                {% if item.status == 'Present' %}
+                                    bg-green-600 text-white
+                                {% elif item.status == 'Absent' %}
+                                    bg-red-600 text-white
+                                {% else %}
+                                    bg-gray-400 text-white
+                                {% endif %}">
+                        {% if item.status == 'Present' %}
+                            <i class="fas fa-check"></i>
+                        {% elif item.status == 'Absent' %}
+                            <i class="fas fa-times"></i>
+                        {% else %}
+                            <i class="fas fa-minus"></i>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Name -->
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-gray-800 text-base">{{ item.student.first_name }} {{ item.student.last_name }}</h3>
+                    <p class="text-gray-500 text-sm">{{ item.student.student_id }}</p>
+                </div>
+
+                <!-- Quick Action Buttons -->
+                <div class="flex gap-2">
+                    <button class="present-btn w-12 h-12 rounded-xl flex items-center justify-center text-lg transition-all active:scale-90
+                                   {% if item.status == 'Present' %}
+                                       bg-green-500 text-white shadow-lg shadow-green-500/30
+                                   {% else %}
+                                       bg-green-100 text-green-600 hover:bg-green-500 hover:text-white
+                                   {% endif %}"
+                            onclick="event.stopPropagation(); markStudent({{ item.student.pk }}, 'Present')">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="absent-btn w-12 h-12 rounded-xl flex items-center justify-center text-lg transition-all active:scale-90
+                                   {% if item.status == 'Absent' %}
+                                       bg-red-500 text-white shadow-lg shadow-red-500/30
+                                   {% else %}
+                                       bg-red-100 text-red-600 hover:bg-red-500 hover:text-white
+                                   {% endif %}"
+                            onclick="event.stopPropagation(); markStudent({{ item.student.pk }}, 'Absent')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Summary Footer -->
+    <div class="mt-6 mb-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div class="flex items-center justify-between">
+            <div class="text-gray-600">
+                <span class="font-bold text-gray-800">{{ total_count }}</span> students total
+            </div>
+            <a href="{% url 'attendance_list' %}" class="text-primary font-semibold flex items-center gap-1 hover:underline">
+                View History <i class="fas fa-arrow-right text-xs"></i>
+            </a>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-users text-4xl text-gray-300"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">No Students Enrolled</h3>
+        <p class="text-gray-500 mb-6">This course doesn't have any students enrolled yet.</p>
+        <a href="{% url 'student_add' %}" class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 font-medium transition-colors">
+            <i class="fas fa-user-plus"></i> Add Students
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3 z-50 whitespace-nowrap">
+    <i id="toastIcon" class="fas fa-check-circle text-green-400"></i>
+    <span id="toastMessage">Saved</span>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const batchId = {{ batch.pk }};
+const csrfToken = '{{ csrf_token }}';
+let attendanceDate = document.getElementById('attendanceDate').value;
+
+// Update counts
+function updateCounts() {
+    const rows = document.querySelectorAll('.student-row');
+    let present = 0, absent = 0;
+    rows.forEach(row => {
+        if (row.dataset.status === 'Present') present++;
+        else if (row.dataset.status === 'Absent') absent++;
+    });
+    document.getElementById('presentCount').textContent = present;
+    document.getElementById('absentCount').textContent = absent;
+}
+
+// Show toast
+function showToast(message, success = true) {
+    const toast = document.getElementById('toast');
+    const icon = document.getElementById('toastIcon');
+    const msg = document.getElementById('toastMessage');
+
+    msg.textContent = message;
+    icon.className = success ? 'fas fa-check-circle text-green-400' : 'fas fa-exclamation-circle text-red-400';
+
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 1500);
+}
+
+// Update row visual state
+function updateRowState(row, status) {
+    const avatar = row.querySelector('.avatar');
+    const statusIcon = row.querySelector('.status-icon');
+    const presentBtn = row.querySelector('.present-btn');
+    const absentBtn = row.querySelector('.absent-btn');
+
+    // Reset classes
+    row.classList.remove('border-green-400', 'bg-green-50', 'border-red-400', 'bg-red-50', 'border-gray-200');
+    avatar.classList.remove('bg-green-500', 'bg-red-500', 'bg-gradient-to-br', 'from-primary', 'to-secondary');
+    statusIcon.classList.remove('bg-green-600', 'bg-red-600', 'bg-gray-400');
+    presentBtn.classList.remove('bg-green-500', 'text-white', 'shadow-lg', 'shadow-green-500/30', 'bg-green-100', 'text-green-600');
+    absentBtn.classList.remove('bg-red-500', 'text-white', 'shadow-lg', 'shadow-red-500/30', 'bg-red-100', 'text-red-600');
+
+    if (status === 'Present') {
+        row.classList.add('border-green-400', 'bg-green-50');
+        avatar.classList.add('bg-green-500', 'text-white');
+        statusIcon.classList.add('bg-green-600', 'text-white');
+        statusIcon.innerHTML = '<i class="fas fa-check"></i>';
+        presentBtn.classList.add('bg-green-500', 'text-white', 'shadow-lg', 'shadow-green-500/30');
+        absentBtn.classList.add('bg-red-100', 'text-red-600');
+    } else if (status === 'Absent') {
+        row.classList.add('border-red-400', 'bg-red-50');
+        avatar.classList.add('bg-red-500', 'text-white');
+        statusIcon.classList.add('bg-red-600', 'text-white');
+        statusIcon.innerHTML = '<i class="fas fa-times"></i>';
+        presentBtn.classList.add('bg-green-100', 'text-green-600');
+        absentBtn.classList.add('bg-red-500', 'text-white', 'shadow-lg', 'shadow-red-500/30');
+    } else {
+        row.classList.add('border-gray-200');
+        avatar.classList.add('bg-gradient-to-br', 'from-primary', 'to-secondary', 'text-white');
+        statusIcon.classList.add('bg-gray-400', 'text-white');
+        statusIcon.innerHTML = '<i class="fas fa-minus"></i>';
+        presentBtn.classList.add('bg-green-100', 'text-green-600');
+        absentBtn.classList.add('bg-red-100', 'text-red-600');
+    }
+
+    row.dataset.status = status;
+    updateCounts();
+}
+
+// Mark single student
+async function markStudent(studentId, status) {
+    const row = document.querySelector(`[data-student-id="${studentId}"]`);
+    const currentStatus = row.dataset.status;
+
+    // Toggle off if same status
+    const newStatus = currentStatus === status ? 'none' : status;
+
+    // Optimistic update
+    updateRowState(row, newStatus === 'none' ? '' : newStatus);
+
+    try {
+        const response = await fetch('{% url "toggle_attendance" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({
+                student_id: studentId,
+                batch_id: batchId,
+                date: attendanceDate,
+                status: newStatus === 'none' ? null : newStatus
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showToast(newStatus === 'none' ? 'Cleared' : newStatus);
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        showToast('Error', false);
+        updateRowState(row, currentStatus);
+    }
+}
+
+// Row click to toggle
+document.querySelectorAll('.student-row').forEach(row => {
+    row.addEventListener('click', function() {
+        const studentId = this.dataset.studentId;
+        const currentStatus = this.dataset.status;
+
+        // Cycle: none -> Present -> Absent -> none
+        let newStatus = 'Present';
+        if (currentStatus === 'Present') newStatus = 'Absent';
+        else if (currentStatus === 'Absent') newStatus = 'none';
+
+        markStudent(studentId, newStatus === 'none' ? currentStatus : newStatus);
+    });
+});
+
+// Mark All Present
+document.getElementById('markAllPresentBtn').addEventListener('click', async function() {
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        const response = await fetch('{% url "mark_all_present" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ batch_id: batchId, date: attendanceDate })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            document.querySelectorAll('.student-row').forEach(row => updateRowState(row, 'Present'));
+            showToast('All Present!');
+        }
+    } catch (e) {
+        showToast('Error', false);
+    }
+
+    this.disabled = false;
+    this.innerHTML = '<i class="fas fa-check-double"></i> All Present';
+});
+
+// Mark All Absent
+document.getElementById('markAllAbsentBtn').addEventListener('click', async function() {
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        const response = await fetch('{% url "mark_all_absent" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ batch_id: batchId, date: attendanceDate })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            document.querySelectorAll('.student-row').forEach(row => updateRowState(row, 'Absent'));
+            showToast('All Absent!');
+        }
+    } catch (e) {
+        showToast('Error', false);
+    }
+
+    this.disabled = false;
+    this.innerHTML = '<i class="fas fa-times"></i> All Absent';
+});
+
+// Date change
+document.getElementById('attendanceDate').addEventListener('change', function() {
+    window.location.href = '{% url "quick_attendance" batch.pk %}?date=' + this.value;
+});
+</script>
+{% endblock %}

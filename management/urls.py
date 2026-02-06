@@ -13,6 +13,12 @@ urlpatterns = [
     path('courses/edit/<int:pk>/', views.course_edit, name='course_edit'),
     path('courses/delete/<int:pk>/', views.course_delete, name='course_delete'),
 
+    # Batch URLs
+    path('batches/', views.batch_list, name='batch_list'),
+    path('batches/add/', views.batch_add, name='batch_add'),
+    path('batches/edit/<int:pk>/', views.batch_edit, name='batch_edit'),
+    path('batches/delete/<int:pk>/', views.batch_delete, name='batch_delete'),
+
     # Student URLs
     path('students/', views.student_list, name='student_list'),
     path('students/add/', views.student_add, name='student_add'),
@@ -31,10 +37,17 @@ urlpatterns = [
     # Attendance URLs
     path('attendance/', views.attendance_list, name='attendance_list'),
     path('attendance/mark/', views.attendance_mark, name='attendance_mark'),
+    path('attendance/quick/<int:batch_id>/', views.quick_attendance, name='quick_attendance'),
+    path('attendance/toggle/', views.toggle_attendance, name='toggle_attendance'),
+    path('attendance/mark-all-present/', views.mark_all_present, name='mark_all_present'),
+    path('attendance/mark-all-absent/', views.mark_all_absent, name='mark_all_absent'),
 
     # Fee Payment URLs
     path('payments/', views.fee_payment_list, name='fee_payment_list'),
     path('payments/add/', views.fee_payment_add, name='fee_payment_add'),
+    path('payments/edit/<int:pk>/', views.fee_payment_edit, name='fee_payment_edit'),
+    path('payments/delete/<int:pk>/', views.fee_payment_delete, name='fee_payment_delete'),
+    path('payments/print/<int:pk>/', views.print_receipt, name='print_receipt'),
 
     # Settings
     path('settings/', views.settings_view, name='settings'),
@@ -43,4 +56,5 @@ urlpatterns = [
     path('export/students/', views.export_students_excel, name='export_students'),
     path('export/staff/', views.export_staff_excel, name='export_staff'),
     path('export/attendance/', views.export_attendance_excel, name='export_attendance'),
+    path('export/payments/', views.export_fee_payments_excel, name='export_fee_payments'),
 ]

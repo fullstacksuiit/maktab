@@ -1,106 +1,136 @@
-{% extends 'management/dashboard_base.html' %}
+{% extends 'management/base_tailwind.html' %}
+{% load pagination_tags %}
 
-{% block title %}Staff - Finetouch{% endblock %}
-
-{% block breadcrumb %}
-<nav class="breadcrumb-container" aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="fas fa-home me-1"></i>Dashboard</a></li>
-        <li class="breadcrumb-item active">Staff</li>
-    </ol>
-</nav>
-{% endblock %}
+{% block title %}Staff - Maktab{% endblock %}
+{% block header_title %}Staff Members{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-[slideUp_0.4s_ease-out]">
     <div>
-        <h1><i class="fas fa-users-cog me-3"></i>Staff Members</h1>
-        <p class="text-muted mb-0">Manage your staff and administration</p>
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <i class="fas fa-users-cog text-primary"></i> Team & Staff
+        </h1>
+        <p class="text-gray-500 text-sm mt-1">Manage personnel and roles</p>
     </div>
-    <div class="d-flex align-items-center gap-2">
-        <div class="input-group" style="width: 250px;">
-            <span class="input-group-text" style="background: #0d6b4e; color: white; border: none; border-radius: 10px 0 0 10px;"><i class="fas fa-search"></i></span>
-            <input type="text" class="form-control" id="searchInput" placeholder="Search staff..." style="border-radius: 0 10px 10px 0;">
+
+    <div class="flex flex-col sm:flex-row gap-3">
+        <form method="get" class="relative">
+            <input type="text" name="q" value="{{ search_query }}" placeholder="Search staff..."
+                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary w-full sm:w-64 transition-shadow">
+            <button type="submit" class="absolute left-3 top-2.5 text-gray-400 hover:text-primary">
+                <i class="fas fa-search"></i>
+            </button>
+            {% if search_query %}
+            <a href="{% url 'staff_list' %}" class="absolute right-3 top-2.5 text-gray-400 hover:text-red-500" title="Clear search">
+                <i class="fas fa-times"></i>
+            </a>
+            {% endif %}
+        </form>
+        <div class="flex gap-2">
+            <a href="{% url 'export_staff' %}" class="px-4 py-2 bg-white border border-green-600 text-green-700 rounded-xl hover:bg-green-50 font-medium transition-colors flex items-center gap-2">
+                <i class="fas fa-file-excel"></i> Export
+            </a>
+            <a href="{% url 'staff_add' %}" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 font-medium shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 flex items-center gap-2">
+                <i class="fas fa-plus"></i> Add Staff
+            </a>
         </div>
-        <a href="{% url 'export_staff' %}" class="btn btn-outline-success" style="border-radius: 10px; font-weight: 600;">
-            <i class="fas fa-file-excel me-2"></i>Export
-        </a>
-        <a href="{% url 'staff_add' %}" class="btn btn-primary"><i class="fas fa-plus me-2"></i>Add Staff</a>
     </div>
 </div>
 
-<div class="card" style="border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border: none;">
-    <div class="card-body p-0">
-        {% if staff_members %}
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead style="background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%); color: white;">
-                    <tr>
-                        <th style="border: none; padding: 15px 20px;">Staff ID</th>
-                        <th style="border: none; padding: 15px 20px;">Name</th>
-                        <th style="border: none; padding: 15px 20px;">Email</th>
-                        <th style="border: none; padding: 15px 20px;">Role</th>
-                        <th style="border: none; padding: 15px 20px;">Department</th>
-                        <th style="border: none; padding: 15px 20px; text-align: center;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for staff in staff_members %}
-                    <tr>
-                        <td style="padding: 15px 20px; vertical-align: middle;">
-                            <strong style="color: #0d6b4e;">{{ staff.staff_id }}</strong>
-                        </td>
-                        <td style="padding: 15px 20px; vertical-align: middle;">
-                            <div class="d-flex align-items-center">
-                                <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; margin-right: 12px; flex-shrink: 0;">
-                                    {{ staff.first_name|first }}
-                                </div>
-                                <div>
-                                    <span class="fw-semibold">{{ staff.first_name }} {{ staff.last_name }}</span>
-                                </div>
+{% if search_query %}
+<div class="mb-4 px-4 py-2 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-sm flex items-center justify-between">
+    <span><i class="fas fa-filter mr-2"></i>Showing results for "<strong>{{ search_query }}</strong>"</span>
+    <a href="{% url 'staff_list' %}" class="text-blue-600 hover:text-blue-800 font-medium">Clear filter</a>
+</div>
+{% endif %}
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-[slideUp_0.5s_ease-out]">
+    {% if staff_members %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+            <thead>
+                <tr class="bg-gradient-to-r from-primary to-secondary text-white">
+                    <th class="px-6 py-4 font-semibold first:pl-8 rounded-tl-lg">Staff ID</th>
+                    <th class="px-6 py-4 font-semibold">Name</th>
+                    <th class="px-6 py-4 font-semibold">Email</th>
+                    <th class="px-6 py-4 font-semibold">Role</th>
+                    <th class="px-6 py-4 font-semibold">Department</th>
+                    <th class="px-6 py-4 font-semibold text-center last:pr-8 rounded-tr-lg">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for staff in staff_members %}
+                <tr class="hover:bg-gray-50/80 transition-colors group">
+                    <td class="px-6 py-4 font-medium text-primary first:pl-8">
+                        {{ staff.staff_id }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">
+                                {{ staff.first_name|first }}
                             </div>
-                        </td>
-                        <td style="padding: 15px 20px; vertical-align: middle;">
-                            <span class="text-muted">{{ staff.email }}</span>
-                        </td>
-                        <td style="padding: 15px 20px; vertical-align: middle;">
-                            {% if staff.role == 'Teacher' %}
-                                <span class="badge" style="background: #0d6b4e; font-size: 11px;">{{ staff.role }}</span>
-                            {% elif staff.role == 'Administrator' %}
-                                <span class="badge" style="background: #c9a84c; font-size: 11px;">{{ staff.role }}</span>
-                            {% elif staff.role == 'Support' %}
-                                <span class="badge" style="background: #17a2b8; font-size: 11px;">{{ staff.get_role_display }}</span>
-                            {% else %}
-                                <span class="badge" style="background: #6c757d; font-size: 11px;">{{ staff.get_role_display }}</span>
-                            {% endif %}
-                        </td>
-                        <td style="padding: 15px 20px; vertical-align: middle;">{{ staff.department }}</td>
-                        <td style="padding: 15px 20px; vertical-align: middle; text-align: center;">
-                            <a href="{% url 'staff_detail' staff.pk %}" class="btn btn-sm btn-outline-info me-1" title="View Details"><i class="fas fa-eye"></i></a>
-                            <a href="{% url 'staff_edit' staff.pk %}" class="btn btn-sm btn-outline-success me-1" title="Edit"><i class="fas fa-edit"></i></a>
-                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"
-                                    data-delete-url="{% url 'staff_delete' staff.pk %}" data-delete-name="{{ staff.first_name }} {{ staff.last_name }}">
+                            <div>
+                                <div class="font-semibold text-gray-800">{{ staff.first_name }} {{ staff.last_name }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-gray-600">
+                        {{ staff.email }}
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if staff.role == 'Teacher' %}
+                            <span class="px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-xs font-medium border border-green-200">Teacher</span>
+                        {% elif staff.role == 'Administrator' %}
+                            <span class="px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 text-xs font-medium border border-purple-200">Administrator</span>
+                        {% elif staff.role == 'Support' %}
+                            <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 text-xs font-medium border border-blue-200">{{ staff.get_role_display }}</span>
+                        {% else %}
+                             <span class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-xs font-medium border border-gray-200">{{ staff.get_role_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-gray-600">
+                        {{ staff.department }}
+                    </td>
+                    <td class="px-6 py-4 max-w-[120px] text-center last:pr-8">
+                        <div class="flex items-center justify-center gap-2 opacity-100 group-hover:opacity-100 transition-opacity">
+                            <a href="{% url 'staff_detail' staff.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="View"><i class="fas fa-eye"></i></a>
+                            <a href="{% url 'staff_edit' staff.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
+                             <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                                onclick="openDeleteModal('{% url 'staff_delete' staff.pk %}', '{{ staff.first_name }} {{ staff.last_name|escapejs }}')"
+                                title="Delete">
                                 <i class="fas fa-trash"></i>
                             </button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include 'management/components/pagination.html' with page_obj=staff_members %}
+
+    {% else %}
+    <div class="text-center py-12">
+        <div class="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-300">
+             <i class="fas fa-users-cog text-4xl"></i>
         </div>
+        {% if search_query %}
+        <h3 class="text-xl font-bold text-gray-800 mb-1">No Staff Found</h3>
+        <p class="text-gray-500 mb-6">No staff members match your search "{{ search_query }}"</p>
+        <a href="{% url 'staff_list' %}" class="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium inline-flex items-center gap-2">
+            <i class="fas fa-times"></i> Clear Search
+        </a>
         {% else %}
-        <div class="text-center py-5">
-            <i class="fas fa-users-cog" style="font-size: 64px; color: #c8e6c9;"></i>
-            <h4 class="mt-3 text-muted">No Staff Members Yet</h4>
-            <p class="text-muted">Start by adding your first staff member</p>
-            <a href="{% url 'staff_add' %}" class="btn btn-primary mt-2"><i class="fas fa-plus me-2"></i>Add Your First Staff Member</a>
-        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-1">No Staff Members Yet</h3>
+        <p class="text-gray-500 mb-6">Build your team by adding staff members.</p>
+        <a href="{% url 'staff_add' %}" class="px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium inline-flex items-center gap-2">
+            <i class="fas fa-plus"></i> Add Staff
+        </a>
         {% endif %}
     </div>
+    {% endif %}
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
-<script>FT.initSearch('searchInput', 'tbody tr');</script>
+{% include 'management/components/delete_modal.html' %}
 {% endblock %}

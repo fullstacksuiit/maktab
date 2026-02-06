@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt #{{ payment.receipt_number }}</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0d6b4e',
+                        secondary: '#1a9e6f',
+                        gold: '#c9a84c',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Poppins:wght@400;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; }
+        .font-mono { font-family: 'Courier Prime', monospace; }
+        @media print {
+            .no-print { display: none; }
+            body { background: white; }
+            .shadow-lg { box-shadow: none; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white p-8 max-w-lg w-full shadow-lg border border-gray-200 relative print:shadow-none print:border-none">
+        <!-- Print Button -->
+        <button onclick="window.print()" class="no-print absolute top-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700 transition-colors flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            Print Receipt
+        </button>
+
+        <!-- Header -->
+        <div class="text-center border-b-2 border-dashed border-primary/30 pb-6 mb-6">
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full text-primary mb-3">
+                <i class="fas fa-mosque text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold uppercase tracking-widest text-primary">{{ user.org_name|default:"Maktab Academy" }}</h1>
+            <p class="text-sm text-gray-500 mt-1 uppercase tracking-wider">{{ user.address|default:"Educational Institute" }}</p>
+            <p class="text-sm text-gray-500">{{ user.contact|default:"" }}</p>
+        </div>
+
+        <!-- Receipt Info -->
+        <div class="flex justify-between items-end mb-8">
+            <div class="text-left">
+                <p class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Receipt No</p>
+                <p class="font-bold text-xl text-gray-800 font-mono">#{{ payment.receipt_number }}</p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Date Issued</p>
+                <p class="font-bold text-gray-800">{{ payment.payment_date }}</p>
+            </div>
+        </div>
+
+        <!-- Received From -->
+        <div class="mb-8 bg-gray-50 p-4 rounded-xl border border-gray-100">
+            <p class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-2">Received From Student</p>
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-lg font-bold text-gray-800">
+                        {{ payment.student.first_name }} {{ payment.student.last_name }}
+                    </p>
+                    <p class="text-sm text-primary font-medium mt-0.5">ID: {{ payment.student.student_id }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Details Area -->
+        <div class="mb-6">
+            <table class="w-full text-left">
+                <tbody>
+                    <tr class="border-b border-dashed border-gray-200">
+                        <td class="py-3 text-gray-500 text-sm">Payment For</td>
+                        <td class="py-3 text-right font-medium text-gray-800">{% if payment.batch %}{{ payment.batch.course.course_name }} - {{ payment.batch.batch_name }}{% else %}General Fee{% endif %}</td>
+                    </tr>
+                    <tr class="border-b border-dashed border-gray-200">
+                        <td class="py-3 text-gray-500 text-sm">Payment Method</td>
+                        <td class="py-3 text-right font-medium text-gray-800">{{ payment.payment_method }}</td>
+                    </tr>
+                     <tr class="border-b border-gray-200">
+                        <td class="py-4 text-gray-800 font-bold text-lg">Total Amount</td>
+                        <td class="py-4 text-right font-bold text-2xl text-primary">{{ currency_symbol }} {{ payment.amount }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        {% if payment.notes %}
+        <div class="mb-6 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+            <p class="text-xs text-yellow-600 uppercase font-bold mb-1">Remarks</p>
+            <p class="text-sm italic text-gray-600">{{ payment.notes }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Bank Details for Bank Transfer Payments -->
+        {% if user.bank_name or user.upi_id %}
+        <div class="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
+            <p class="text-xs text-gray-500 uppercase font-bold mb-3 flex items-center gap-2">
+                <i class="fas fa-university"></i> Bank Details for Future Payments
+            </p>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+                {% if user.bank_name %}
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase">Bank Name</p>
+                    <p class="font-medium text-gray-800">{{ user.bank_name }}</p>
+                </div>
+                {% endif %}
+                {% if user.account_holder %}
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase">Account Holder</p>
+                    <p class="font-medium text-gray-800">{{ user.account_holder }}</p>
+                </div>
+                {% endif %}
+                {% if user.account_number %}
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase">Account No.</p>
+                    <p class="font-medium text-gray-800 font-mono">{{ user.account_number }}</p>
+                </div>
+                {% endif %}
+                {% if user.ifsc_code %}
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase">IFSC Code</p>
+                    <p class="font-medium text-gray-800 font-mono">{{ user.ifsc_code }}</p>
+                </div>
+                {% endif %}
+                {% if user.upi_id %}
+                <div class="col-span-2">
+                    <p class="text-[10px] text-gray-400 uppercase">UPI ID</p>
+                    <p class="font-medium text-primary font-mono">{{ user.upi_id }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Footer -->
+        <div class="flex flex-col items-center mt-12 pt-4">
+             <div class="w-full flex justify-between items-end mb-6">
+                 <div class="text-left">
+                     <p class="text-[10px] text-gray-400 uppercase">System Generated</p>
+                 </div>
+                 <div class="text-center">
+                    <div class="w-48 border-b border-gray-300 mb-2"></div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider">Authorized Signature</p>
+                 </div>
+             </div>
+            
+            <p class="text-sm font-medium text-primary mb-1">Thank you for your payment!</p>
+            <p class="text-xs text-gray-400">Computer generated receipt.</p>
+        </div>
+    </div>
+
+</body>
+</html>

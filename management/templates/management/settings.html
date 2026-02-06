@@ -1,214 +1,171 @@
-{% extends 'management/dashboard_base.html' %}
+{% extends 'management/base_tailwind.html' %}
 
-{% block title %}Settings - Finetouch{% endblock %}
-
-{% block breadcrumb %}
-<nav class="breadcrumb-container" aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="fas fa-home me-1"></i>Dashboard</a></li>
-        <li class="breadcrumb-item active">Settings</li>
-    </ol>
-</nav>
-{% endblock %}
+{% block title %}Settings - Maktab{% endblock %}
+{% block header_title %}System Settings{% endblock %}
 
 {% block content %}
-<style>
-    .settings-card {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
-        overflow: hidden;
-        margin-bottom: 30px;
-    }
-
-    .settings-card .card-header-custom {
-        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
-        color: white;
-        padding: 20px 30px;
-        font-size: 18px;
-        font-weight: 600;
-    }
-
-    .settings-card .card-header-custom i {
-        margin-right: 10px;
-        color: #c9a84c;
-    }
-
-    .settings-card .card-body-custom {
-        padding: 30px;
-    }
-
-    .currency-preview {
-        background: #f8fdf8;
-        border: 2px dashed #0d6b4e;
-        border-radius: 12px;
-        padding: 20px;
-        text-align: center;
-        margin-top: 10px;
-    }
-
-    .currency-preview .preview-label {
-        font-size: 12px;
-        color: #888;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-weight: 600;
-        margin-bottom: 8px;
-    }
-
-    .currency-preview .preview-value {
-        font-size: 28px;
-        font-weight: 700;
-        color: #0d6b4e;
-    }
-
-    .form-label {
-        font-weight: 600;
-        color: #2c3e50;
-        font-size: 14px;
-    }
-
-    .form-label i {
-        color: #c9a84c;
-        margin-right: 6px;
-    }
-
-    .form-text {
-        font-size: 12px;
-        color: #999;
-    }
-
-    .btn-save {
-        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
-        border: none;
-        padding: 12px 35px;
-        font-weight: 600;
-        border-radius: 10px;
-        color: white;
-        font-size: 15px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(13, 107, 78, 0.3);
-    }
-
-    .btn-save:hover {
-        background: linear-gradient(135deg, #1a9e6f 0%, #0d6b4e 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(13, 107, 78, 0.4);
-        color: white;
-    }
-
-    .currency-hint {
-        display: inline-block;
-        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
-        color: white;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        margin: 3px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .currency-hint:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(13, 107, 78, 0.3);
-    }
-</style>
-
-<!-- Page Header -->
-<div class="page-header">
-    <h1><i class="fas fa-cog me-2"></i>Settings</h1>
-</div>
-
-<form method="POST">
-    {% csrf_token %}
-
-    <!-- Organization Settings -->
-    <div class="settings-card">
-        <div class="card-header-custom">
-            <i class="fas fa-building"></i>Organization Settings
-        </div>
-        <div class="card-body-custom">
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="{{ form.org_name.id_for_label }}" class="form-label">
-                        <i class="fas fa-building"></i>Organization Name
-                    </label>
-                    {{ form.org_name }}
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="{{ form.contact.id_for_label }}" class="form-label">
-                        <i class="fas fa-phone"></i>Contact Number
-                    </label>
-                    {{ form.contact }}
-                </div>
-                <div class="col-md-12 mb-3">
-                    <label for="{{ form.address.id_for_label }}" class="form-label">
-                        <i class="fas fa-map-marker-alt"></i>Address
-                    </label>
-                    {{ form.address }}
-                </div>
-            </div>
-        </div>
+<div class="animate-[slideUp_0.4s_ease-out]">
+    <!-- Page Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <i class="fas fa-cogs text-primary"></i> System Settings
+        </h1>
+        <p class="text-gray-500 text-sm mt-1">Manage organization details and system preferences</p>
     </div>
 
-    <!-- Currency Settings -->
-    <div class="settings-card">
-        <div class="card-header-custom">
-            <i class="fas fa-coins"></i>Currency Settings
-        </div>
-        <div class="card-body-custom">
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="{{ form.currency_symbol.id_for_label }}" class="form-label">
-                        <i class="fas fa-money-bill-wave"></i>Currency Symbol
-                    </label>
-                    {{ form.currency_symbol }}
-                    <div class="form-text mt-2">
-                        This symbol will appear before all monetary amounts across the system.
-                    </div>
-                    <div class="mt-2">
-                        <span class="currency-hint" onclick="document.getElementById('id_currency_symbol').value='Rs.'">Rs.</span>
-                        <span class="currency-hint" onclick="document.getElementById('id_currency_symbol').value='₹'">₹</span>
-                        <span class="currency-hint" onclick="document.getElementById('id_currency_symbol').value='$'">$</span>
-                        <span class="currency-hint" onclick="document.getElementById('id_currency_symbol').value='€'">€</span>
-                        <span class="currency-hint" onclick="document.getElementById('id_currency_symbol').value='£'">£</span>
-                        <span class="currency-hint" onclick="document.getElementById('id_currency_symbol').value='৳'">৳</span>
-                    </div>
+    <div class="max-w-4xl mx-auto">
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Organization Settings -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="bg-gradient-to-r from-primary to-secondary px-6 py-4">
+                    <h5 class="text-white font-semibold flex items-center gap-2">
+                        <i class="fas fa-building"></i> Organization Settings
+                    </h5>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">
-                        <i class="fas fa-eye"></i>Preview
-                    </label>
-                    <div class="currency-preview">
-                        <div class="preview-label">Amount will look like</div>
-                        <div class="preview-value">
-                            <span id="currencyPreview">{{ user.currency_symbol }}</span> 1,500.00
+                <div class="p-6 md:p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.org_name.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-building text-primary mr-1"></i> Organization Name
+                            </label>
+                            {{ form.org_name }}
+                        </div>
+                        <div>
+                            <label for="{{ form.contact.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-phone text-primary mr-1"></i> Contact Number
+                            </label>
+                            {{ form.contact }}
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="{{ form.address.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-map-marker-alt text-primary mr-1"></i> Address
+                            </label>
+                            {{ form.address }}
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Save Button -->
-    <div class="text-end">
-        <button type="submit" class="btn btn-save">
-            <i class="fas fa-save me-2"></i>Save Settings
-        </button>
+            <!-- Currency Settings -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="bg-gradient-to-r from-primary to-secondary px-6 py-4">
+                    <h5 class="text-white font-semibold flex items-center gap-2">
+                        <i class="fas fa-coins"></i> Currency Settings
+                    </h5>
+                </div>
+                <div class="p-6 md:p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <label for="{{ form.currency_symbol.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-money-bill-wave text-primary mr-1"></i> Currency Symbol
+                            </label>
+                            {{ form.currency_symbol }}
+                            <p class="text-xs text-gray-500 mt-2">
+                                This symbol will appear before all monetary amounts across the system.
+                            </p>
+                            
+                            <!-- Quick Select -->
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <button type="button" onclick="setCurrency('Rs.')" class="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full hover:bg-primary hover:text-white transition-colors">Rs.</button>
+                                <button type="button" onclick="setCurrency('₹')" class="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full hover:bg-primary hover:text-white transition-colors">₹</button>
+                                <button type="button" onclick="setCurrency('$')" class="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full hover:bg-primary hover:text-white transition-colors">$</button>
+                                <button type="button" onclick="setCurrency('€')" class="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full hover:bg-primary hover:text-white transition-colors">€</button>
+                                <button type="button" onclick="setCurrency('£')" class="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full hover:bg-primary hover:text-white transition-colors">£</button>
+                                <button type="button" onclick="setCurrency('৳')" class="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full hover:bg-primary hover:text-white transition-colors">৳</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-eye text-primary mr-1"></i> Preview
+                            </label>
+                            <div class="bg-gray-50 border-2 border-dashed border-primary/30 rounded-xl p-6 text-center">
+                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Amount will look like</p>
+                                <div class="text-3xl font-bold text-primary">
+                                    <span id="currencyPreview">{{ user.currency_symbol }}</span> 1,500.00
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bank Details -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="bg-gradient-to-r from-gray-800 to-gray-700 px-6 py-4">
+                    <h5 class="text-white font-semibold flex items-center gap-2">
+                        <i class="fas fa-university"></i> Bank Details
+                    </h5>
+                    <p class="text-gray-300 text-xs mt-1">These details will appear on payment receipts</p>
+                </div>
+                <div class="p-6 md:p-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.bank_name.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-university text-gray-500 mr-1"></i> Bank Name
+                            </label>
+                            {{ form.bank_name }}
+                        </div>
+                        <div>
+                            <label for="{{ form.account_holder.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-user text-gray-500 mr-1"></i> Account Holder Name
+                            </label>
+                            {{ form.account_holder }}
+                        </div>
+                        <div>
+                            <label for="{{ form.account_number.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-credit-card text-gray-500 mr-1"></i> Account Number
+                            </label>
+                            {{ form.account_number }}
+                        </div>
+                        <div>
+                            <label for="{{ form.ifsc_code.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-hashtag text-gray-500 mr-1"></i> IFSC Code
+                            </label>
+                            {{ form.ifsc_code }}
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="{{ form.upi_id.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-mobile-alt text-gray-500 mr-1"></i> UPI ID
+                            </label>
+                            {{ form.upi_id }}
+                            <p class="text-xs text-gray-500 mt-2">Optional: Add your UPI ID for quick mobile payments</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end">
+                <button type="submit" class="px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all font-semibold text-lg flex items-center transform hover:-translate-y-0.5">
+                    <i class="fas fa-save mr-2"></i> Save Settings
+                </button>
+            </div>
+        </form>
     </div>
-</form>
 {% endblock %}
 
 {% block extra_js %}
 <script>
     const currencyInput = document.getElementById('id_currency_symbol');
     const preview = document.getElementById('currencyPreview');
+    
     if (currencyInput && preview) {
+        // Update on input
         currencyInput.addEventListener('input', function() {
             preview.textContent = this.value || 'Rs.';
         });
+    }
+
+    // Helper function for quick select buttons
+    function setCurrency(symbol) {
+        if(currencyInput) {
+            currencyInput.value = symbol;
+            // Trigger input event to update preview
+            currencyInput.dispatchEvent(new Event('input'));
+        }
     }
 </script>
 {% endblock %}

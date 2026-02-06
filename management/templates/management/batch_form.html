@@ -1,0 +1,161 @@
+{% extends 'management/base_tailwind.html' %}
+
+{% block title %}{{ action }} Batch - Maktab{% endblock %}
+{% block header_title %}{{ action }} Batch{% endblock %}
+
+{% block content %}
+<div class="animate-[slideUp_0.4s_ease-out]">
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-layer-group text-primary"></i> {{ action }} Batch
+            </h1>
+            <p class="text-gray-500 text-sm mt-1">Fill in the batch details below</p>
+        </div>
+        <a href="{% url 'batch_list' %}" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors flex items-center gap-2 w-fit">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-primary to-secondary px-6 py-4">
+                <h5 class="text-white font-semibold flex items-center gap-2">
+                    <i class="fas fa-info-circle"></i> Batch Information
+                </h5>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <form method="post" novalidate class="space-y-6">
+                    {% csrf_token %}
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.batch_code.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Batch Code
+                            </label>
+                            {{ form.batch_code }}
+                            {% if form.batch_code.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.batch_code.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                            <p class="text-gray-400 text-xs mt-1">
+                                Leave blank for auto-generation
+                            </p>
+                        </div>
+
+                        <div>
+                            <label for="{{ form.batch_name.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Batch Name *
+                            </label>
+                            {{ form.batch_name }}
+                            {% if form.batch_name.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.batch_name.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="{{ form.course.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Course *
+                        </label>
+                        {{ form.course }}
+                        {% if form.course.errors %}
+                            <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                <div>{% for error in form.course.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label for="{{ form.days.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Days *
+                            </label>
+                            {{ form.days }}
+                            {% if form.days.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.days.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="{{ form.start_time.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Start Time
+                            </label>
+                            {{ form.start_time }}
+                            {% if form.start_time.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.start_time.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="{{ form.end_time.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                End Time
+                            </label>
+                            {{ form.end_time }}
+                            {% if form.end_time.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.end_time.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.max_capacity.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Max Capacity
+                            </label>
+                            {{ form.max_capacity }}
+                            {% if form.max_capacity.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.max_capacity.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                            <p class="text-gray-400 text-xs mt-1">
+                                Leave blank for unlimited capacity
+                            </p>
+                        </div>
+
+                        <div class="flex items-center pt-8">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                {{ form.is_active }}
+                                <span class="text-sm font-semibold text-gray-700">Active Batch</span>
+                            </label>
+                            {% if form.is_active.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.is_active.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="pt-6 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                        <a href="{% url 'batch_list' %}" class="px-6 py-2.5 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors text-center">
+                            Cancel
+                        </a>
+                        <button type="submit" class="px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium text-center">
+                            <i class="fas fa-save mr-2"></i> {{ action }} Batch
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

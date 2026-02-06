@@ -1,333 +1,198 @@
-{% extends 'management/dashboard_base.html' %}
+{% extends 'management/base_tailwind.html' %}
 
-{% block title %}{{ student.first_name }} {{ student.last_name }} - Student Detail - Finetouch{% endblock %}
-
-{% block extra_css %}
-<style>
-    .profile-avatar {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 22px;
-        font-weight: 700;
-        margin: 0 auto 15px;
-    }
-    .profile-card {
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        border: none;
-        overflow: hidden;
-    }
-    .profile-card .card-header {
-        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
-        color: white;
-        text-align: center;
-        padding: 25px 20px 20px;
-        border: none;
-    }
-    .profile-card .card-header h4 {
-        margin: 0;
-        font-weight: 700;
-        font-size: 18px;
-    }
-    .info-row {
-        display: flex;
-        align-items: center;
-        padding: 12px 20px;
-        border-bottom: 1px solid #f0f0f0;
-        font-size: 14px;
-    }
-    .info-row:last-child {
-        border-bottom: none;
-    }
-    .info-row i {
-        color: #0d6b4e;
-        width: 20px;
-        text-align: center;
-        margin-right: 12px;
-        font-size: 14px;
-    }
-    .info-row .info-label {
-        color: #999;
-        font-weight: 500;
-        min-width: 110px;
-    }
-    .info-row .info-value {
-        color: #333;
-        font-weight: 500;
-    }
-    .id-badge {
-        display: inline-block;
-        background: rgba(201, 168, 76, 0.15);
-        color: #c9a84c;
-        font-weight: 600;
-        font-size: 12px;
-        padding: 4px 12px;
-        border-radius: 20px;
-        margin-top: 8px;
-    }
-    .nav-tabs .nav-link {
-        color: #555;
-        font-weight: 500;
-        font-size: 14px;
-        border: none;
-        padding: 12px 20px;
-        border-bottom: 3px solid transparent;
-        transition: all 0.3s ease;
-    }
-    .nav-tabs .nav-link:hover {
-        color: #0d6b4e;
-        border-bottom-color: rgba(13, 107, 78, 0.3);
-    }
-    .nav-tabs .nav-link.active {
-        color: #0d6b4e;
-        font-weight: 600;
-        border-bottom-color: #0d6b4e;
-        background: transparent;
-    }
-    .tab-content-card {
-        border-radius: 0 0 15px 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        border: none;
-        border-top: none;
-    }
-    .course-card {
-        border-radius: 12px;
-        border: 2px solid #e8f5e9;
-        transition: all 0.3s ease;
-    }
-    .course-card:hover {
-        border-color: #0d6b4e;
-        box-shadow: 0 4px 15px rgba(13, 107, 78, 0.15);
-    }
-    .status-badge {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        color: white;
-    }
-    .status-present { background: #0d6b4e; }
-    .status-absent { background: #dc3545; }
-    .status-late { background: #c9a84c; }
-    .status-excused { background: #6c757d; }
-    .summary-card {
-        border-radius: 12px;
-        border: none;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
-        text-align: center;
-        padding: 20px;
-    }
-    .summary-card h3 {
-        font-size: 28px;
-        font-weight: 700;
-        margin: 10px 0 5px;
-    }
-    .summary-card p {
-        font-size: 13px;
-        color: #777;
-        margin: 0;
-    }
-    .attendance-pct {
-        display: inline-block;
-        padding: 6px 16px;
-        border-radius: 20px;
-        font-weight: 700;
-        font-size: 14px;
-        color: white;
-        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
-    }
-    .small-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 12px;
-        font-weight: 600;
-        margin-right: 8px;
-    }
-</style>
-{% endblock %}
-
-{% block breadcrumb %}
-<nav class="breadcrumb-container" aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="fas fa-home me-1"></i>Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'student_list' %}">Students</a></li>
-        <li class="breadcrumb-item active">{{ student.first_name }} {{ student.last_name }}</li>
-    </ol>
-</nav>
-{% endblock %}
+{% block title %}{{ student.first_name }} {{ student.last_name }} - Student Detail - Maktab{% endblock %}
+{% block header_title %}{{ student.first_name }} {{ student.last_name }}{% endblock %}
 
 {% block content %}
-<!-- Page Header -->
-<div class="page-header">
-    <div class="d-flex align-items-center">
-        <a href="{% url 'student_list' %}" class="btn btn-outline-secondary me-3">
-            <i class="fas fa-arrow-left"></i>
-        </a>
+<div class="animate-[slideUp_0.4s_ease-out]">
+    <!-- Page Header -->
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1><i class="fas fa-user-graduate me-3"></i>{{ student.first_name }} {{ student.last_name }}</h1>
-            <p class="text-muted mb-0">Student Profile</p>
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-user-graduate text-primary"></i> {{ student.first_name }} {{ student.last_name }}
+            </h1>
+            <p class="text-gray-500 text-sm mt-1">Student Profile Details</p>
         </div>
-    </div>
-    <div>
-        <a href="{% url 'student_edit' student.pk %}" class="btn btn-outline-primary me-2">
-            <i class="fas fa-edit me-2"></i>Edit
-        </a>
-        <a href="{% url 'fee_payment_add' %}?student={{ student.pk }}" class="btn btn-primary">
-            <i class="fas fa-money-bill-wave me-2"></i>Record Payment
-        </a>
-    </div>
-</div>
-
-<div class="row">
-    <!-- Left Column: Profile Card -->
-    <div class="col-md-4 mb-4">
-        <div class="card profile-card">
-            <div class="card-header">
-                <div class="profile-avatar mx-auto">
-                    {{ student.first_name|first }}{{ student.last_name|first }}
-                </div>
-                <h4>{{ student.first_name }} {{ student.last_name }}</h4>
-                <span class="id-badge">
-                    <i class="fas fa-id-card me-1"></i>{{ student.student_id }}
-                </span>
-            </div>
-            <div class="card-body p-0">
-                <div class="info-row">
-                    <i class="fas fa-envelope"></i>
-                    <span class="info-label">Email</span>
-                    <span class="info-value">{{ student.email }}</span>
-                </div>
-                <div class="info-row">
-                    <i class="fas fa-phone"></i>
-                    <span class="info-label">Phone</span>
-                    <span class="info-value">{{ student.phone }}</span>
-                </div>
-                <div class="info-row">
-                    <i class="fas fa-calendar"></i>
-                    <span class="info-label">Date of Birth</span>
-                    <span class="info-value">{{ student.date_of_birth }}</span>
-                </div>
-                <div class="info-row">
-                    <i class="fas fa-venus-mars"></i>
-                    <span class="info-label">Gender</span>
-                    <span class="info-value">{{ student.get_gender_display }}</span>
-                </div>
-                <div class="info-row">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span class="info-label">Address</span>
-                    <span class="info-value">{{ student.address }}</span>
-                </div>
-                <div class="info-row">
-                    <i class="fas fa-calendar-check"></i>
-                    <span class="info-label">Enrollment</span>
-                    <span class="info-value">{{ student.enrollment_date }}</span>
-                </div>
-            </div>
+        <div class="flex gap-3">
+            <a href="{% url 'student_list' %}" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors flex items-center gap-2">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <a href="{% url 'student_edit' student.pk %}" class="px-4 py-2 bg-white text-primary border border-primary/20 rounded-xl hover:bg-primary/5 transition-colors font-medium flex items-center gap-2">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <a href="{% url 'fee_payment_add' %}?student={{ student.pk }}" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium flex items-center gap-2">
+                <i class="fas fa-money-bill-wave"></i> Record Payment
+            </a>
         </div>
     </div>
 
-    <!-- Right Column: Tabs -->
-    <div class="col-md-8">
-        <div class="card" style="border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: none;">
-            <div class="card-body p-0">
-                <!-- Nav Tabs -->
-                <ul class="nav nav-tabs px-3 pt-3" id="studentTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="courses-tab" data-bs-toggle="tab" data-bs-target="#courses-pane" type="button" role="tab" aria-controls="courses-pane" aria-selected="true">
-                            <i class="fas fa-book-quran me-2"></i>Courses
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column: Profile Card -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
+                <div class="bg-gradient-to-r from-primary to-secondary px-6 py-8 text-center text-white">
+                    <div class="w-24 h-24 rounded-full bg-white/20 border-4 border-white/30 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 backdrop-blur-sm">
+                        {{ student.first_name|first }}{{ student.last_name|first }}
+                    </div>
+                    <h4 class="text-xl font-bold mb-2">{{ student.first_name }} {{ student.last_name }}</h4>
+                    <span class="inline-block bg-white/20 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm">
+                        <i class="fas fa-id-card mr-1"></i>{{ student.student_id }}
+                    </span>
+                </div>
+
+                <div class="p-0">
+                    <div class="divide-y divide-gray-50">
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-medium text-gray-500 uppercase">Email</p>
+                                <p class="text-sm font-semibold text-gray-800 truncate">{{ student.email }}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-medium text-gray-500 uppercase">Phone</p>
+                                <p class="text-sm font-semibold text-gray-800">{{ student.phone }}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                                <i class="fas fa-calendar"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-medium text-gray-500 uppercase">Date of Birth</p>
+                                <p class="text-sm font-semibold text-gray-800">{{ student.date_of_birth }}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                                <i class="fas fa-venus-mars"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-medium text-gray-500 uppercase">Gender</p>
+                                <p class="text-sm font-semibold text-gray-800">{{ student.get_gender_display }}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-medium text-gray-500 uppercase">Address</p>
+                                <p class="text-sm font-semibold text-gray-800">{{ student.address }}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-medium text-gray-500 uppercase">Enrollment</p>
+                                <p class="text-sm font-semibold text-gray-800">{{ student.enrollment_date }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Tabs -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <!-- Tab Navigation -->
+                <div class="border-b border-gray-100 px-6 pt-4">
+                    <div class="flex gap-6 overflow-x-auto">
+                        <button onclick="switchTab('courses')" id="tab-courses" class="tab-btn pb-3 px-1 text-sm font-semibold text-primary border-b-2 border-primary transition-colors">
+                            <i class="fas fa-book-quran mr-2"></i>Courses
                         </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance-pane" type="button" role="tab" aria-controls="attendance-pane" aria-selected="false">
-                            <i class="fas fa-clipboard-check me-2"></i>Attendance
+                        <button onclick="switchTab('attendance')" id="tab-attendance" class="tab-btn pb-3 px-1 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-primary transition-colors">
+                            <i class="fas fa-clipboard-check mr-2"></i>Attendance
                         </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="fees-tab" data-bs-toggle="tab" data-bs-target="#fees-pane" type="button" role="tab" aria-controls="fees-pane" aria-selected="false">
-                            <i class="fas fa-money-bill-wave me-2"></i>Fees
+                        <button onclick="switchTab('fees')" id="tab-fees" class="tab-btn pb-3 px-1 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-primary transition-colors">
+                            <i class="fas fa-money-bill-wave mr-2"></i>Fees
                         </button>
-                    </li>
-                </ul>
+                    </div>
+                </div>
 
                 <!-- Tab Content -->
-                <div class="tab-content p-4" id="studentTabsContent">
+                <div class="p-6">
                     <!-- Courses Tab -->
-                    <div class="tab-pane fade show active" id="courses-pane" role="tabpanel" aria-labelledby="courses-tab">
+                    <div id="content-courses" class="tab-content block animate-[fadeIn_0.3s_ease-out]">
                         {% if student.courses.exists %}
-                            <div class="row">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {% for course in student.courses.all %}
-                                <div class="col-md-6 mb-3">
-                                    <div class="card course-card">
-                                        <div class="card-body p-3">
-                                            <h6 style="font-weight: 700; color: #0d6b4e; margin-bottom: 8px;">
-                                                <i class="fas fa-book-quran me-2"></i>{{ course.course_name }}
-                                            </h6>
-                                            <div class="d-flex flex-wrap gap-2 mt-2">
-                                                <span class="badge" style="background: rgba(13, 107, 78, 0.1); color: #0d6b4e; font-weight: 500;">
-                                                    <i class="fas fa-code me-1"></i>{{ course.course_code }}
-                                                </span>
-                                                <span class="badge" style="background: rgba(201, 168, 76, 0.15); color: #c9a84c; font-weight: 500;">
-                                                    <i class="fas fa-coins me-1"></i>{{ currency_symbol }} {{ course.fees }}
-                                                </span>
-                                                <span class="badge" style="background: rgba(108, 117, 125, 0.1); color: #6c757d; font-weight: 500;">
-                                                    <i class="fas fa-clock me-1"></i>{{ course.duration }}
-                                                </span>
-                                                <span class="badge" style="background: rgba(13, 107, 78, 0.1); color: #0d6b4e; font-weight: 500;">
-                                                    <i class="fas fa-calendar-alt me-1"></i>{{ course.get_fee_period_display }}
-                                                </span>
-                                            </div>
-                                        </div>
+                                <div class="border border-gray-100 rounded-xl p-4 hover:border-primary hover:shadow-md transition-all group">
+                                    <h6 class="font-bold text-primary mb-3 flex items-center">
+                                        <i class="fas fa-book-quran mr-2"></i>{{ course.course_name }}
+                                    </h6>
+                                    <div class="flex flex-wrap gap-2 text-xs">
+                                        <span class="px-2 py-1 bg-primary/10 text-primary rounded-lg font-medium">
+                                            <i class="fas fa-code mr-1"></i>{{ course.course_code }}
+                                        </span>
+                                        <span class="px-2 py-1 bg-gold/10 text-gold rounded-lg font-medium">
+                                            <i class="fas fa-coins mr-1"></i>{{ currency_symbol }} {{ course.fees }}
+                                        </span>
+                                        <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg font-medium">
+                                            <i class="fas fa-clock mr-1"></i>{{ course.duration }}
+                                        </span>
+                                        <span class="px-2 py-1 bg-primary/10 text-primary rounded-lg font-medium">
+                                            <i class="fas fa-calendar-alt mr-1"></i>{{ course.get_fee_period_display }}
+                                        </span>
                                     </div>
                                 </div>
                                 {% endfor %}
                             </div>
                         {% else %}
-                            <div class="text-center py-4">
-                                <i class="fas fa-book-quran" style="font-size: 48px; color: #ddd;"></i>
-                                <h5 class="mt-3 text-muted">No Courses Enrolled</h5>
-                                <p class="text-muted">This student has not been enrolled in any courses yet.</p>
+                            <div class="text-center py-8">
+                                <i class="fas fa-book-quran text-gray-200 text-5xl mb-3"></i>
+                                <h5 class="text-gray-500 font-medium">No Courses Enrolled</h5>
+                                <p class="text-gray-400 text-sm">This student has not been enrolled in any courses yet.</p>
                             </div>
                         {% endif %}
                     </div>
 
                     <!-- Attendance Tab -->
-                    <div class="tab-pane fade" id="attendance-pane" role="tabpanel" aria-labelledby="attendance-tab">
-                        <div class="d-flex align-items-center justify-content-between mb-3">
-                            <h6 class="mb-0" style="font-weight: 600; color: #333;">Attendance Records</h6>
-                            <span class="attendance-pct">
-                                <i class="fas fa-chart-pie me-1"></i>{{ attendance_percentage }}%
+                    <div id="content-attendance" class="tab-content hidden animate-[fadeIn_0.3s_ease-out]">
+                        <div class="flex items-center justify-between mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <h6 class="font-bold text-gray-700">Attendance Records</h6>
+                            <span class="px-4 py-1.5 bg-gradient-to-r from-primary to-secondary text-white rounded-full text-sm font-bold shadow-sm">
+                                <i class="fas fa-chart-pie mr-1"></i>{{ attendance_percentage }}% Present
                             </span>
                         </div>
 
                         {% if attendances %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead style="background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%); color: white;">
+                        <div class="overflow-x-auto rounded-xl border border-gray-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-gradient-to-r from-primary to-secondary text-white text-xs uppercase tracking-wider">
                                     <tr>
-                                        <th style="border: none; padding: 12px 16px; font-size: 12px;">Date</th>
-                                        <th style="border: none; padding: 12px 16px; font-size: 12px;">Course</th>
-                                        <th style="border: none; padding: 12px 16px; font-size: 12px; text-align: center;">Status</th>
+                                        <th class="px-4 py-3 font-semibold">Date</th>
+                                        <th class="px-4 py-3 font-semibold">Course</th>
+                                        <th class="px-4 py-3 font-semibold text-center">Status</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody class="divide-y divide-gray-100">
                                     {% for record in attendances %}
-                                    <tr>
-                                        <td style="padding: 12px 16px; vertical-align: middle; font-size: 13px;">{{ record.date }}</td>
-                                        <td style="padding: 12px 16px; vertical-align: middle; font-size: 13px;">{{ record.course.course_name }}</td>
-                                        <td style="padding: 12px 16px; vertical-align: middle; text-align: center;">
-                                            <span class="status-badge status-{{ record.status|lower }}">{{ record.status }}</span>
+                                    <tr class="hover:bg-gray-50/50">
+                                        <td class="px-4 py-3 text-sm text-gray-700 font-medium">{{ record.date }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-600">{{ record.course.course_name }}</td>
+                                        <td class="px-4 py-3 text-center">
+                                            <span class="px-3 py-1 rounded-full text-xs font-bold text-white
+                                                {% if record.status == 'Present' %}bg-primary
+                                                {% elif record.status == 'Absent' %}bg-red-500
+                                                {% elif record.status == 'Late' %}bg-gold
+                                                {% else %}bg-gray-500{% endif %}">
+                                                {{ record.status }}
+                                            </span>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -335,69 +200,61 @@
                             </table>
                         </div>
                         {% else %}
-                        <div class="text-center py-4">
-                            <i class="fas fa-clipboard-check" style="font-size: 48px; color: #ddd;"></i>
-                            <h5 class="mt-3 text-muted">No Attendance Records</h5>
-                            <p class="text-muted">No attendance has been recorded for this student yet.</p>
+                        <div class="text-center py-8">
+                            <i class="fas fa-clipboard-check text-gray-200 text-5xl mb-3"></i>
+                            <h5 class="text-gray-500 font-medium">No Attendance Records</h5>
+                            <p class="text-gray-400 text-sm">No attendance has been recorded for this student yet.</p>
                         </div>
                         {% endif %}
                     </div>
 
                     <!-- Fees Tab -->
-                    <div class="tab-pane fade" id="fees-pane" role="tabpanel" aria-labelledby="fees-tab">
+                    <div id="content-fees" class="tab-content hidden animate-[fadeIn_0.3s_ease-out]">
                         <!-- Summary Cards -->
-                        <div class="row mb-4">
-                            <div class="col-md-4 mb-3">
-                                <div class="summary-card" style="background: linear-gradient(135deg, rgba(13,107,78,0.08), rgba(26,158,111,0.08));">
-                                    <i class="fas fa-file-invoice-dollar" style="font-size: 24px; color: #0d6b4e;"></i>
-                                    <h3 style="color: #0d6b4e;">{{ currency_symbol }} {{ student.get_total_fees }}</h3>
-                                    <p>Total Fees</p>
-                                </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-primary/5 p-4 rounded-xl border border-primary/10 text-center">
+                                <i class="fas fa-file-invoice-dollar text-primary text-2xl mb-2"></i>
+                                <h3 class="text-2xl font-bold text-primary">{{ currency_symbol }} {{ student.get_total_fees }}</h3>
+                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Fees</p>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <div class="summary-card" style="background: rgba(40, 167, 69, 0.08);">
-                                    <i class="fas fa-check-circle" style="font-size: 24px; color: #28a745;"></i>
-                                    <h3 style="color: #28a745;">{{ currency_symbol }} {{ total_paid }}</h3>
-                                    <p>Paid</p>
-                                </div>
+                            <div class="bg-green-50 p-4 rounded-xl border border-green-100 text-center">
+                                <i class="fas fa-check-circle text-green-500 text-2xl mb-2"></i>
+                                <h3 class="text-2xl font-bold text-green-500">{{ currency_symbol }} {{ total_paid }}</h3>
+                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Paid</p>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <div class="summary-card" style="background: {% if pending_fees > 0 %}rgba(220, 53, 69, 0.08){% else %}rgba(40, 167, 69, 0.08){% endif %};">
-                                    <i class="fas fa-hourglass-half" style="font-size: 24px; color: {% if pending_fees > 0 %}#dc3545{% else %}#28a745{% endif %};"></i>
-                                    <h3 style="color: {% if pending_fees > 0 %}#dc3545{% else %}#28a745{% endif %};">{{ currency_symbol }} {{ pending_fees }}</h3>
-                                    <p>Pending</p>
-                                </div>
+                            <div class="{% if pending_fees > 0 %}bg-red-50 border-red-100{% else %}bg-green-50 border-green-100{% endif %} p-4 rounded-xl border text-center">
+                                <i class="fas {% if pending_fees > 0 %}fa-hourglass-half text-red-500{% else %}fa-check-double text-green-500{% endif %} text-2xl mb-2"></i>
+                                <h3 class="text-2xl font-bold {% if pending_fees > 0 %}text-red-500{% else %}text-green-500{% endif %}">{{ currency_symbol }} {{ pending_fees }}</h3>
+                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Pending</p>
                             </div>
                         </div>
 
                         <!-- Payments Table -->
                         {% if fee_payments %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead style="background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%); color: white;">
+                        <div class="overflow-x-auto rounded-xl border border-gray-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-gradient-to-r from-primary to-secondary text-white text-xs uppercase tracking-wider">
                                     <tr>
-                                        <th style="border: none; padding: 12px 16px; font-size: 12px;">Receipt #</th>
-                                        <th style="border: none; padding: 12px 16px; font-size: 12px;">Course</th>
-                                        <th style="border: none; padding: 12px 16px; font-size: 12px;">Amount</th>
-                                        <th style="border: none; padding: 12px 16px; font-size: 12px;">Date</th>
-                                        <th style="border: none; padding: 12px 16px; font-size: 12px;">Method</th>
+                                        <th class="px-4 py-3 font-semibold">Receipt #</th>
+                                        <th class="px-4 py-3 font-semibold">Course</th>
+                                        <th class="px-4 py-3 font-semibold">Amount</th>
+                                        <th class="px-4 py-3 font-semibold">Date</th>
+                                        <th class="px-4 py-3 font-semibold">Method</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody class="divide-y divide-gray-100">
                                     {% for payment in fee_payments %}
-                                    <tr>
-                                        <td style="padding: 12px 16px; vertical-align: middle; font-size: 13px;">
-                                            <strong style="color: #0d6b4e;">{{ payment.receipt_number }}</strong>
+                                    <tr class="hover:bg-gray-50/50">
+                                        <td class="px-4 py-3 text-sm font-bold text-primary">{{ payment.receipt_number }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-600">
+                                            {% if payment.course %}{{ payment.course.course_name }}{% else %}<span class="text-gray-400">-</span>{% endif %}
                                         </td>
-                                        <td style="padding: 12px 16px; vertical-align: middle; font-size: 13px;">
-                                            {% if payment.course %}{{ payment.course.course_name }}{% else %}<span class="text-muted">-</span>{% endif %}
-                                        </td>
-                                        <td style="padding: 12px 16px; vertical-align: middle; font-size: 13px;">
-                                            <strong style="color: #28a745;">{{ currency_symbol }} {{ payment.amount }}</strong>
-                                        </td>
-                                        <td style="padding: 12px 16px; vertical-align: middle; font-size: 13px;">{{ payment.payment_date }}</td>
-                                        <td style="padding: 12px 16px; vertical-align: middle; font-size: 13px;">
-                                            <span class="badge" style="background: rgba(201, 168, 76, 0.15); color: #c9a84c; font-weight: 500;">{{ payment.payment_method }}</span>
+                                        <td class="px-4 py-3 text-sm font-bold text-green-600">{{ currency_symbol }} {{ payment.amount }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-600">{{ payment.payment_date }}</td>
+                                        <td class="px-4 py-3">
+                                            <span class="px-2 py-0.5 rounded-lg text-xs font-medium bg-gold/10 text-gold border border-gold/20">
+                                                {{ payment.payment_method }}
+                                            </span>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -405,12 +262,12 @@
                             </table>
                         </div>
                         {% else %}
-                        <div class="text-center py-4">
-                            <i class="fas fa-money-bill-wave" style="font-size: 48px; color: #ddd;"></i>
-                            <h5 class="mt-3 text-muted">No Payments Recorded</h5>
-                            <p class="text-muted">No fee payments have been recorded for this student yet.</p>
-                            <a href="{% url 'fee_payment_add' %}?student={{ student.pk }}" class="btn btn-primary btn-sm mt-2">
-                                <i class="fas fa-plus me-2"></i>Record Payment
+                        <div class="text-center py-8">
+                            <i class="fas fa-money-bill-wave text-gray-200 text-5xl mb-3"></i>
+                            <h5 class="text-gray-500 font-medium">No Payments Recorded</h5>
+                            <p class="text-gray-400 text-sm mb-4">No fee payments have been recorded for this student yet.</p>
+                            <a href="{% url 'fee_payment_add' %}?student={{ student.pk }}" class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>Record Payment
                             </a>
                         </div>
                         {% endif %}
@@ -420,4 +277,24 @@
         </div>
     </div>
 </div>
+
+<script>
+    function switchTab(tabId) {
+        // Headers
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('text-primary', 'border-primary', 'font-semibold');
+            btn.classList.add('text-gray-500', 'border-transparent', 'font-medium');
+        });
+        document.getElementById('tab-' + tabId).classList.add('text-primary', 'border-primary', 'font-semibold');
+        document.getElementById('tab-' + tabId).classList.remove('text-gray-500', 'border-transparent', 'font-medium');
+
+        // Contents
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+            content.classList.remove('block');
+        });
+        document.getElementById('content-' + tabId).classList.remove('hidden');
+        document.getElementById('content-' + tabId).classList.add('block');
+    }
+</script>
 {% endblock %}

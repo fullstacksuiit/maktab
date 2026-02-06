@@ -1,0 +1,69 @@
+{% load pagination_tags %}
+
+{% if page_obj.has_other_pages %}
+<nav class="flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6 mt-6" aria-label="Pagination">
+    <div class="hidden sm:block">
+        <p class="text-sm text-gray-700">
+            Showing
+            <span class="font-medium">{{ page_obj.start_index }}</span>
+            to
+            <span class="font-medium">{{ page_obj.end_index }}</span>
+            of
+            <span class="font-medium">{{ page_obj.paginator.count }}</span>
+            results
+        </p>
+    </div>
+    <div class="flex flex-1 justify-between sm:justify-end gap-2">
+        {% if page_obj.has_previous %}
+        <a href="?{% url_replace page=page_obj.previous_page_number %}"
+           class="relative inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            <i class="fas fa-chevron-left mr-2"></i> Previous
+        </a>
+        {% else %}
+        <span class="relative inline-flex items-center rounded-xl border border-gray-200 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-400 cursor-not-allowed">
+            <i class="fas fa-chevron-left mr-2"></i> Previous
+        </span>
+        {% endif %}
+
+        <!-- Page numbers (hidden on mobile) -->
+        <div class="hidden md:flex gap-1 items-center">
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium">{{ num }}</span>
+                {% elif num == 1 or num == page_obj.paginator.num_pages or num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                    <a href="?{% url_replace page=num %}"
+                       class="px-4 py-2 border border-gray-300 bg-white rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                        {{ num }}
+                    </a>
+                {% elif num == page_obj.number|add:"-3" or num == page_obj.number|add:"3" %}
+                    <span class="px-2 py-2 text-gray-500">...</span>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Mobile page indicator -->
+        <div class="flex md:hidden items-center px-3 py-2 text-sm text-gray-700">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </div>
+
+        {% if page_obj.has_next %}
+        <a href="?{% url_replace page=page_obj.next_page_number %}"
+           class="relative inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            Next <i class="fas fa-chevron-right ml-2"></i>
+        </a>
+        {% else %}
+        <span class="relative inline-flex items-center rounded-xl border border-gray-200 bg-gray-100 px-4 py-2 text-sm font-medium text-gray-400 cursor-not-allowed">
+            Next <i class="fas fa-chevron-right ml-2"></i>
+        </span>
+        {% endif %}
+    </div>
+</nav>
+{% endif %}
+
+{% if page_obj.paginator.count == 0 %}
+<!-- Empty state handled by parent template -->
+{% elif not page_obj.has_other_pages %}
+<div class="text-center text-sm text-gray-500 mt-4 py-2">
+    Showing all {{ page_obj.paginator.count }} result{{ page_obj.paginator.count|pluralize }}
+</div>
+{% endif %}

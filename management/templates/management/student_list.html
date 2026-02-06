@@ -1,108 +1,142 @@
-{% extends 'management/dashboard_base.html' %}
+{% extends 'management/base_tailwind.html' %}
+{% load pagination_tags %}
 
-{% block title %}Students - Finetouch{% endblock %}
-
-{% block breadcrumb %}
-<nav class="breadcrumb-container" aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="fas fa-home me-1"></i>Dashboard</a></li>
-        <li class="breadcrumb-item active">Students</li>
-    </ol>
-</nav>
-{% endblock %}
+{% block title %}Students - Maktab{% endblock %}
+{% block header_title %}Students{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-[slideUp_0.4s_ease-out]">
     <div>
-        <h1><i class="fas fa-user-graduate me-3"></i>Students</h1>
-        <p class="text-muted mb-0">Manage your students and enrollments</p>
+        <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <i class="fas fa-user-graduate text-primary"></i> Students
+        </h1>
+        <p class="text-gray-500 text-sm mt-1">Manage enrollments and profiles</p>
     </div>
-    <div class="d-flex align-items-center gap-2">
-        <div class="input-group" style="width: 250px;">
-            <span class="input-group-text" style="background: #0d6b4e; color: white; border: none; border-radius: 10px 0 0 10px;"><i class="fas fa-search"></i></span>
-            <input type="text" class="form-control" id="searchInput" placeholder="Search students..." style="border-radius: 0 10px 10px 0;">
+
+    <div class="flex flex-col sm:flex-row gap-3">
+        <form method="get" class="relative">
+            <input type="text" name="q" value="{{ search_query }}" placeholder="Search students..."
+                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary w-full sm:w-64 transition-shadow">
+            <button type="submit" class="absolute left-3 top-2.5 text-gray-400 hover:text-primary">
+                <i class="fas fa-search"></i>
+            </button>
+            {% if search_query %}
+            <a href="{% url 'student_list' %}" class="absolute right-3 top-2.5 text-gray-400 hover:text-red-500" title="Clear search">
+                <i class="fas fa-times"></i>
+            </a>
+            {% endif %}
+        </form>
+        <div class="flex gap-2">
+            <a href="{% url 'export_students' %}" class="px-4 py-2 bg-white border border-green-600 text-green-700 rounded-xl hover:bg-green-50 font-medium transition-colors flex items-center gap-2">
+                <i class="fas fa-file-excel"></i> Export
+            </a>
+            <a href="{% url 'student_add' %}" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 font-medium shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 flex items-center gap-2">
+                <i class="fas fa-plus"></i> Add Student
+            </a>
         </div>
-        <a href="{% url 'export_students' %}" class="btn btn-outline-success" style="border-radius: 10px; font-weight: 600;">
-            <i class="fas fa-file-excel me-2"></i>Export
-        </a>
-        <a href="{% url 'student_add' %}" class="btn btn-primary"><i class="fas fa-plus me-2"></i>Add Student</a>
     </div>
 </div>
 
-<div class="card" style="border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border: none;">
-    <div class="card-body p-0">
-        {% if students %}
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead style="background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%); color: white;">
-                    <tr>
-                        <th style="border: none; padding: 15px 20px;">Student ID</th>
-                        <th style="border: none; padding: 15px 20px;">Name</th>
-                        <th style="border: none; padding: 15px 20px;">Email</th>
-                        <th style="border: none; padding: 15px 20px;">Phone</th>
-                        <th style="border: none; padding: 15px 20px;">Courses</th>
-                        <th style="border: none; padding: 15px 20px;">Total Fees</th>
-                        <th style="border: none; padding: 15px 20px; text-align: center;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student in students %}
-                    <tr>
-                        <td style="padding: 15px 20px; vertical-align: middle;">
-                            <strong style="color: #0d6b4e;">{{ student.student_id }}</strong>
-                        </td>
-                        <td style="padding: 15px 20px; vertical-align: middle;">
-                            <div class="d-flex align-items-center">
-                                <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; margin-right: 12px; flex-shrink: 0;">
-                                    {{ student.first_name|first }}
-                                </div>
-                                <div>
-                                    <span class="fw-semibold">{{ student.first_name }} {{ student.last_name }}</span>
-                                </div>
+{% if search_query %}
+<div class="mb-4 px-4 py-2 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-sm flex items-center justify-between">
+    <span><i class="fas fa-filter mr-2"></i>Showing results for "<strong>{{ search_query }}</strong>"</span>
+    <a href="{% url 'student_list' %}" class="text-blue-600 hover:text-blue-800 font-medium">Clear filter</a>
+</div>
+{% endif %}
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-[slideUp_0.5s_ease-out]">
+    {% if students %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+            <thead>
+                <tr class="bg-gradient-to-r from-primary to-secondary text-white">
+                    <th class="px-6 py-4 font-semibold first:pl-8 rounded-tl-lg">Student ID</th>
+                    <th class="px-6 py-4 font-semibold">Name</th>
+                    <th class="px-6 py-4 font-semibold">Email</th>
+                    <th class="px-6 py-4 font-semibold">Phone</th>
+                    <th class="px-6 py-4 font-semibold">Batches</th>
+                    <th class="px-6 py-4 font-semibold">Total Fees</th>
+                    <th class="px-6 py-4 font-semibold text-center last:pr-8 rounded-tr-lg">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for student in students %}
+                <tr class="hover:bg-gray-50/80 transition-colors group">
+                    <td class="px-6 py-4 font-medium text-primary first:pl-8">
+                        {{ student.student_id }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                                {{ student.first_name|first }}
                             </div>
-                        </td>
-                        <td style="padding: 15px 20px; vertical-align: middle;">
-                            <span class="text-muted">{{ student.email }}</span>
-                        </td>
-                        <td style="padding: 15px 20px; vertical-align: middle;">{{ student.phone }}</td>
-                        <td style="padding: 15px 20px; vertical-align: middle;">
-                            {% if student.courses.exists %}
-                                {% for course in student.courses.all %}
-                                    <span class="badge mb-1" style="background: #0d6b4e; font-size: 11px;">{{ course.course_code }}</span>
+                            <div>
+                                <div class="font-semibold text-gray-800">{{ student.first_name }} {{ student.last_name }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-gray-600">
+                        {{ student.email }}
+                    </td>
+                    <td class="px-6 py-4 text-gray-600">
+                        {{ student.phone }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-wrap gap-1">
+                            {% if student.batches.exists %}
+                                {% for batch in student.batches.all %}
+                                    <span class="px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-xs font-medium border border-green-200" title="{{ batch.course.course_name }}">
+                                        {{ batch.course.course_code }} - {{ batch.batch_name }}
+                                    </span>
                                 {% endfor %}
                             {% else %}
-                                <span class="badge" style="background: #999; font-size: 11px;">Not Enrolled</span>
+                                <span class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 text-xs border border-gray-200">Not Enrolled</span>
                             {% endif %}
-                        </td>
-                        <td style="padding: 15px 20px; vertical-align: middle;">
-                            <strong style="color: #0d6b4e;">{{ currency_symbol }} {{ student.get_total_fees }}</strong>
-                        </td>
-                        <td style="padding: 15px 20px; vertical-align: middle; text-align: center;">
-                            <a href="{% url 'student_detail' student.pk %}" class="btn btn-sm btn-outline-info me-1" title="View Details"><i class="fas fa-eye"></i></a>
-                            <a href="{% url 'student_edit' student.pk %}" class="btn btn-sm btn-outline-success me-1" title="Edit"><i class="fas fa-edit"></i></a>
-                            <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"
-                                    data-delete-url="{% url 'student_delete' student.pk %}" data-delete-name="{{ student.first_name }} {{ student.last_name }}">
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 font-bold text-gray-700">
+                        {{ currency_symbol }} {{ student.get_total_fees }}
+                    </td>
+                    <td class="px-6 py-4 max-w-[120px] text-center last:pr-8">
+                         <div class="flex items-center justify-center gap-2 opacity-100 group-hover:opacity-100 transition-opacity">
+                            <a href="{% url 'student_detail' student.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="View"><i class="fas fa-eye"></i></a>
+                            <a href="{% url 'student_edit' student.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
+                             <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                                onclick="openDeleteModal('{% url 'student_delete' student.pk %}', '{{ student.first_name }} {{ student.last_name|escapejs }}')"
+                                title="Delete">
                                 <i class="fas fa-trash"></i>
                             </button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% include 'management/components/pagination.html' with page_obj=students %}
+
+    {% else %}
+    <div class="text-center py-12">
+        <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 text-green-300">
+             <i class="fas fa-user-graduate text-4xl"></i>
         </div>
+        {% if search_query %}
+        <h3 class="text-xl font-bold text-gray-800 mb-1">No Students Found</h3>
+        <p class="text-gray-500 mb-6">No students match your search "{{ search_query }}"</p>
+        <a href="{% url 'student_list' %}" class="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium inline-flex items-center gap-2">
+            <i class="fas fa-times"></i> Clear Search
+        </a>
         {% else %}
-        <div class="text-center py-5">
-            <i class="fas fa-user-graduate" style="font-size: 64px; color: #c8e6c9;"></i>
-            <h4 class="mt-3 text-muted">No Students Yet</h4>
-            <p class="text-muted">Start by adding your first student</p>
-            <a href="{% url 'student_add' %}" class="btn btn-primary mt-2"><i class="fas fa-plus me-2"></i>Add Your First Student</a>
-        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-1">No Students Yet</h3>
+        <p class="text-gray-500 mb-6">Get started by adding your first student.</p>
+        <a href="{% url 'student_add' %}" class="px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium inline-flex items-center gap-2">
+            <i class="fas fa-plus"></i> Add Student
+        </a>
         {% endif %}
     </div>
+    {% endif %}
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
-<script>FT.initSearch('searchInput', 'tbody tr');</script>
+{% include 'management/components/delete_modal.html' %}
 {% endblock %}

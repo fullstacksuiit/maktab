@@ -1,138 +1,126 @@
-{% extends 'management/dashboard_base.html' %}
+{% extends 'management/base_tailwind.html' %}
 
-{% block title %}{{ action }} Course - Finetouch{% endblock %}
-
-{% block breadcrumb %}
-<nav class="breadcrumb-container" aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'dashboard' %}"><i class="fas fa-home me-1"></i>Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'course_list' %}">Courses</a></li>
-        <li class="breadcrumb-item active">{{ action }} Course</li>
-    </ol>
-</nav>
-{% endblock %}
+{% block title %}{{ action }} Course - Maktab{% endblock %}
+{% block header_title %}{{ action }} Course{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <h1><i class="fas fa-book-quran me-3"></i>{{ action }} Course</h1>
-        <p class="text-muted mb-0">Fill in the course details below</p>
+<div class="animate-[slideUp_0.4s_ease-out]">
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-book-quran text-primary"></i> {{ action }} Course
+            </h1>
+            <p class="text-gray-500 text-sm mt-1">Fill in the course details below</p>
+        </div>
+        <a href="{% url 'course_list' %}" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors flex items-center gap-2 w-fit">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
     </div>
-    <a href="{% url 'course_list' %}" class="btn btn-outline-secondary" style="border-radius: 10px; font-weight: 600;">
-        <i class="fas fa-arrow-left me-2"></i>Back to List
-    </a>
-</div>
 
-<div class="row">
-    <div class="col-lg-8 mx-auto">
-        <div class="card" style="border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border: none;">
-            <div class="card-header" style="background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%); color: white; border-radius: 15px 15px 0 0; padding: 18px 25px;">
-                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Course Information</h5>
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-primary to-secondary px-6 py-4">
+                <h5 class="text-white font-semibold flex items-center gap-2">
+                    <i class="fas fa-info-circle"></i> Course Information
+                </h5>
             </div>
-            <div class="card-body p-4">
-                <form method="post" novalidate>
+            
+            <div class="p-6 md:p-8">
+                <form method="post" novalidate class="space-y-6">
                     {% csrf_token %}
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.course_code.id_for_label }}" class="form-label fw-semibold">
-                                <i class="fas fa-hashtag me-2" style="color: #0d6b4e;"></i>Course Code *
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.course_code.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Course Code *
                             </label>
                             {{ form.course_code }}
                             {% if form.course_code.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.course_code.errors %}
-                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                    {% endfor %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.course_code.errors %}<p>{{ error }}</p>{% endfor %}</div>
                                 </div>
                             {% endif %}
-                            <small class="form-text text-muted">
-                                <i class="fas fa-info-circle me-1"></i>Leave blank for auto-generation
-                            </small>
+                            <p class="text-gray-400 text-xs mt-1">
+                                Leave blank for auto-generation
+                            </p>
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.course_name.id_for_label }}" class="form-label fw-semibold">
-                                <i class="fas fa-book-quran me-2" style="color: #0d6b4e;"></i>Course Name *
+                        <div>
+                            <label for="{{ form.course_name.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Course Name *
                             </label>
                             {{ form.course_name }}
                             {% if form.course_name.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.course_name.errors %}
-                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                    {% endfor %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.course_name.errors %}<p>{{ error }}</p>{% endfor %}</div>
                                 </div>
                             {% endif %}
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
-                            <i class="fas fa-align-left me-2" style="color: #0d6b4e;"></i>Description *
+                    <div>
+                        <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Description *
                         </label>
                         {{ form.description }}
                         {% if form.description.errors %}
-                            <div class="text-danger small mt-1">
-                                {% for error in form.description.errors %}
-                                    <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                {% endfor %}
+                            <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                <div>{% for error in form.description.errors %}<p>{{ error }}</p>{% endfor %}</div>
                             </div>
                         {% endif %}
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="{{ form.duration.id_for_label }}" class="form-label fw-semibold">
-                                <i class="fas fa-clock me-2" style="color: #0d6b4e;"></i>Duration *
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label for="{{ form.duration.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Duration *
                             </label>
                             {{ form.duration }}
                             {% if form.duration.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.duration.errors %}
-                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                    {% endfor %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.duration.errors %}<p>{{ error }}</p>{% endfor %}</div>
                                 </div>
                             {% endif %}
                         </div>
 
-                        <div class="col-md-4 mb-3">
-                            <label for="{{ form.fees.id_for_label }}" class="form-label fw-semibold">
-                                <i class="fas fa-coins me-2" style="color: #c9a84c;"></i>Course Fees *
+                        <div>
+                            <label for="{{ form.fees.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Course Fees *
                             </label>
                             {{ form.fees }}
                             {% if form.fees.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.fees.errors %}
-                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                    {% endfor %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.fees.errors %}<p>{{ error }}</p>{% endfor %}</div>
                                 </div>
                             {% endif %}
                         </div>
 
-                        <div class="col-md-4 mb-3">
-                            <label for="{{ form.fee_period.id_for_label }}" class="form-label fw-semibold">
-                                <i class="fas fa-calendar-alt me-2" style="color: #c9a84c;"></i>Fee Period *
+                        <div>
+                            <label for="{{ form.fee_period.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Fee Period *
                             </label>
                             {{ form.fee_period }}
                             {% if form.fee_period.errors %}
-                                <div class="text-danger small mt-1">
-                                    {% for error in form.fee_period.errors %}
-                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                    {% endfor %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.fee_period.errors %}<p>{{ error }}</p>{% endfor %}</div>
                                 </div>
                             {% endif %}
                         </div>
                     </div>
 
-                    <hr style="border-color: #e8f5e9; margin: 25px 0;">
-
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="fas fa-save me-2"></i>{{ action }} Course
-                        </button>
-                        <a href="{% url 'course_list' %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-times me-2"></i>Cancel
+                    <div class="pt-6 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                        <a href="{% url 'course_list' %}" class="px-6 py-2.5 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors text-center">
+                            Cancel
                         </a>
+                        <button type="submit" class="px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium text-center">
+                            <i class="fas fa-save mr-2"></i> {{ action }} Course
+                        </button>
                     </div>
                 </form>
             </div>

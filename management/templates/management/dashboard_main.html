@@ -1,683 +1,435 @@
-{% extends 'management/dashboard_base.html' %}
+{% extends 'management/base_tailwind.html' %}
 
-{% block title %}Dashboard - Finetouch{% endblock %}
+{% block title %}Dashboard - Maktab{% endblock %}
+{% block header_title %}Overview{% endblock %}
 
 {% block content %}
-<style>
-    /* ===== Stat Cards ===== */
-    .stat-card {
-        background: white;
-        padding: 25px 20px;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-        text-align: center;
-        height: 100%;
-    }
-
-    .stat-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-        background: linear-gradient(180deg, #0d6b4e 0%, #1a9e6f 100%);
-        border-radius: 4px 0 0 4px;
-    }
-
-    .stat-card.gold::before {
-        background: linear-gradient(180deg, #c9a84c 0%, #d4af37 100%);
-    }
-
-    .stat-card.red::before {
-        background: linear-gradient(180deg, #dc3545 0%, #c82333 100%);
-    }
-
-    .stat-card.green::before {
-        background: linear-gradient(180deg, #0d6b4e 0%, #28a745 100%);
-    }
-
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-    }
-
-    .stat-card .icon-circle {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 15px;
-        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
-    }
-
-    .stat-card .icon-circle.gold-icon {
-        background: linear-gradient(135deg, #c9a84c 0%, #d4af37 100%);
-    }
-
-    .stat-card .icon-circle.red-icon {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-    }
-
-    .stat-card .icon-circle.green-icon {
-        background: linear-gradient(135deg, #0d6b4e 0%, #28a745 100%);
-    }
-
-    .stat-card .icon-circle i {
-        font-size: 22px;
-        color: white;
-    }
-
-    .stat-card .stat-title {
-        font-size: 13px;
-        color: #888;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        margin-bottom: 6px;
-    }
-
-    .stat-card .stat-value {
-        font-size: 32px;
-        font-weight: 700;
-        color: #2c3e50;
-        line-height: 1.2;
-        margin-bottom: 12px;
-    }
-
-    .stat-card .stat-link {
-        font-size: 13px;
-        font-weight: 500;
-        color: #0d6b4e;
-        text-decoration: none;
-        transition: all 0.3s ease;
-    }
-
-    .stat-card .stat-link:hover {
-        color: #1a9e6f;
-        text-decoration: underline;
-    }
-
-    .stat-card .stat-link.gold-link {
-        color: #c9a84c;
-    }
-
-    .stat-card .stat-link.gold-link:hover {
-        color: #d4af37;
-    }
-
-    /* ===== Page Header ===== */
-    .dashboard-header {
-        background: white;
-        padding: 30px 35px;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
-        margin-bottom: 30px;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .dashboard-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 5px;
-        height: 100%;
-        background: linear-gradient(180deg, #c9a84c 0%, #d4af37 100%);
-    }
-
-    .dashboard-header h1 {
-        font-size: 28px;
-        font-weight: 700;
-        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin: 0 0 5px 0;
-    }
-
-    .dashboard-header .subtitle {
-        font-size: 15px;
-        color: #888;
-        margin: 0;
-        font-weight: 400;
-    }
-
-    .dashboard-header .subtitle strong {
-        color: #c9a84c;
-        font-weight: 600;
-    }
-
-    /* ===== Quick Actions ===== */
-    .quick-actions-card {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
-        padding: 25px 30px;
-        margin-bottom: 30px;
-    }
-
-    .quick-actions-card h5 {
-        font-size: 16px;
-        font-weight: 700;
-        color: #2c3e50;
-        margin-bottom: 20px;
-    }
-
-    .quick-actions-card h5 i {
-        color: #c9a84c;
-        margin-right: 8px;
-    }
-
-    .quick-actions-card .btn {
-        padding: 10px 20px;
-        font-weight: 600;
-        font-size: 13px;
-        border-radius: 10px;
-        border-width: 2px;
-        transition: all 0.3s ease;
-    }
-
-    .quick-actions-card .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    /* ===== Recent Activity Cards ===== */
-    .activity-card {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
-        overflow: hidden;
-        height: 100%;
-    }
-
-    .activity-card .card-header-custom {
-        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
-        color: white;
-        padding: 18px 25px;
-        font-size: 16px;
-        font-weight: 600;
-    }
-
-    .activity-card .card-header-custom i {
-        margin-right: 10px;
-        color: #c9a84c;
-    }
-
-    .activity-card .card-body-custom {
-        padding: 0;
-    }
-
-    .activity-item {
-        display: flex;
-        align-items: center;
-        padding: 15px 25px;
-        border-bottom: 1px solid #f0f0f0;
-        transition: background 0.2s ease;
-    }
-
-    .activity-item:last-child {
-        border-bottom: none;
-    }
-
-    .activity-item:hover {
-        background: #f8fdf8;
-    }
-
-    .activity-item .avatar-circle {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        margin-right: 15px;
-    }
-
-    .activity-item .avatar-circle i {
-        color: white;
-        font-size: 16px;
-    }
-
-    .activity-item .avatar-circle.payment-icon {
-        background: linear-gradient(135deg, #c9a84c 0%, #d4af37 100%);
-    }
-
-    .activity-item .activity-info {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .activity-item .activity-name {
-        font-size: 14px;
-        font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 2px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .activity-item .activity-detail {
-        font-size: 12px;
-        color: #999;
-    }
-
-    .activity-item .activity-badge {
-        flex-shrink: 0;
-        margin-left: 10px;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 40px 20px;
-        color: #bbb;
-    }
-
-    .empty-state i {
-        font-size: 40px;
-        margin-bottom: 12px;
-        display: block;
-        color: #ddd;
-    }
-
-    .empty-state p {
-        font-size: 14px;
-        margin: 0;
-    }
-
-    /* ===== Profile Information Card ===== */
-    .profile-card {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
-        overflow: hidden;
-        margin-top: 30px;
-    }
-
-    .profile-card .profile-header {
-        background: linear-gradient(135deg, #0d6b4e 0%, #1a9e6f 100%);
-        color: white;
-        padding: 20px 25px;
-        font-size: 17px;
-        font-weight: 600;
-    }
-
-    .profile-card .profile-header i {
-        margin-right: 10px;
-        color: #c9a84c;
-    }
-
-    .profile-card .profile-body {
-        padding: 25px;
-    }
-
-    .info-box {
-        background: #f8fdf8;
-        padding: 15px 18px;
-        border-radius: 10px;
-        border-left: 4px solid #0d6b4e;
-        transition: all 0.3s ease;
-    }
-
-    .info-box:hover {
-        background: #eef8f0;
-        transform: translateX(3px);
-    }
-
-    .info-box .info-label {
-        font-size: 12px;
-        color: #999;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        font-weight: 600;
-        margin-bottom: 4px;
-    }
-
-    .info-box .info-label i {
-        color: #c9a84c;
-        margin-right: 6px;
-        width: 16px;
-        text-align: center;
-    }
-
-    .info-box .info-value {
-        font-size: 15px;
-        font-weight: 600;
-        color: #2c3e50;
-    }
-
-    .info-box.gold-border {
-        border-left-color: #c9a84c;
-    }
-
-    /* ===== Staggered Entrance Animations ===== */
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .dashboard-header {
-        opacity: 0;
-        animation: fadeInUp 0.4s ease-out 0.05s forwards;
-    }
-
-    .stat-card {
-        opacity: 0;
-        animation: fadeInUp 0.4s ease-out forwards;
-    }
-
-    /* Row 1 stat cards stagger */
-    .row:nth-of-type(1) .col-md-4:nth-child(1) .stat-card { animation-delay: 0.1s; }
-    .row:nth-of-type(1) .col-md-4:nth-child(2) .stat-card { animation-delay: 0.15s; }
-    .row:nth-of-type(1) .col-md-4:nth-child(3) .stat-card { animation-delay: 0.2s; }
-
-    /* Row 2 stat cards stagger */
-    .row:nth-of-type(2) .col-md-4:nth-child(1) .stat-card { animation-delay: 0.25s; }
-    .row:nth-of-type(2) .col-md-4:nth-child(2) .stat-card { animation-delay: 0.3s; }
-    .row:nth-of-type(2) .col-md-4:nth-child(3) .stat-card { animation-delay: 0.35s; }
-
-    .stat-card:hover {
-        transform: translateY(-5px) scale(1.02);
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
-    }
-
-    .quick-actions-card {
-        opacity: 0;
-        animation: fadeInUp 0.4s ease-out 0.4s forwards;
-    }
-
-    .activity-card {
-        opacity: 0;
-        animation: fadeInUp 0.4s ease-out 0.45s forwards;
-    }
-
-    .profile-card {
-        opacity: 0;
-        animation: fadeInUp 0.4s ease-out 0.5s forwards;
-    }
-
-    /* Mobile quick actions stack */
-    @media (max-width: 767.98px) {
-        .quick-actions-card .d-flex {
-            flex-direction: column;
-        }
-        .quick-actions-card .btn {
-            width: 100%;
-            padding: 14px 20px;
-            font-size: 15px;
-            text-align: left;
-        }
-        .stat-card .stat-value { font-size: 26px; }
-        .dashboard-header h1 { font-size: 22px; }
-    }
-</style>
-
-<!-- ===== Page Header with Greeting ===== -->
-<div class="dashboard-header">
-    <h1><i class="fas fa-mosque me-2"></i>Assalamu Alaikum, {{ user.username }}!</h1>
-    <p class="subtitle">Managing <strong>{{ user.org_name }}</strong> — Here's your overview for today</p>
-</div>
-
-<!-- ===== Row 1: Stat Cards (Courses, Students, Staff) ===== -->
-<div class="row mb-4">
-    <!-- Total Courses -->
-    <div class="col-md-4 mb-3">
-        <div class="stat-card">
-            <div class="icon-circle">
-                <i class="fas fa-book-quran"></i>
-            </div>
-            <div class="stat-title">Total Courses</div>
-            <div class="stat-value">{{ total_courses|default:0 }}</div>
-            <a href="{% url 'course_list' %}" class="stat-link">
-                <i class="fas fa-arrow-right me-1"></i>View Courses
-            </a>
+<div class="animate-[slideUp_0.4s_ease-out]">
+    <!-- Welcome Section - Mobile Optimized -->
+    <div class="bg-gradient-to-br from-primary via-secondary to-primary rounded-2xl sm:rounded-3xl p-5 sm:p-8 mb-6 sm:mb-8 text-white relative overflow-hidden shadow-xl shadow-primary/30">
+        <div class="absolute top-0 right-0 -mr-16 -mt-16 w-48 sm:w-64 h-48 sm:h-64 bg-white/10 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-32 sm:w-48 h-32 sm:h-48 bg-gold/20 rounded-full blur-3xl"></div>
+        <div class="absolute top-1/2 right-1/4 w-20 h-20 bg-white/5 rounded-full blur-2xl"></div>
+
+        <div class="relative z-10">
+            <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2 flex items-center gap-2 sm:gap-3">
+                <i class="fas fa-mosque text-gold"></i>
+                <span>Assalamu Alaikum, {{ user.username }}!</span>
+            </h1>
+            <p class="text-white/80 text-sm sm:text-base lg:text-lg">
+                Here's what's happening at <strong class="text-gold">{{ user.org_name }}</strong> today.
+            </p>
         </div>
     </div>
 
-    <!-- Total Students -->
-    <div class="col-md-4 mb-3">
-        <div class="stat-card">
-            <div class="icon-circle">
-                <i class="fas fa-user-graduate"></i>
-            </div>
-            <div class="stat-title">Total Students</div>
-            <div class="stat-value">{{ total_students|default:0 }}</div>
-            <a href="{% url 'student_list' %}" class="stat-link">
-                <i class="fas fa-arrow-right me-1"></i>View Students
-            </a>
-        </div>
-    </div>
-
-    <!-- Total Staff -->
-    <div class="col-md-4 mb-3">
-        <div class="stat-card">
-            <div class="icon-circle">
-                <i class="fas fa-users-cog"></i>
-            </div>
-            <div class="stat-title">Total Staff</div>
-            <div class="stat-value">{{ total_staff|default:0 }}</div>
-            <a href="{% url 'staff_list' %}" class="stat-link">
-                <i class="fas fa-arrow-right me-1"></i>View Staff
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- ===== Row 2: Stat Cards (Revenue, Pending, Attendance) ===== -->
-<div class="row mb-4">
-    <!-- Total Revenue -->
-    <div class="col-md-4 mb-3">
-        <div class="stat-card gold">
-            <div class="icon-circle gold-icon">
-                <i class="fas fa-coins"></i>
-            </div>
-            <div class="stat-title">Total Revenue</div>
-            <div class="stat-value" style="color: #c9a84c;">{{ currency_symbol }} {{ total_revenue|default:0 }}</div>
-            <a href="{% url 'fee_payment_list' %}" class="stat-link gold-link">
-                <i class="fas fa-arrow-right me-1"></i>View Payments
-            </a>
-        </div>
-    </div>
-
-    <!-- Pending Fees -->
-    <div class="col-md-4 mb-3">
-        {% if total_pending > 0 %}
-        <div class="stat-card red">
-            <div class="icon-circle red-icon">
-                <i class="fas fa-exclamation-circle"></i>
-            </div>
-            <div class="stat-title">Pending Fees</div>
-            <div class="stat-value" style="color: #dc3545;">{{ currency_symbol }} {{ total_pending|default:0 }}</div>
-            <a href="{% url 'fee_payment_list' %}" class="stat-link" style="color: #dc3545;">
-                <i class="fas fa-arrow-right me-1"></i>View Pending
-            </a>
-        </div>
-        {% else %}
-        <div class="stat-card green">
-            <div class="icon-circle green-icon">
-                <i class="fas fa-exclamation-circle"></i>
-            </div>
-            <div class="stat-title">Pending Fees</div>
-            <div class="stat-value" style="color: #0d6b4e;">{{ currency_symbol }} {{ total_pending|default:0 }}</div>
-            <a href="{% url 'fee_payment_list' %}" class="stat-link">
-                <i class="fas fa-arrow-right me-1"></i>View Payments
-            </a>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Today's Attendance -->
-    <div class="col-md-4 mb-3">
-        <div class="stat-card">
-            <div class="icon-circle">
-                <i class="fas fa-clipboard-check"></i>
-            </div>
-            <div class="stat-title">Today's Attendance</div>
-            <div class="stat-value">{{ today_present|default:0 }} / {{ today_total|default:0 }}</div>
-            <a href="{% url 'attendance_list' %}" class="stat-link">
-                <i class="fas fa-arrow-right me-1"></i>View Attendance
-            </a>
-        </div>
-    </div>
-</div>
-
-<!-- ===== Quick Actions ===== -->
-<div class="quick-actions-card">
-    <h5><i class="fas fa-bolt"></i>Quick Actions</h5>
-    <div class="d-flex flex-wrap gap-3">
-        <a href="{% url 'student_add' %}" class="btn btn-outline-success">
-            <i class="fas fa-user-plus me-2"></i>Add Student
-        </a>
-        <a href="{% url 'attendance_mark' %}" class="btn btn-outline-primary">
-            <i class="fas fa-clipboard-check me-2"></i>Mark Attendance
-        </a>
-        <a href="{% url 'fee_payment_add' %}" class="btn btn-outline-warning text-dark">
-            <i class="fas fa-money-bill-wave me-2"></i>Record Payment
-        </a>
-        <a href="{% url 'course_add' %}" class="btn btn-outline-info">
-            <i class="fas fa-book-medical me-2"></i>Add Course
-        </a>
-    </div>
-</div>
-
-<!-- ===== Recent Activity: Two Column Layout ===== -->
-<div class="row mb-4">
-    <!-- Recent Enrollments -->
-    <div class="col-md-6 mb-3">
-        <div class="activity-card">
-            <div class="card-header-custom">
-                <i class="fas fa-user-graduate"></i>Recent Enrollments
-            </div>
-            <div class="card-body-custom">
-                {% if recent_students %}
-                    {% for student in recent_students %}
-                    <div class="activity-item">
-                        <div class="avatar-circle">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="activity-info">
-                            <div class="activity-name">{{ student.first_name }} {{ student.last_name }}</div>
-                            <div class="activity-detail">
-                                <i class="fas fa-id-badge me-1"></i>{{ student.student_id }}
-                                <span class="mx-1">|</span>
-                                <i class="fas fa-calendar-alt me-1"></i>{{ student.enrollment_date|date:"d M Y" }}
-                            </div>
-                        </div>
-                        <div class="activity-badge">
-                            <span class="badge" style="background: linear-gradient(135deg, #0d6b4e, #1a9e6f); font-size: 11px; padding: 5px 10px; border-radius: 20px;">
-                                New
-                            </span>
-                        </div>
+    <!-- Quick Stats Grid - Beautiful Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+        <!-- Courses Card -->
+        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-xl hover:shadow-blue-500/10 border border-gray-100 hover:border-blue-200 transition-all duration-300 group relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-50 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative z-10">
+                <div class="flex items-center justify-between mb-3 sm:mb-4">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-base sm:text-xl shadow-lg shadow-blue-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                        <i class="fas fa-book-quran"></i>
                     </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="empty-state">
+                    <span class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:block">Courses</span>
+                </div>
+                <div class="flex items-end justify-between">
+                    <div>
+                        <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">{{ total_courses|default:0 }}</h3>
+                        <p class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Active Courses</p>
+                    </div>
+                    <a href="{% url 'course_list' %}" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:scale-110 transition-all duration-300 shadow-sm">
+                        <i class="fas fa-arrow-right text-[10px] sm:text-xs"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Batches Card -->
+        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-xl hover:shadow-teal-500/10 border border-gray-100 hover:border-teal-200 transition-all duration-300 group relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-teal-50 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative z-10">
+                <div class="flex items-center justify-between mb-3 sm:mb-4">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 text-white flex items-center justify-center text-base sm:text-xl shadow-lg shadow-teal-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <span class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:block">Batches</span>
+                </div>
+                <div class="flex items-end justify-between">
+                    <div>
+                        <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 group-hover:text-teal-600 transition-colors">{{ total_batches|default:0 }}</h3>
+                        <p class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Active Batches</p>
+                    </div>
+                    <a href="{% url 'batch_list' %}" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-teal-600 hover:text-white hover:border-teal-600 hover:scale-110 transition-all duration-300 shadow-sm">
+                        <i class="fas fa-arrow-right text-[10px] sm:text-xs"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Students Card -->
+        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-xl hover:shadow-purple-500/10 border border-gray-100 hover:border-purple-200 transition-all duration-300 group relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-purple-50 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative z-10">
+                <div class="flex items-center justify-between mb-3 sm:mb-4">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center text-base sm:text-xl shadow-lg shadow-purple-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
                         <i class="fas fa-user-graduate"></i>
-                        <p>No recent enrollments</p>
                     </div>
-                {% endif %}
+                    <span class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:block">Students</span>
+                </div>
+                <div class="flex items-end justify-between">
+                    <div>
+                        <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 group-hover:text-purple-600 transition-colors">{{ total_students|default:0 }}</h3>
+                        <p class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Enrolled</p>
+                    </div>
+                    <a href="{% url 'student_list' %}" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-purple-600 hover:text-white hover:border-purple-600 hover:scale-110 transition-all duration-300 shadow-sm">
+                        <i class="fas fa-arrow-right text-[10px] sm:text-xs"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staff Card -->
+        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-xl hover:shadow-orange-500/10 border border-gray-100 hover:border-orange-200 transition-all duration-300 group relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-orange-50 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative z-10">
+                <div class="flex items-center justify-between mb-3 sm:mb-4">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white flex items-center justify-center text-base sm:text-xl shadow-lg shadow-orange-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                        <i class="fas fa-users-cog"></i>
+                    </div>
+                    <span class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:block">Staff</span>
+                </div>
+                <div class="flex items-end justify-between">
+                    <div>
+                        <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 group-hover:text-orange-600 transition-colors">{{ total_staff|default:0 }}</h3>
+                        <p class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Total Staff</p>
+                    </div>
+                    <a href="{% url 'staff_list' %}" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-orange-600 hover:text-white hover:border-orange-600 hover:scale-110 transition-all duration-300 shadow-sm">
+                        <i class="fas fa-arrow-right text-[10px] sm:text-xs"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Revenue Card - Premium Look -->
+        <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl hover:shadow-gold/20 transition-all duration-300 group text-white relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-gold/10 rounded-full blur-2xl -mr-8 -mt-8"></div>
+            <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-xl -ml-8 -mb-8"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-gold/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="relative z-10">
+                <div class="flex items-center justify-between mb-3 sm:mb-4">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-gold to-yellow-500 text-gray-900 flex items-center justify-center text-base sm:text-xl shadow-lg shadow-gold/40 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <span class="text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:block">Revenue</span>
+                </div>
+                <div class="flex items-end justify-between">
+                    <div>
+                        <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gold group-hover:text-yellow-400 transition-colors">{{ currency_symbol }} {{ total_revenue|default:0 }}</h3>
+                        <p class="text-[10px] sm:text-xs text-gray-400 mt-0.5 sm:mt-1">Total Revenue</p>
+                    </div>
+                    <a href="{% url 'fee_payment_list' %}" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-gray-400 hover:bg-gold hover:text-gray-900 hover:border-gold hover:scale-110 transition-all duration-300">
+                        <i class="fas fa-arrow-right text-[10px] sm:text-xs"></i>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Payments -->
-    <div class="col-md-6 mb-3">
-        <div class="activity-card">
-            <div class="card-header-custom">
-                <i class="fas fa-money-bill-wave"></i>Recent Payments
-            </div>
-            <div class="card-body-custom">
-                {% if recent_payments %}
-                    {% for payment in recent_payments %}
-                    <div class="activity-item">
-                        <div class="avatar-circle payment-icon">
-                            <i class="fas fa-receipt"></i>
-                        </div>
-                        <div class="activity-info">
-                            <div class="activity-name">{{ payment.student.first_name }} {{ payment.student.last_name }}</div>
-                            <div class="activity-detail">
-                                <i class="fas fa-hashtag me-1"></i>{{ payment.receipt_number }}
-                                <span class="mx-1">|</span>
-                                <i class="fas fa-calendar-alt me-1"></i>{{ payment.payment_date|date:"d M Y" }}
-                            </div>
-                        </div>
-                        <div class="activity-badge">
-                            <span class="badge" style="background: linear-gradient(135deg, #c9a84c, #d4af37); color: #fff; font-size: 11px; padding: 5px 12px; border-radius: 20px; font-weight: 600;">
-                                {{ currency_symbol }} {{ payment.amount }}
-                            </span>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="empty-state">
+    <!-- Payment Method Breakdown -->
+    {% if total_revenue %}
+    <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 mb-6 sm:mb-8 animate-[slideUp_0.5s_ease-out]">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm sm:text-base font-bold text-gray-800 flex items-center gap-2">
+                <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-white text-xs sm:text-sm shadow-md">
+                    <i class="fas fa-chart-pie"></i>
+                </span>
+                Payment Breakdown
+            </h2>
+            <a href="{% url 'fee_payment_list' %}" class="text-xs text-primary font-medium hover:underline">View All</a>
+        </div>
+        <div class="grid grid-cols-3 gap-3 sm:gap-4">
+            <!-- Cash -->
+            <a href="{% url 'fee_payment_list' %}?method=Cash" class="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-3 sm:p-4 border border-green-200 hover:shadow-md hover:shadow-green-500/10 transition-all group">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-green-600 text-white flex items-center justify-center text-sm shadow-sm group-hover:scale-110 transition-transform">
                         <i class="fas fa-money-bill-wave"></i>
-                        <p>No recent payments</p>
                     </div>
-                {% endif %}
-            </div>
+                    <span class="text-[10px] sm:text-xs font-bold text-green-700 uppercase tracking-wider">Cash</span>
+                </div>
+                <p class="text-lg sm:text-xl font-bold text-gray-800">{{ currency_symbol }} {{ cash_total|default:0 }}</p>
+            </a>
+            <!-- Bank Transfer -->
+            <a href="{% url 'fee_payment_list' %}?method=Bank+Transfer" class="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-3 sm:p-4 border border-blue-200 hover:shadow-md hover:shadow-blue-500/10 transition-all group">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-sm shadow-sm group-hover:scale-110 transition-transform">
+                        <i class="fas fa-university"></i>
+                    </div>
+                    <span class="text-[10px] sm:text-xs font-bold text-blue-700 uppercase tracking-wider">Bank</span>
+                </div>
+                <p class="text-lg sm:text-xl font-bold text-gray-800">{{ currency_symbol }} {{ bank_total|default:0 }}</p>
+            </a>
+            <!-- Online -->
+            <a href="{% url 'fee_payment_list' %}?method=Online" class="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-3 sm:p-4 border border-purple-200 hover:shadow-md hover:shadow-purple-500/10 transition-all group">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center text-sm shadow-sm group-hover:scale-110 transition-transform">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <span class="text-[10px] sm:text-xs font-bold text-purple-700 uppercase tracking-wider">Online</span>
+                </div>
+                <p class="text-lg sm:text-xl font-bold text-gray-800">{{ currency_symbol }} {{ online_total|default:0 }}</p>
+            </a>
         </div>
     </div>
-</div>
+    {% endif %}
 
-<!-- ===== Profile Information ===== -->
-<div class="profile-card">
-    <div class="profile-header">
-        <i class="fas fa-building"></i>Profile Information
-    </div>
-    <div class="profile-body">
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <div class="info-box gold-border">
-                    <div class="info-label">
-                        <i class="fas fa-building"></i>Organization
-                    </div>
-                    <div class="info-value">{{ user.org_name }}</div>
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+        <!-- Main Activity Column -->
+        <div class="lg:col-span-2 space-y-6 sm:space-y-8">
+            <!-- Quick Actions - Mobile Optimized -->
+            <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md border border-gray-100 p-4 sm:p-6 transition-shadow">
+                <h2 class="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-gold to-yellow-500 flex items-center justify-center text-white text-sm shadow-md">
+                        <i class="fas fa-bolt"></i>
+                    </span>
+                    Quick Actions
+                </h2>
+                <div class="grid grid-cols-4 gap-2 sm:gap-4">
+                    <a href="{% url 'student_add' %}" class="flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border border-gray-100 hover:border-green-300 hover:bg-gradient-to-br hover:from-green-50 hover:to-white hover:shadow-md hover:shadow-green-500/10 transition-all duration-300 group">
+                        <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-green-500 to-green-600 text-white flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-green-500/30 transition-all duration-300 text-sm sm:text-base">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <span class="text-[10px] sm:text-sm font-semibold text-gray-700 text-center leading-tight">Add<br class="sm:hidden"> Student</span>
+                    </a>
+                    <a href="{% url 'attendance_mark' %}" class="flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border border-gray-100 hover:border-blue-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-white hover:shadow-md hover:shadow-blue-500/10 transition-all duration-300 group">
+                        <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-blue-500/30 transition-all duration-300 text-sm sm:text-base">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <span class="text-[10px] sm:text-sm font-semibold text-gray-700 text-center">Attendance</span>
+                    </a>
+                    <a href="{% url 'fee_payment_add' %}" class="flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border border-gray-100 hover:border-yellow-300 hover:bg-gradient-to-br hover:from-yellow-50 hover:to-white hover:shadow-md hover:shadow-yellow-500/10 transition-all duration-300 group">
+                        <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-yellow-500 to-yellow-600 text-white flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-yellow-500/30 transition-all duration-300 text-sm sm:text-base">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <span class="text-[10px] sm:text-sm font-semibold text-gray-700 text-center">Payment</span>
+                    </a>
+                    <a href="{% url 'course_add' %}" class="flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border border-gray-100 hover:border-purple-300 hover:bg-gradient-to-br hover:from-purple-50 hover:to-white hover:shadow-md hover:shadow-purple-500/10 transition-all duration-300 group">
+                        <div class="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center mb-1.5 sm:mb-2 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-purple-500/30 transition-all duration-300 text-sm sm:text-base">
+                            <i class="fas fa-book-medical"></i>
+                        </div>
+                        <span class="text-[10px] sm:text-sm font-semibold text-gray-700 text-center leading-tight">Add<br class="sm:hidden"> Course</span>
+                    </a>
                 </div>
             </div>
-            <div class="col-md-6 mb-3">
-                <div class="info-box">
-                    <div class="info-label">
-                        <i class="fas fa-user"></i>Username
+
+            <!-- Recent Activity - Mobile Optimized -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <!-- Recent Enrollments -->
+                <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md border border-gray-100 overflow-hidden transition-shadow">
+                    <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-r from-primary/5 to-transparent flex items-center justify-between">
+                        <h3 class="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+                            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-xs shadow-sm">
+                                <i class="fas fa-user-graduate"></i>
+                            </span>
+                            New Enrollments
+                        </h3>
+                        <span class="text-[10px] sm:text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Recent</span>
                     </div>
-                    <div class="info-value">{{ user.username }}</div>
+                    <div class="divide-y divide-gray-50">
+                        {% if recent_students %}
+                            {% for student in recent_students %}
+                            <div class="p-3 sm:p-4 flex items-center gap-3 hover:bg-gradient-to-r hover:from-gray-50 hover:to-white transition-colors group">
+                                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center font-bold text-[10px] sm:text-xs shadow-md group-hover:scale-105 transition-transform">
+                                    {{ student.first_name|first }}{{ student.last_name|first }}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs sm:text-sm font-semibold text-gray-800 truncate">{{ student.first_name }} {{ student.last_name }}</p>
+                                    <p class="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1">
+                                        <i class="fas fa-id-card text-gray-400"></i> {{ student.student_id }}
+                                    </p>
+                                </div>
+                                <span class="bg-gradient-to-r from-green-500 to-green-600 text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide shadow-sm">
+                                    New
+                                </span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="p-6 sm:p-8 text-center text-gray-400">
+                                <div class="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-2 rounded-full bg-gray-50 flex items-center justify-center">
+                                    <i class="fas fa-user-slash text-xl sm:text-2xl text-gray-300"></i>
+                                </div>
+                                <p class="text-xs sm:text-sm">No recent enrollments</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Recent Payments -->
+                <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md border border-gray-100 overflow-hidden transition-shadow">
+                    <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-r from-gold/10 to-transparent flex items-center justify-between">
+                        <h3 class="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+                            <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-gold to-yellow-500 text-white flex items-center justify-center text-xs shadow-sm">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                            </span>
+                            Recent Payments
+                        </h3>
+                        <span class="text-[10px] sm:text-xs font-bold bg-gold/20 text-gold px-2 py-0.5 rounded-full">Recent</span>
+                    </div>
+                    <div class="divide-y divide-gray-50">
+                        {% if recent_payments %}
+                            {% for payment in recent_payments %}
+                            <div class="p-3 sm:p-4 flex items-center gap-3 hover:bg-gradient-to-r hover:from-gray-50 hover:to-white transition-colors group">
+                                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-gold/20 to-yellow-100 text-gold flex items-center justify-center text-xs sm:text-sm shadow-sm border border-gold/30 group-hover:scale-105 transition-transform">
+                                    <i class="fas fa-receipt"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs sm:text-sm font-semibold text-gray-800 truncate">{{ payment.student.first_name }} {{ payment.student.last_name }}</p>
+                                    <p class="text-[10px] sm:text-xs text-gray-500">
+                                        {{ payment.payment_date|date:"M d, Y" }}
+                                    </p>
+                                </div>
+                                <span class="text-xs sm:text-sm font-bold text-gray-800 bg-gray-50 px-2 py-1 rounded-lg">
+                                    {{ currency_symbol }}{{ payment.amount }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="p-6 sm:p-8 text-center text-gray-400">
+                                <div class="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-2 rounded-full bg-gray-50 flex items-center justify-center">
+                                    <i class="fas fa-receipt text-xl sm:text-2xl text-gray-300"></i>
+                                </div>
+                                <p class="text-xs sm:text-sm">No recent payments</p>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
-            <div class="col-md-6 mb-3">
-                <div class="info-box">
-                    <div class="info-label">
-                        <i class="fas fa-phone"></i>Contact
+        </div>
+
+        <!-- Sidebar / Profile Column - Mobile Optimized -->
+        <div class="lg:col-span-1 space-y-6 sm:space-y-8">
+            <!-- Profile Card -->
+            <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 overflow-hidden transition-shadow">
+                <div class="bg-gradient-to-br from-primary via-secondary to-primary p-5 sm:p-6 text-center text-white relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIi8+PC9zdmc+')] opacity-50"></div>
+                    <div class="relative z-10">
+                        <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-white rounded-full flex items-center justify-center text-2xl sm:text-3xl font-bold text-primary shadow-xl mb-3 border-4 border-white/30 ring-4 ring-white/10">
+                            {{ user.username|slice:":1"|upper }}
+                        </div>
+                        <h3 class="text-base sm:text-lg font-bold">{{ user.username }}</h3>
+                        <p class="text-white/80 text-xs sm:text-sm">{{ user.org_name }}</p>
                     </div>
-                    <div class="info-value">{{ user.contact }}</div>
+                </div>
+                <div class="p-4 sm:p-6">
+                    <h4 class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 sm:mb-4">Organization Details</h4>
+
+                    <div class="space-y-3 sm:space-y-4">
+                        <div class="flex items-center gap-3 text-xs sm:text-sm group">
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-gray-500 group-hover:from-primary/10 group-hover:to-primary/5 group-hover:text-primary transition-all">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <span class="text-gray-600 truncate flex-1">{{ user.org_name }}</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs sm:text-sm group">
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-gray-500 group-hover:from-primary/10 group-hover:to-primary/5 group-hover:text-primary transition-all">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <span class="text-gray-600 truncate flex-1">{{ user.address }}</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs sm:text-sm group">
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-gray-500 group-hover:from-primary/10 group-hover:to-primary/5 group-hover:text-primary transition-all">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <span class="text-gray-600 truncate flex-1">{{ user.contact }}</span>
+                        </div>
+                    </div>
+
+                    <a href="{% url 'settings' %}" class="mt-4 sm:mt-6 block w-full py-2 sm:py-2.5 text-center text-xs sm:text-sm font-semibold text-primary border-2 border-primary/20 rounded-xl hover:bg-gradient-to-r hover:from-primary hover:to-secondary hover:text-white hover:border-transparent transition-all duration-300 hover:shadow-lg hover:shadow-primary/20">
+                        <i class="fas fa-cog mr-1"></i> Edit Settings
+                    </a>
                 </div>
             </div>
-            <div class="col-md-6 mb-3">
-                <div class="info-box">
-                    <div class="info-label">
-                        <i class="fas fa-map-marker-alt"></i>Address
+
+            <!-- Quick Attendance Widget -->
+            <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 overflow-hidden transition-shadow">
+                <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-gold/10 to-transparent">
+                    <h3 class="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+                        <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-gold to-yellow-500 text-white flex items-center justify-center text-xs shadow-sm">
+                            <i class="fas fa-bolt"></i>
+                        </span>
+                        Quick Attendance
+                    </h3>
+                    <span class="text-[10px] sm:text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 sm:py-1 rounded-lg flex items-center gap-1">
+                        <i class="fas fa-calendar-day text-[8px]"></i> Today
+                    </span>
+                </div>
+
+                <!-- Today's Stats -->
+                <div class="px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-br from-primary/5 via-secondary/5 to-gold/5 border-b border-gray-100">
+                    <div class="flex items-center justify-around">
+                        <div class="text-center px-2">
+                            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-green-500 to-green-600 text-white flex items-center justify-center mx-auto mb-1 shadow-lg shadow-green-500/30">
+                                <span class="text-lg sm:text-xl font-bold">{{ today_present|default:0 }}</span>
+                            </div>
+                            <p class="text-[10px] sm:text-xs text-gray-500 font-medium">Present</p>
+                        </div>
+                        <div class="w-px h-12 bg-gradient-to-b from-transparent via-gray-200 to-transparent"></div>
+                        <div class="text-center px-2">
+                            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 text-white flex items-center justify-center mx-auto mb-1 shadow-lg shadow-gray-500/30">
+                                <span class="text-lg sm:text-xl font-bold">{{ today_total|default:0 }}</span>
+                            </div>
+                            <p class="text-[10px] sm:text-xs text-gray-500 font-medium">Total</p>
+                        </div>
+                        <div class="w-px h-12 bg-gradient-to-b from-transparent via-gray-200 to-transparent"></div>
+                        <div class="text-center px-2">
+                            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center mx-auto mb-1 shadow-lg shadow-primary/30">
+                                <span class="text-base sm:text-lg font-bold">{% widthratio today_present today_total 100 %}%</span>
+                            </div>
+                            <p class="text-[10px] sm:text-xs text-gray-500 font-medium">Rate</p>
+                        </div>
                     </div>
-                    <div class="info-value">{{ user.address }}</div>
+                </div>
+
+                <!-- Batch Quick Links -->
+                <div class="p-3 sm:p-4">
+                    <p class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 sm:mb-3">Tap a batch to mark attendance:</p>
+                    {% if batches_for_attendance %}
+                    <div class="grid grid-cols-1 gap-2">
+                        {% for batch in batches_for_attendance %}
+                        <a href="{% url 'quick_attendance' batch.pk %}"
+                           class="flex items-center gap-3 p-2.5 sm:p-3 rounded-xl border border-gray-100 hover:border-primary/50 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent hover:shadow-md transition-all duration-300 group">
+                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-md group-hover:scale-110 transition-transform">
+                                {{ batch.course.course_code|slice:":2"|upper }}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs sm:text-sm font-semibold text-gray-800 truncate group-hover:text-primary transition-colors">{{ batch.course.course_name }}</p>
+                                <p class="text-[10px] sm:text-xs text-gray-500">{{ batch.batch_name }} - {{ batch.student_count }} students</p>
+                            </div>
+                            <div class="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-primary group-hover:text-white transition-all">
+                                <i class="fas fa-chevron-right text-[10px]"></i>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-gray-400">
+                        <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-gray-50 flex items-center justify-center">
+                            <i class="fas fa-layer-group text-xl text-gray-300"></i>
+                        </div>
+                        <p class="text-xs sm:text-sm">No batches yet</p>
+                        <a href="{% url 'batch_add' %}" class="text-primary hover:underline text-xs sm:text-sm mt-1 inline-block font-medium">Add a batch</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="px-4 sm:px-6 pb-4 sm:pb-5">
+                    <a href="{% url 'attendance_list' %}" class="flex items-center justify-center gap-2 w-full py-2 text-xs sm:text-sm font-semibold text-primary bg-primary/5 rounded-xl hover:bg-primary hover:text-white transition-all duration-300">
+                        View All Records <i class="fas fa-arrow-right text-[10px]"></i>
+                    </a>
                 </div>
             </div>
-            {% if user.license %}
-            <div class="col-md-12 mb-3">
-                <div class="info-box gold-border">
-                    <div class="info-label">
-                        <i class="fas fa-certificate"></i>License
-                    </div>
-                    <div class="info-value">{{ user.license }}</div>
-                </div>
-            </div>
-            {% endif %}
         </div>
     </div>
 </div>

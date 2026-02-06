@@ -1,13 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Course, Student, Staff, Attendance, FeePayment
+from .models import User, Course, Batch, Student, Staff, Attendance, FeePayment
 
 
 class CustomUserAdmin(UserAdmin):
     model = User
     list_display = ['username', 'org_name', 'contact', 'license', 'is_staff']
     fieldsets = UserAdmin.fieldsets + (
-        ('Organization Info', {'fields': ('org_name', 'address', 'contact', 'license')}),
+        ('Organization Info', {'fields': ('org_name', 'address', 'contact', 'license', 'currency_symbol')}),
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('Organization Info', {'fields': ('org_name', 'address', 'contact', 'license')}),
@@ -22,13 +22,21 @@ class CourseAdmin(admin.ModelAdmin):
     readonly_fields = ['course_code']
 
 
+@admin.register(Batch)
+class BatchAdmin(admin.ModelAdmin):
+    list_display = ['batch_code', 'batch_name', 'course', 'get_schedule_display', 'is_active', 'get_student_count']
+    list_filter = ['is_active', 'course', 'days']
+    search_fields = ['batch_code', 'batch_name', 'course__course_name']
+    readonly_fields = ['batch_code']
+
+
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
     list_display = ['student_id', 'first_name', 'last_name', 'email', 'enrollment_date']
     list_filter = ['gender', 'enrollment_date']
     search_fields = ['student_id', 'first_name', 'last_name', 'email']
     readonly_fields = ['student_id']
-    filter_horizontal = ['courses']
+    filter_horizontal = ['batches']
 
 
 @admin.register(Staff)
@@ -40,14 +48,14 @@ class StaffAdmin(admin.ModelAdmin):
 
 @admin.register(Attendance)
 class AttendanceAdmin(admin.ModelAdmin):
-    list_display = ['date', 'student', 'course', 'status', 'marked_by', 'created_at']
-    list_filter = ['status', 'date', 'course']
+    list_display = ['date', 'student', 'batch', 'status', 'marked_by', 'created_at']
+    list_filter = ['status', 'date', 'batch']
     search_fields = ['student__first_name', 'student__last_name', 'student__student_id']
 
 
 @admin.register(FeePayment)
 class FeePaymentAdmin(admin.ModelAdmin):
-    list_display = ['receipt_number', 'student', 'amount', 'payment_date', 'payment_method']
+    list_display = ['receipt_number', 'student', 'batch', 'amount', 'payment_date', 'payment_method']
     list_filter = ['payment_method', 'payment_date']
     search_fields = ['receipt_number', 'student__first_name', 'student__last_name']
     readonly_fields = ['receipt_number']
