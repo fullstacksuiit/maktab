@@ -1,5 +1,5 @@
 from django.db import models, transaction
-from django.db.models import Sum
+from django.db.models import Sum, Count, Q
 from django.contrib.auth.models import AbstractUser
 from django.db.utils import IntegrityError
 import time
@@ -314,7 +314,7 @@ class Student(models.Model):
             super().save(*args, **kwargs)
 
     def get_total_fees(self):
-        return sum(batch.course.fees for batch in self.batches.all())
+        return self.batches.aggregate(total=Sum('course__fees'))['total'] or 0
 
     def get_enrolled_batches_list(self):
         if self.batches.exists():
@@ -329,11 +329,13 @@ class Student(models.Model):
         return self.get_total_fees() - self.get_total_paid()
 
     def get_attendance_percentage(self):
-        total = self.attendances.count()
-        if total == 0:
+        result = self.attendances.aggregate(
+            total=Count('id'),
+            present=Count('id', filter=Q(status__in=['Present', 'Late']))
+        )
+        if result['total'] == 0:
             return 0
-        present = self.attendances.filter(status__in=['Present', 'Late']).count()
-        return round((present / total) * 100, 1)
+        return round((result['present'] / result['total']) * 100, 1)
 
 
 class Staff(models.Model):

@@ -79,7 +79,7 @@
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex flex-wrap gap-1">
-                            {% if student.batches.exists %}
+                            {% if student.batches.all %}
                                 {% for batch in student.batches.all %}
                                     <span class="px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-xs font-medium border border-green-200" title="{{ batch.course.course_name }}">
                                         {{ batch.course.course_code }} - {{ batch.batch_name }}
@@ -91,7 +91,7 @@
                         </div>
                     </td>
                     <td class="px-6 py-4 font-bold text-gray-700">
-                        {{ currency_symbol }} {{ student.get_total_fees }}
+                        {{ currency_symbol }} {{ student.total_fees|default:"0" }}
                     </td>
                     <td class="px-6 py-4 max-w-[120px] text-center last:pr-8">
                          <div class="flex items-center justify-center gap-2">

@@ -23,7 +23,7 @@ class PhoneOrUsernameBackend(ModelBackend):
             normalized = normalize_phone(username)
             if normalized:
                 try:
-                    user = User.objects.get(username=normalized)
+                    user = User.objects.select_related('organization').get(username=normalized)
                     if user.check_password(password) and self.user_can_authenticate(user):
                         return user
                 except User.DoesNotExist:
@@ -31,7 +31,7 @@ class PhoneOrUsernameBackend(ModelBackend):
 
         # Fall back to exact username match (for admin/manager/staff)
         try:
-            user = User.objects.get(username=username)
+            user = User.objects.select_related('organization').get(username=username)
             if user.check_password(password) and self.user_can_authenticate(user):
                 return user
         except User.DoesNotExist:

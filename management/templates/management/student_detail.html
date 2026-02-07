@@ -119,7 +119,7 @@
                 <div class="p-6">
                     <!-- Courses Tab -->
                     <div id="content-courses" class="tab-content block animate-[fadeIn_0.3s_ease-out]">
-                        {% if student.batches.exists %}
+                        {% if student.batches.all %}
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {% for batch in student.batches.all %}
                                 <div class="border border-gray-100 rounded-xl p-4 hover:border-primary hover:shadow-md transition-all group">

@@ -416,7 +416,9 @@ def batch_delete(request, pk):
 @internal_user_required
 def student_list(request):
     org = get_org(request)
-    students_qs = Student.objects.filter(organization=org).prefetch_related('batches__course', 'fee_payments')
+    students_qs = Student.objects.filter(organization=org).prefetch_related('batches__course', 'fee_payments').annotate(
+        total_fees=Sum('batches__course__fees'),
+    )
 
     # Server-side search
     search_query = request.GET.get('q', '').strip()
@@ -496,21 +498,27 @@ def student_delete(request, pk):
 @internal_user_required
 def student_detail(request, pk):
     org = get_org(request)
-    student = get_object_or_404(Student, pk=pk, organization=org)
+    student = get_object_or_404(
+        Student.objects.prefetch_related('batches__course'),
+        pk=pk, organization=org
+    )
     attendances = Attendance.objects.filter(
         student=student, organization=org
-    ).order_by('-date')[:20]
+    ).select_related('batch__course').order_by('-date')[:20]
     fee_payments = FeePayment.objects.filter(
         student=student, organization=org
-    ).order_by('-payment_date')
+    ).select_related('batch__course').order_by('-payment_date')
+
+    total_fees = student.get_total_fees()
+    total_paid = student.get_total_paid()
 
     context = {
         'student': student,
         'attendances': attendances,
         'fee_payments': fee_payments,
         'attendance_percentage': student.get_attendance_percentage(),
-        'total_paid': student.get_total_paid(),
-        'pending_fees': student.get_pending_fees(),
+        'total_paid': total_paid,
+        'pending_fees': total_fees - total_paid,
     }
     return render(request, 'management/student_detail.html', context)
 
@@ -521,12 +529,16 @@ def student_fee_history(request, pk):
     org = get_org(request)
     student = get_object_or_404(Student.objects.prefetch_related('batches__course'), pk=pk, organization=org)
     payments = FeePayment.objects.filter(student=student, organization=org).select_related('batch__course')
+
+    total_fees = student.get_total_fees()
+    total_paid = student.get_total_paid()
+
     context = {
         'student': student,
         'payments': payments,
-        'total_paid': student.get_total_paid(),
-        'total_fees': student.get_total_fees(),
-        'pending_fees': student.get_pending_fees(),
+        'total_paid': total_paid,
+        'total_fees': total_fees,
+        'pending_fees': total_fees - total_paid,
     }
     return render(request, 'management/student_fee_history.html', context)
 
@@ -1572,52 +1584,65 @@ def import_students(request):
 @parent_required
 def parent_dashboard(request):
     """Parent portal: show all students linked to this parent's phone number."""
+    from django.db.models import Prefetch
     from .utils import normalize_phone
 
     user = request.user
     org = user.organization
 
-    # Find all students whose normalized phone matches the parent's username
-    all_students = Student.objects.filter(
-        organization=org
-    ).prefetch_related('batches__course')
+    # First pass: find matching student IDs (phones stored raw, username is normalized)
+    all_students = Student.objects.filter(organization=org).only('id', 'phone')
+    matched_ids = [s.id for s in all_students if normalize_phone(s.phone) == user.username]
 
-    matched_students = [
-        s for s in all_students
-        if normalize_phone(s.phone) == user.username
-    ]
+    # Second pass: load matched students with all related data in bulk
+    matched_students = Student.objects.filter(
+        id__in=matched_ids
+    ).prefetch_related(
+        'batches__course',
+        Prefetch(
+            'attendances',
+            queryset=Attendance.objects.select_related('batch__course').order_by('-date'),
+            to_attr='all_attendances'
+        ),
+        Prefetch(
+            'fee_payments',
+            queryset=FeePayment.objects.select_related('batch__course').order_by('-payment_date'),
+            to_attr='all_fee_payments'
+        ),
+    ).annotate(
+        att_total=Count('attendances'),
+        att_present=Count('attendances', filter=Q(attendances__status='Present')),
+        att_absent=Count('attendances', filter=Q(attendances__status='Absent')),
+        att_late=Count('attendances', filter=Q(attendances__status='Late')),
+        total_fees=Sum('batches__course__fees'),
+        total_paid=Coalesce(Sum('fee_payments__amount'), 0, output_field=DecimalField()),
+    )
 
     students_data = []
     for student in matched_students:
-        attendances = Attendance.objects.filter(
-            student=student, organization=org
-        ).select_related('batch__course').order_by('-date')[:20]
+        total_fees = student.total_fees or 0
+        total_paid = student.total_paid or 0
+        att_total = student.att_total or 0
+        att_present = student.att_present or 0
 
-        fee_payments = FeePayment.objects.filter(
-            student=student, organization=org
-        ).select_related('batch__course').order_by('-payment_date')
+        if att_total > 0:
+            attendance_pct = round(((att_present + (student.att_late or 0)) / att_total) * 100, 1)
+        else:
+            attendance_pct = 0
 
-        # Attendance breakdown counts
-        all_att = student.attendances.all()
-        att_total = all_att.count()
-        att_present = all_att.filter(status='Present').count()
-        att_absent = all_att.filter(status='Absent').count()
-        att_late = all_att.filter(status='Late').count()
-
-        # Enrollment duration
         days_enrolled = (date.today() - student.enrollment_date).days if student.enrollment_date else 0
 
         students_data.append({
             'student': student,
-            'attendances': attendances,
-            'fee_payments': fee_payments,
-            'attendance_percentage': student.get_attendance_percentage(),
-            'total_fees': student.get_total_fees(),
-            'total_paid': student.get_total_paid(),
-            'pending_fees': student.get_pending_fees(),
+            'attendances': student.all_attendances[:20],
+            'fee_payments': student.all_fee_payments,
+            'attendance_percentage': attendance_pct,
+            'total_fees': total_fees,
+            'total_paid': total_paid,
+            'pending_fees': total_fees - total_paid,
             'att_present': att_present,
-            'att_absent': att_absent,
-            'att_late': att_late,
+            'att_absent': student.att_absent or 0,
+            'att_late': student.att_late or 0,
             'att_total': att_total,
             'days_enrolled': days_enrolled,
         })

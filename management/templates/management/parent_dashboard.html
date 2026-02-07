@@ -145,7 +145,7 @@
         <div class="p-4 sm:p-6">
             <!-- Courses Tab -->
             <div id="content-courses-{{ data.student.pk }}" class="tab-content-{{ data.student.pk }} block animate-[fadeIn_0.3s_ease-out]">
-                {% if data.student.batches.exists %}
+                {% if data.student.batches.all %}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     {% for batch in data.student.batches.all %}
                     <div class="border border-gray-100 rounded-xl p-4 sm:p-5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group relative overflow-hidden">
@@ -340,7 +340,7 @@
 
                 <!-- Last Payment Info -->
                 {% if data.fee_payments %}
-                {% with last_payment=data.fee_payments.first %}
+                {% with last_payment=data.fee_payments.0 %}
                 <div class="bg-gradient-to-r from-gray-50 to-white p-3 sm:p-4 rounded-xl border border-gray-100 mb-4 sm:mb-6 flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-gold to-yellow-500 text-white flex items-center justify-center shrink-0 shadow-sm">
                         <i class="fas fa-clock text-xs"></i>
