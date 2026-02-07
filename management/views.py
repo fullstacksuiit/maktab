@@ -12,6 +12,7 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from datetime import date, datetime
 from django.conf import settings
+from django.core import signing
 import json
 import logging
 import os
@@ -80,11 +81,19 @@ def login_view(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
+                # Generate a signed remember-me token for PWA session persistence
+                remember_token = signing.dumps(user.pk, salt='remember-me')
                 display_name = user.first_name or username
                 messages.success(request, f'Assalamu Alaikum, {display_name}!')
-                if user.is_parent():
-                    return redirect('parent_dashboard')
-                return redirect('dashboard')
+                redirect_url = 'parent_dashboard' if user.is_parent() else 'dashboard'
+                response = redirect(redirect_url)
+                response.set_cookie(
+                    'remember_token', remember_token,
+                    max_age=60 * 60 * 24 * 30,  # 30 days
+                    httponly=True,
+                    samesite='Lax',
+                )
+                return response
             else:
                 messages.error(request, 'Invalid username or password.')
         else:
@@ -94,10 +103,42 @@ def login_view(request):
     return render(request, 'management/login.html', {'form': form})
 
 
+def auto_login_view(request):
+    """Re-authenticate user from remember-me token when session is lost."""
+    if request.user.is_authenticated:
+        if request.user.is_parent():
+            return redirect('parent_dashboard')
+        return redirect('dashboard')
+
+    token = request.COOKIES.get('remember_token')
+    if token:
+        try:
+            user_pk = signing.loads(token, salt='remember-me', max_age=60 * 60 * 24 * 30)
+            user = User.objects.get(pk=user_pk)
+            login(request, user, backend='management.backends.PhoneOrUsernameBackend')
+            # Refresh the token
+            new_token = signing.dumps(user.pk, salt='remember-me')
+            redirect_url = 'parent_dashboard' if user.is_parent() else 'dashboard'
+            response = redirect(redirect_url)
+            response.set_cookie(
+                'remember_token', new_token,
+                max_age=60 * 60 * 24 * 30,
+                httponly=True,
+                samesite='Lax',
+            )
+            return response
+        except (signing.BadSignature, User.DoesNotExist):
+            pass
+
+    return redirect('login')
+
+
 def logout_view(request):
     logout(request)
     messages.success(request, 'You have been logged out successfully.')
-    return redirect('login')
+    response = redirect('login')
+    response.delete_cookie('remember_token')
+    return response
 
 
 # ─── Dashboard ───────────────────────────────────────────────────────────────

@@ -16,12 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.shortcuts import redirect
-from management.views import service_worker
+from management.views import service_worker, auto_login_view
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("sw.js", service_worker, name='service_worker'),
-    path("", lambda request: redirect('login')),
+    path("", auto_login_view),
     path("", include('management.urls')),
 ]
