@@ -11,8 +11,10 @@ from django.core.paginator import Paginator
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from datetime import date, datetime
+from django.conf import settings
 import json
 import logging
+import os
 import re
 
 logger = logging.getLogger('management')
@@ -23,6 +25,13 @@ from .models import User, Organization, Course, Batch, Student, Staff, Attendanc
 from .decorators import role_required, admin_required, manager_or_admin_required, parent_required, internal_user_required
 from .indian_cities import CITY_DATA
 from .hijri_dates import get_upcoming_islamic_dates
+
+
+def service_worker(request):
+    """Serve the service worker from root scope for PWA support."""
+    sw_path = os.path.join(settings.BASE_DIR, 'management', 'static', 'management', 'sw.js')
+    with open(sw_path, 'r') as f:
+        return HttpResponse(f.read(), content_type='application/javascript')
 
 
 def get_org(request):
