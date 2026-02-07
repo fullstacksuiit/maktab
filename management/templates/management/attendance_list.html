@@ -14,12 +14,29 @@
             <a href="{% url 'attendance_mark' %}" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors flex items-center gap-2">
                 <i class="fas fa-list-alt"></i> Full View
             </a>
-            <a href="{% url 'dashboard' %}" class="px-4 py-2 bg-gradient-to-r from-gold to-yellow-500 text-white rounded-xl hover:shadow-lg font-medium shadow-lg shadow-gold/30 transition-all hover:-translate-y-0.5 flex items-center gap-2">
-                <i class="fas fa-bolt"></i> Quick Mark
-            </a>
         </div>
     </div>
 </div>
+
+<!-- Quick Attendance Batch Selector -->
+{% if batches %}
+<div class="mb-6 animate-[slideUp_0.45s_ease-out]">
+    <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-2">
+        <i class="fas fa-bolt text-yellow-500"></i> Quick Attendance
+    </h3>
+    <div class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory" style="-ms-overflow-style:none;scrollbar-width:none;-webkit-overflow-scrolling:touch">
+        {% for batch in batches %}
+        <a href="{% url 'quick_attendance' batch.pk %}" class="snap-start shrink-0 w-40 bg-white rounded-xl border border-gray-100 p-3 hover:border-primary/30 hover:shadow-md transition-all active:scale-95 group">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-xs font-bold mb-2 shadow-sm group-hover:scale-105 transition-transform">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <h4 class="font-semibold text-gray-800 text-sm truncate">{{ batch.batch_name }}</h4>
+            <p class="text-xs text-gray-500 truncate">{{ batch.course.course_name }}</p>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 
 <!-- Filters -->
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 animate-[slideUp_0.5s_ease-out]">
@@ -76,7 +93,8 @@
 
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-[slideUp_0.6s_ease-out]">
     {% if attendances %}
-    <div class="overflow-x-auto">
+    <!-- Desktop Table View -->
+    <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-left text-sm">
             <thead>
                 <tr class="bg-gradient-to-r from-primary to-secondary text-white">
@@ -131,6 +149,42 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="md:hidden divide-y divide-gray-100">
+        {% for record in attendances %}
+        <div class="p-4">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-xs shrink-0">
+                        {{ record.student.first_name|first }}{{ record.student.last_name|first }}
+                    </div>
+                    <div class="min-w-0">
+                        <h4 class="font-semibold text-gray-800 text-sm">{{ record.student.first_name }} {{ record.student.last_name }}</h4>
+                        {% if record.batch %}
+                        <p class="text-xs text-gray-500">{{ record.batch.course.course_code }} &middot; {{ record.batch.batch_name }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if record.status == 'Present' %}
+                    <span class="px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold border border-green-200 shrink-0">Present</span>
+                {% elif record.status == 'Absent' %}
+                    <span class="px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold border border-red-200 shrink-0">Absent</span>
+                {% elif record.status == 'Late' %}
+                    <span class="px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold border border-yellow-200 shrink-0">Late</span>
+                {% elif record.status == 'Excused' %}
+                    <span class="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200 shrink-0">Excused</span>
+                {% else %}
+                    <span class="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200 shrink-0">{{ record.status }}</span>
+                {% endif %}
+            </div>
+            <div class="flex items-center gap-3 text-xs text-gray-400 pl-[46px]">
+                <span><i class="fas fa-calendar mr-1"></i>{{ record.date }}</span>
+                {% if record.notes %}<span class="truncate"><i class="fas fa-sticky-note mr-1"></i>{{ record.notes }}</span>{% endif %}
+            </div>
+        </div>
+        {% endfor %}
     </div>
 
     {% include 'management/components/pagination.html' with page_obj=attendances %}

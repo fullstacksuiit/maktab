@@ -12,6 +12,7 @@ urlpatterns = [
     path('courses/add/', views.course_add, name='course_add'),
     path('courses/edit/<int:pk>/', views.course_edit, name='course_edit'),
     path('courses/delete/<int:pk>/', views.course_delete, name='course_delete'),
+    path('courses/create-ajax/', views.course_create_ajax, name='course_create_ajax'),
 
     # Batch URLs
     path('batches/', views.batch_list, name='batch_list'),

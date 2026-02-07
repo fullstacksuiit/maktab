@@ -118,7 +118,7 @@ class Course(models.Model):
     ]
 
     course_name = models.CharField(max_length=255, verbose_name="Course Name")
-    course_code = models.CharField(max_length=50, unique=True, blank=True, verbose_name="Course Code")
+    course_code = models.CharField(max_length=50, blank=True, verbose_name="Course Code")
     description = models.TextField(verbose_name="Description")
     duration_value = models.PositiveIntegerField(default=1, verbose_name="Duration Value")
     duration_unit = models.CharField(max_length=10, choices=DURATION_UNIT_CHOICES, default='months', verbose_name="Duration Unit")
@@ -135,6 +135,9 @@ class Course(models.Model):
             models.Index(fields=['organization', 'course_name']),
             models.Index(fields=['fee_period']),
         ]
+        constraints = [
+            models.UniqueConstraint(fields=['organization', 'course_code'], name='unique_course_code_per_org'),
+        ]
 
     @property
     def duration_display(self):
@@ -150,7 +153,7 @@ class Course(models.Model):
         if not self.course_code:
             for attempt in range(5):
                 with transaction.atomic():
-                    last_course = Course.objects.select_for_update().order_by('-id').first()
+                    last_course = Course.objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
                     if last_course and last_course.course_code.startswith('CRS'):
                         try:
                             last_number = int(last_course.course_code[3:])
@@ -182,7 +185,7 @@ class Batch(models.Model):
         ('custom', 'Custom'),
     ]
 
-    batch_code = models.CharField(max_length=50, unique=True, blank=True, verbose_name="Batch Code")
+    batch_code = models.CharField(max_length=50, blank=True, verbose_name="Batch Code")
     batch_name = models.CharField(max_length=255, verbose_name="Batch Name")
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='batches', verbose_name="Course")
     start_time = models.TimeField(verbose_name="Start Time", null=True, blank=True)
@@ -202,6 +205,9 @@ class Batch(models.Model):
             models.Index(fields=['organization', 'course']),
             models.Index(fields=['is_active']),
         ]
+        constraints = [
+            models.UniqueConstraint(fields=['organization', 'batch_code'], name='unique_batch_code_per_org'),
+        ]
 
     def __str__(self):
         return f"{self.course.course_code} - {self.batch_name}"
@@ -210,7 +216,7 @@ class Batch(models.Model):
         if not self.batch_code:
             for attempt in range(5):
                 with transaction.atomic():
-                    last_batch = Batch.objects.select_for_update().order_by('-id').first()
+                    last_batch = Batch.objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
                     if last_batch and last_batch.batch_code.startswith('BTH'):
                         try:
                             last_number = int(last_batch.batch_code[3:])
@@ -248,7 +254,7 @@ class Student(models.Model):
         ('O', 'Other'),
     ]
 
-    student_id = models.CharField(max_length=50, unique=True, blank=True, verbose_name="Student ID")
+    student_id = models.CharField(max_length=50, blank=True, verbose_name="Student ID")
     first_name = models.CharField(max_length=100, verbose_name="First Name")
     last_name = models.CharField(max_length=100, verbose_name="Last Name")
     email = models.EmailField(blank=True, default='', verbose_name="Email Address")
@@ -273,6 +279,9 @@ class Student(models.Model):
             models.Index(fields=['organization', 'email']),
             models.Index(fields=['enrollment_date']),
         ]
+        constraints = [
+            models.UniqueConstraint(fields=['organization', 'student_id'], name='unique_student_id_per_org'),
+        ]
 
     @property
     def full_address(self):
@@ -292,7 +301,7 @@ class Student(models.Model):
         if not self.student_id:
             for attempt in range(5):
                 with transaction.atomic():
-                    last_student = Student.objects.select_for_update().order_by('-id').first()
+                    last_student = Student.objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
                     if last_student and last_student.student_id.startswith('STU'):
                         try:
                             last_number = int(last_student.student_id[3:])
@@ -352,7 +361,7 @@ class Staff(models.Model):
         ('Other', 'Other'),
     ]
 
-    staff_id = models.CharField(max_length=50, unique=True, verbose_name="Staff ID")
+    staff_id = models.CharField(max_length=50, verbose_name="Staff ID")
     first_name = models.CharField(max_length=100, verbose_name="First Name")
     last_name = models.CharField(max_length=100, verbose_name="Last Name")
     email = models.EmailField(verbose_name="Email Address")
@@ -379,6 +388,9 @@ class Staff(models.Model):
             models.Index(fields=['organization', 'first_name', 'last_name']),
             models.Index(fields=['staff_role']),
             models.Index(fields=['department']),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['organization', 'staff_id'], name='unique_staff_id_per_org'),
         ]
 
     @property
@@ -437,7 +449,7 @@ class FeePayment(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Amount")
     payment_date = models.DateField(verbose_name="Payment Date")
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='Cash', verbose_name="Payment Method")
-    receipt_number = models.CharField(max_length=50, unique=True, blank=True, verbose_name="Receipt Number")
+    receipt_number = models.CharField(max_length=50, blank=True, verbose_name="Receipt Number")
     notes = models.TextField(blank=True, null=True, verbose_name="Notes")
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='fee_payments')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -450,6 +462,9 @@ class FeePayment(models.Model):
             models.Index(fields=['student', 'payment_date']),
             models.Index(fields=['payment_method']),
         ]
+        constraints = [
+            models.UniqueConstraint(fields=['organization', 'receipt_number'], name='unique_receipt_number_per_org'),
+        ]
 
     def __str__(self):
         return f"{self.receipt_number} - {self.student} - {self.amount}"
@@ -458,7 +473,7 @@ class FeePayment(models.Model):
         if not self.receipt_number:
             for attempt in range(5):
                 with transaction.atomic():
-                    last_payment = FeePayment.objects.select_for_update().order_by('-id').first()
+                    last_payment = FeePayment.objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
                     if last_payment and last_payment.receipt_number.startswith('RCP'):
                         try:
                             last_number = int(last_payment.receipt_number[3:])

@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_POST
+from django.db import transaction
 from django.db.models import Sum, Count, Q, Subquery, OuterRef, DecimalField
 from django.db.models.functions import Coalesce
 from django.core.paginator import Paginator
@@ -303,6 +304,27 @@ def course_delete(request, pk):
     course.delete()
     messages.success(request, f'Course "{course_name}" deleted successfully!')
     return redirect('course_list')
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def course_create_ajax(request):
+    """AJAX endpoint to create a course from the batch form modal."""
+    org = get_org(request)
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'errors': {'__all__': ['Invalid request.']}}, status=400)
+
+    form = CourseForm(data)
+    if form.is_valid():
+        course = form.save(commit=False)
+        course.organization = org
+        course.save()
+        return JsonResponse({'success': True, 'id': course.id, 'name': str(course)})
+    else:
+        return JsonResponse({'success': False, 'errors': form.errors}, status=400)
 
 
 # ─── Batch Views ─────────────────────────────────────────────────────────────
@@ -691,10 +713,11 @@ def attendance_mark(request):
                     date=attendance_date, student=student, batch=batch,
                     organization=org, status=status, marked_by=request.user, notes=notes,
                 ))
-        if to_create:
-            Attendance.objects.bulk_create(to_create)
-        if to_update:
-            Attendance.objects.bulk_update(to_update, ['status', 'marked_by', 'notes'])
+        with transaction.atomic():
+            if to_create:
+                Attendance.objects.bulk_create(to_create)
+            if to_update:
+                Attendance.objects.bulk_update(to_update, ['status', 'marked_by', 'notes'])
         marked_count = len(students)
 
         messages.success(request, f'Attendance marked for {marked_count} students!')
@@ -703,10 +726,9 @@ def attendance_mark(request):
     form = AttendanceFilterForm()
     form.fields['batch'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
 
-    students = None
+    students_data = None
     selected_batch = None
     selected_date = None
-    existing_attendance = {}
 
     if request.GET.get('batch') and request.GET.get('date'):
         try:
@@ -719,16 +741,24 @@ def attendance_mark(request):
             )
             existing_attendance = {a.student_id: a for a in existing}
 
+            students_data = []
+            for student in students:
+                att = existing_attendance.get(student.pk)
+                students_data.append({
+                    'student': student,
+                    'status': att.status if att else 'Present',
+                    'notes': att.notes if att else '',
+                })
+
             form.initial = {'batch': selected_batch.pk, 'date': selected_date}
         except Batch.DoesNotExist:
             pass
 
     context = {
         'form': form,
-        'students': students,
+        'students_data': students_data,
         'selected_batch': selected_batch,
         'selected_date': selected_date,
-        'existing_attendance': existing_attendance,
     }
     return render(request, 'management/attendance_mark.html', context)
 
@@ -852,10 +882,11 @@ def mark_all_present(request):
                     date=attendance_date, student=student, batch=batch,
                     organization=org, status='Present', marked_by=request.user,
                 ))
-        if to_create:
-            Attendance.objects.bulk_create(to_create)
-        if to_update:
-            Attendance.objects.bulk_update(to_update, ['status', 'marked_by'])
+        with transaction.atomic():
+            if to_create:
+                Attendance.objects.bulk_create(to_create)
+            if to_update:
+                Attendance.objects.bulk_update(to_update, ['status', 'marked_by'])
         count = len(students)
 
         return JsonResponse({
@@ -899,10 +930,11 @@ def mark_all_absent(request):
                     date=attendance_date, student=student, batch=batch,
                     organization=org, status='Absent', marked_by=request.user,
                 ))
-        if to_create:
-            Attendance.objects.bulk_create(to_create)
-        if to_update:
-            Attendance.objects.bulk_update(to_update, ['status', 'marked_by'])
+        with transaction.atomic():
+            if to_create:
+                Attendance.objects.bulk_create(to_create)
+            if to_update:
+                Attendance.objects.bulk_update(to_update, ['status', 'marked_by'])
         count = len(students)
 
         return JsonResponse({
@@ -1392,7 +1424,6 @@ def import_students(request):
             import openpyxl
             from django.core.validators import validate_email
             from django.core.exceptions import ValidationError as DjangoValidationError
-            from django.db import transaction
 
             wb = openpyxl.load_workbook(file, read_only=True, data_only=True)
             ws = wb.active

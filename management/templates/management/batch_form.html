@@ -58,7 +58,14 @@
                         <label for="{{ form.course.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
                             Course *
                         </label>
-                        {{ form.course }}
+                        <div class="flex items-start gap-2">
+                            <div class="flex-1">
+                                {{ form.course }}
+                            </div>
+                            <button type="button" onclick="openCourseModal()" title="Quick add course" class="mt-0.5 w-10 h-10 flex items-center justify-center bg-primary text-white rounded-xl hover:bg-primary/90 shadow-sm transition-all flex-shrink-0">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
                         {% if form.course.errors %}
                             <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
                                 <i class="fas fa-exclamation-circle mt-0.5"></i>
@@ -160,6 +167,54 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Add Course Modal -->
+<div id="courseModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="course-modal-title" role="dialog" aria-modal="true">
+    <div class="flex min-h-screen items-center justify-center px-4 pb-20 pt-4 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity" onclick="closeCourseModal()" aria-label="Close modal"></div>
+        <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
+        <div class="inline-block transform overflow-hidden rounded-2xl bg-white text-left align-bottom shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle animate-[slideUp_0.2s_ease-out]">
+            <div class="bg-gradient-to-r from-primary to-secondary px-6 py-4">
+                <h3 class="text-white font-semibold flex items-center gap-2" id="course-modal-title">
+                    <i class="fas fa-book"></i> Quick Add Course
+                </h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <div id="courseModalErrors" class="hidden bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-sm"></div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Course Name *</label>
+                    <input type="text" id="modalCourseName" placeholder="Enter course name" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-shadow">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Fees</label>
+                        <input type="number" id="modalCourseFees" placeholder="e.g., 500" step="0.01" min="0" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-shadow">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Fee Period</label>
+                        <select id="modalCourseFeePeriod" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white">
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                </div>
+
+                <p class="text-gray-400 text-xs">Course code will be auto-generated. You can edit other details later.</p>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 sm:flex sm:flex-row-reverse sm:gap-3 rounded-b-2xl">
+                <button type="button" id="courseModalSubmit" onclick="submitCourseModal()" class="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">
+                    <i class="fas fa-plus"></i> Create Course
+                </button>
+                <button type="button" onclick="closeCourseModal()" class="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-xl bg-white px-6 py-2.5 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
             </div>
         </div>
     </div>
@@ -272,5 +327,91 @@
         loadAndCheck();
     }
 })();
+</script>
+<script>
+var COURSE_CREATE_URL = '{% url "course_create_ajax" %}';
+var CSRF_TOKEN = '{{ csrf_token }}';
+
+function openCourseModal() {
+    document.getElementById('modalCourseName').value = '';
+    document.getElementById('modalCourseFees').value = '';
+    document.getElementById('modalCourseFeePeriod').value = 'monthly';
+    document.getElementById('courseModalErrors').classList.add('hidden');
+    document.getElementById('courseModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('modalCourseName').focus();
+}
+
+function closeCourseModal() {
+    document.getElementById('courseModal').classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function submitCourseModal() {
+    var name = document.getElementById('modalCourseName').value.trim();
+    var fees = document.getElementById('modalCourseFees').value;
+    var feePeriod = document.getElementById('modalCourseFeePeriod').value;
+    var errDiv = document.getElementById('courseModalErrors');
+    var submitBtn = document.getElementById('courseModalSubmit');
+
+    if (!name) {
+        errDiv.textContent = 'Course name is required.';
+        errDiv.classList.remove('hidden');
+        return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+    fetch(COURSE_CREATE_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF_TOKEN
+        },
+        body: JSON.stringify({
+            course_name: name,
+            fees: fees || '0',
+            fee_period: feePeriod
+        })
+    })
+    .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
+    .then(function(res) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-plus"></i> Create Course';
+
+        if (res.data.success) {
+            var courseSelect = document.getElementById('id_course');
+            if (courseSelect.tomselect) {
+                courseSelect.tomselect.addOption({value: String(res.data.id), text: res.data.name});
+                courseSelect.tomselect.setValue(String(res.data.id));
+            }
+            closeCourseModal();
+        } else {
+            var errors = res.data.errors;
+            var msgs = [];
+            for (var field in errors) {
+                var fieldErrors = errors[field];
+                for (var i = 0; i < fieldErrors.length; i++) {
+                    msgs.push(fieldErrors[i].message || fieldErrors[i]);
+                }
+            }
+            errDiv.innerHTML = msgs.join('<br>');
+            errDiv.classList.remove('hidden');
+        }
+    })
+    .catch(function() {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-plus"></i> Create Course';
+        errDiv.textContent = 'Something went wrong. Please try again.';
+        errDiv.classList.remove('hidden');
+    });
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !document.getElementById('courseModal').classList.contains('hidden')) {
+        closeCourseModal();
+    }
+});
 </script>
 {% endblock %}

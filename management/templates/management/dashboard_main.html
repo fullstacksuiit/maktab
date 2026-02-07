@@ -368,7 +368,7 @@
                         <div class="w-px h-12 bg-gradient-to-b from-transparent via-gray-200 to-transparent"></div>
                         <div class="text-center px-2">
                             <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center mx-auto mb-1 shadow-lg shadow-primary/30">
-                                <span class="text-base sm:text-lg font-bold">{% widthratio today_present today_total 100 %}%</span>
+                                <span class="text-base sm:text-lg font-bold">{% if today_total %}{% widthratio today_present today_total 100 %}{% else %}0{% endif %}%</span>
                             </div>
                             <p class="text-[10px] sm:text-xs text-gray-500 font-medium">Rate</p>
                         </div>
@@ -600,11 +600,11 @@
     var LNG = {{ org_longitude|default:"null" }};
 
     var PRAYERS = [
-        { key: 'Fajr',    name: 'Fajr',    arabic: '\u0641\u062C\u0631',                         icon: 'fa-cloud-sun',  gradient: 'from-indigo-500 to-indigo-600' },
-        { key: 'Dhuhr',   name: 'Zohar',   arabic: '\u0638\u06C1\u0631',                         icon: 'fa-sun',        gradient: 'from-yellow-500 to-yellow-600' },
-        { key: 'Asr',     name: 'Asr',     arabic: '\u0639\u0635\u0631',                         icon: 'fa-cloud-sun',  gradient: 'from-orange-500 to-orange-600' },
-        { key: 'Maghrib', name: 'Maghrib', arabic: '\u0645\u063A\u0631\u0628',                   icon: 'fa-cloud-moon', gradient: 'from-red-500 to-red-600' },
-        { key: 'Isha',    name: 'Isha',    arabic: '\u0639\u0634\u0627\u0621',                   icon: 'fa-moon',       gradient: 'from-gray-700 to-gray-800' }
+        { key: 'Fajr',    endKey: 'Sunrise',  name: 'Fajr',    arabic: '\u0641\u062C\u0631',                         icon: 'fa-cloud-sun',  gradient: 'from-indigo-500 to-indigo-600' },
+        { key: 'Dhuhr',   endKey: 'Asr',      name: 'Zohar',   arabic: '\u0638\u06C1\u0631',                         icon: 'fa-sun',        gradient: 'from-yellow-500 to-yellow-600' },
+        { key: 'Asr',     endKey: 'Maghrib',  name: 'Asr',     arabic: '\u0639\u0635\u0631',                         icon: 'fa-cloud-sun',  gradient: 'from-orange-500 to-orange-600' },
+        { key: 'Maghrib', endKey: 'Isha',     name: 'Maghrib', arabic: '\u0645\u063A\u0631\u0628',                   icon: 'fa-cloud-moon', gradient: 'from-red-500 to-red-600' },
+        { key: 'Isha',    endKey: 'Midnight', name: 'Isha',    arabic: '\u0639\u0634\u0627\u0621',                   icon: 'fa-moon',       gradient: 'from-gray-700 to-gray-800' }
     ];
 
     var loadingEl = document.getElementById('salah-loading');
@@ -669,7 +669,12 @@
             html += '<p class="text-xs sm:text-sm font-semibold ' + (isPast && nextIdx !== -1 ? 'text-gray-400' : 'text-gray-800') + '">' + p.name + '</p>';
             html += '<p class="text-[10px] sm:text-xs text-gray-400">' + p.arabic + '</p>';
             html += '</div>';
-            html += '<span class="text-sm sm:text-base font-bold ' + timeColor + ' bg-gray-50 px-2.5 py-1 rounded-lg">' + formatTo12h(timings[p.key]) + '</span>';
+            html += '<div class="text-right bg-gray-50 px-2.5 py-1 rounded-lg">';
+            html += '<span class="text-sm sm:text-base font-bold ' + timeColor + '">' + formatTo12h(timings[p.key]) + '</span>';
+            if (p.endKey && timings[p.endKey]) {
+                html += '<p class="text-[10px] sm:text-xs text-gray-500 font-medium">ends ' + formatTo12h(timings[p.endKey]) + '</p>';
+            }
+            html += '</div>';
             if (isNext) {
                 html += '<span class="bg-gradient-to-r from-primary to-secondary text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide shadow-sm animate-pulse">Next</span>';
             }
@@ -697,7 +702,10 @@
                 if (data && data.data && data.data.timings) {
                     var timings = data.data.timings;
                     var stored = {};
-                    PRAYERS.forEach(function(p) { stored[p.key] = timings[p.key]; });
+                    PRAYERS.forEach(function(p) {
+                        stored[p.key] = timings[p.key];
+                        if (p.endKey) stored[p.endKey] = timings[p.endKey];
+                    });
                     try { localStorage.setItem(cacheKey, JSON.stringify(stored)); } catch(e) {}
                     renderPrayers(stored);
                 }
