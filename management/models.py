@@ -375,7 +375,8 @@ class Staff(models.Model):
     staff_role = models.CharField(max_length=50, choices=ROLE_CHOICES, verbose_name="Staff Role")
     department = models.CharField(max_length=100, verbose_name="Department")
     joining_date = models.DateField(verbose_name="Joining Date")
-    salary = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Salary")
+    salary = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Monthly Salary")
+    working_hours_per_day = models.DecimalField(max_digits=4, decimal_places=1, default=8.0, verbose_name="Working Hours/Day")
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='staff_members')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -392,6 +393,14 @@ class Staff(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['organization', 'staff_id'], name='unique_staff_id_per_org'),
         ]
+
+    @property
+    def hourly_rate(self):
+        """Derive hourly rate from monthly salary: salary / (working_hours_per_day x 26 working days)."""
+        if self.working_hours_per_day and self.working_hours_per_day > 0:
+            monthly_hours = self.working_hours_per_day * 26
+            return round(float(self.salary) / float(monthly_hours), 2)
+        return 0
 
     @property
     def full_address(self):
@@ -435,6 +444,43 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.student} - {self.batch} - {self.date} - {self.status}"
+
+
+class StaffAttendance(models.Model):
+    STATUS_CHOICES = [
+        ('Present', 'Present'),
+        ('Absent', 'Absent'),
+        ('Late', 'Late'),
+        ('Excused', 'Excused'),
+    ]
+
+    date = models.DateField(verbose_name="Date")
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='attendances')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Present', verbose_name="Status")
+    marked_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='marked_staff_attendances', verbose_name="Marked By")
+    hours = models.DecimalField(max_digits=4, decimal_places=1, blank=True, null=True, verbose_name="Hours Worked")
+    notes = models.TextField(blank=True, null=True, verbose_name="Notes")
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='staff_attendances')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date', '-created_at']
+        indexes = [
+            models.Index(fields=['organization', 'date']),
+            models.Index(fields=['staff', 'status']),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['organization', 'staff', 'date'], name='unique_staff_attendance_per_day'),
+        ]
+
+    @property
+    def earnings(self):
+        if self.hours and self.staff.hourly_rate:
+            return round(float(self.hours) * self.staff.hourly_rate, 2)
+        return 0
+
+    def __str__(self):
+        return f"{self.staff} - {self.date} - {self.status}"
 
 
 class FeePayment(models.Model):

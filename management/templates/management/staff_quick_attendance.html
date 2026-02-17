@@ -1,0 +1,422 @@
+{% extends 'management/base_tailwind.html' %}
+
+{% block title %}Quick Staff Attendance{% endblock %}
+{% block header_title %}Staff Attendance{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Sticky Header -->
+    <div class="sticky top-0 z-40 -mx-4 px-4 pt-2 pb-4 bg-gray-50/95 backdrop-blur-sm">
+        <!-- Info & Date Bar -->
+        <div class="bg-gradient-to-r from-primary to-secondary rounded-2xl p-4 text-white shadow-lg mb-3">
+            <div class="flex items-center justify-between gap-4">
+                <div class="min-w-0">
+                    <h1 class="font-bold text-lg truncate">Quick Attendance</h1>
+                    <div class="flex items-center gap-2 mt-1">
+                        <i class="fas fa-calendar text-white/70"></i>
+                        <input type="date" id="attendanceDate" value="{{ attendance_date }}"
+                               class="bg-white/20 border-0 rounded-lg px-3 py-1 text-white font-semibold focus:outline-none focus:ring-2 focus:ring-white/50 cursor-pointer text-sm">
+                    </div>
+                </div>
+
+                <!-- Live Stats -->
+                <div class="flex gap-2 shrink-0">
+                    <div class="bg-green-500 rounded-xl px-3 py-2 text-center min-w-[56px]">
+                        <div id="presentCount" class="text-xl font-bold">{{ present_count }}</div>
+                        <div class="text-[10px] text-white/80 uppercase tracking-wide">Present</div>
+                    </div>
+                    <div class="bg-red-500 rounded-xl px-3 py-2 text-center min-w-[56px]">
+                        <div id="absentCount" class="text-xl font-bold">{{ absent_count }}</div>
+                        <div class="text-[10px] text-white/80 uppercase tracking-wide">Absent</div>
+                    </div>
+                    <div class="bg-white/20 rounded-xl px-3 py-2 text-center min-w-[56px]">
+                        <div id="totalHours" class="text-xl font-bold">0</div>
+                        <div class="text-[10px] text-white/80 uppercase tracking-wide">Hours</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="flex gap-2">
+            <button id="markAllPresentBtn" class="flex-1 py-3 bg-green-500 text-white rounded-xl font-bold shadow-lg shadow-green-500/30 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                <i class="fas fa-check-double"></i> All Present
+            </button>
+            <button id="markAllAbsentBtn" class="flex-1 py-3 bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-500/30 active:scale-95 transition-transform flex items-center justify-center gap-2">
+                <i class="fas fa-times"></i> All Absent
+            </button>
+            <a href="{% url 'staff_attendance_list' %}" class="py-3 px-4 bg-white text-gray-600 rounded-xl font-bold border border-gray-200 active:scale-95 transition-transform flex items-center justify-center" title="View History">
+                <i class="fas fa-history"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Instruction -->
+    <p class="text-center text-gray-500 text-sm mb-4 flex items-center justify-center gap-2">
+        <i class="fas fa-hand-pointer text-primary"></i>
+        Tap to toggle status &middot; Enter hours worked
+    </p>
+
+    <!-- Staff List -->
+    {% if staff_data %}
+    <div class="space-y-2" id="staffList">
+        {% for item in staff_data %}
+        <div class="staff-row bg-white rounded-2xl shadow-sm border-2 overflow-hidden transition-all duration-150
+                    {% if item.status == 'Present' %}
+                        border-green-400 bg-green-50
+                    {% elif item.status == 'Absent' %}
+                        border-red-400 bg-red-50
+                    {% else %}
+                        border-gray-200
+                    {% endif %}"
+             data-staff-id="{{ item.staff.pk }}"
+             data-status="{{ item.status|default:'none' }}"
+             data-expected-hours="{{ item.staff.working_hours_per_day }}"
+             data-hourly-rate="{{ item.staff.hourly_rate }}">
+
+            <div class="flex items-center p-3 gap-3">
+                <!-- Avatar with Status Indicator -->
+                <div class="relative cursor-pointer select-none active:scale-95 transition-transform" onclick="toggleStaffRow({{ item.staff.pk }})">
+                    <div class="avatar w-13 h-13 rounded-full flex items-center justify-center text-base font-bold shadow-md transition-all
+                                {% if item.status == 'Present' %}
+                                    bg-green-500 text-white
+                                {% elif item.status == 'Absent' %}
+                                    bg-red-500 text-white
+                                {% else %}
+                                    bg-gradient-to-br from-primary to-secondary text-white
+                                {% endif %}">
+                        {{ item.staff.first_name|first }}{{ item.staff.last_name|first }}
+                    </div>
+                    <div class="status-icon absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-md transition-all
+                                {% if item.status == 'Present' %}
+                                    bg-green-600 text-white
+                                {% elif item.status == 'Absent' %}
+                                    bg-red-600 text-white
+                                {% else %}
+                                    bg-gray-400 text-white
+                                {% endif %}">
+                        {% if item.status == 'Present' %}
+                            <i class="fas fa-check"></i>
+                        {% elif item.status == 'Absent' %}
+                            <i class="fas fa-times"></i>
+                        {% else %}
+                            <i class="fas fa-minus"></i>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Name & Role Badge -->
+                <div class="flex-1 min-w-0 cursor-pointer select-none" onclick="toggleStaffRow({{ item.staff.pk }})">
+                    <div class="flex items-center gap-2 mb-0.5">
+                        <h3 class="font-bold text-gray-800 text-sm truncate">{{ item.staff.first_name }} {{ item.staff.last_name }}</h3>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0
+                            {% if item.staff.staff_role == 'Teacher' %}bg-green-100 text-green-700
+                            {% elif item.staff.staff_role == 'Administrator' %}bg-purple-100 text-purple-700
+                            {% elif item.staff.staff_role == 'Support' %}bg-blue-100 text-blue-700
+                            {% else %}bg-gray-100 text-gray-600{% endif %}">
+                            {{ item.staff.get_staff_role_display }}
+                        </span>
+                    </div>
+                    <p class="text-gray-400 text-xs">
+                        Expected: {{ item.staff.working_hours_per_day }}h/day
+                        &middot; {{ currency_symbol }}{{ item.staff.hourly_rate }}/hr
+                    </p>
+                </div>
+
+                <!-- Hours Input -->
+                <div class="shrink-0 flex items-center gap-1.5" onclick="event.stopPropagation()">
+                    <div class="relative">
+                        <input type="number" step="0.5" min="0" max="24"
+                               class="hours-input w-16 px-2 py-2 text-center text-sm font-bold border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-gray-50"
+                               value="{{ item.hours|default:'' }}"
+                               placeholder="{{ item.staff.working_hours_per_day }}"
+                               data-staff-id="{{ item.staff.pk }}"
+                               onchange="saveHours({{ item.staff.pk }}, this.value)">
+                    </div>
+                    <span class="text-xs text-gray-400 font-semibold">hrs</span>
+                </div>
+
+                <!-- Quick Action Buttons -->
+                <div class="flex gap-1.5 shrink-0">
+                    <button class="present-btn w-11 h-11 rounded-xl flex items-center justify-center text-base transition-all active:scale-90
+                                   {% if item.status == 'Present' %}
+                                       bg-green-500 text-white shadow-lg shadow-green-500/30
+                                   {% else %}
+                                       bg-green-100 text-green-600 hover:bg-green-500 hover:text-white
+                                   {% endif %}"
+                            onclick="event.stopPropagation(); markStaff({{ item.staff.pk }}, 'Present')">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="absent-btn w-11 h-11 rounded-xl flex items-center justify-center text-base transition-all active:scale-90
+                                   {% if item.status == 'Absent' %}
+                                       bg-red-500 text-white shadow-lg shadow-red-500/30
+                                   {% else %}
+                                       bg-red-100 text-red-600 hover:bg-red-500 hover:text-white
+                                   {% endif %}"
+                            onclick="event.stopPropagation(); markStaff({{ item.staff.pk }}, 'Absent')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Summary Footer -->
+    <div class="mt-6 mb-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4 text-sm">
+                <span class="text-gray-600">
+                    <span class="font-bold text-gray-800">{{ total_count }}</span> staff
+                </span>
+                <span class="text-gray-300">|</span>
+                <span class="text-blue-600 font-semibold">
+                    <i class="fas fa-clock mr-1"></i><span id="footerTotalHours">0</span>h logged
+                </span>
+                <span class="text-gray-300">|</span>
+                <span class="text-amber-700 font-semibold">
+                    <i class="fas fa-coins mr-1"></i>{{ currency_symbol }}<span id="footerEarnings">0</span>
+                </span>
+            </div>
+            <a href="{% url 'staff_attendance_list' %}" class="text-primary font-semibold flex items-center gap-1 hover:underline text-sm">
+                History <i class="fas fa-arrow-right text-xs"></i>
+            </a>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+        <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-user-clock text-4xl text-primary/40"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">No Staff Members</h3>
+        <p class="text-gray-500 mb-6">Your organization doesn't have any staff members yet.</p>
+        <a href="{% url 'staff_add' %}" class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 font-medium transition-colors">
+            <i class="fas fa-user-plus"></i> Add Staff
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3 z-50 whitespace-nowrap">
+    <i id="toastIcon" class="fas fa-check-circle text-green-400"></i>
+    <span id="toastMessage">Saved</span>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const csrfToken = '{{ csrf_token }}';
+let attendanceDate = document.getElementById('attendanceDate').value;
+
+// Debounce timer for hours saving
+let hoursTimers = {};
+
+// Update counts and totals
+function updateCounts() {
+    const rows = document.querySelectorAll('.staff-row');
+    let present = 0, absent = 0, totalHours = 0, totalEarnings = 0;
+    rows.forEach(row => {
+        if (row.dataset.status === 'Present') present++;
+        else if (row.dataset.status === 'Absent') absent++;
+
+        const hoursInput = row.querySelector('.hours-input');
+        const hours = parseFloat(hoursInput.value) || 0;
+        const rate = parseFloat(row.dataset.hourlyRate) || 0;
+        totalHours += hours;
+        totalEarnings += hours * rate;
+    });
+    document.getElementById('presentCount').textContent = present;
+    document.getElementById('absentCount').textContent = absent;
+    document.getElementById('totalHours').textContent = totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
+    document.getElementById('footerTotalHours').textContent = totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
+    document.getElementById('footerEarnings').textContent = totalEarnings.toFixed(2);
+}
+
+// Show toast
+function showToast(message, success = true) {
+    const toast = document.getElementById('toast');
+    const icon = document.getElementById('toastIcon');
+    const msg = document.getElementById('toastMessage');
+
+    msg.textContent = message;
+    icon.className = success ? 'fas fa-check-circle text-green-400' : 'fas fa-exclamation-circle text-red-400';
+
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 1500);
+}
+
+// Update row visual state
+function updateRowState(row, status) {
+    const avatar = row.querySelector('.avatar');
+    const statusIcon = row.querySelector('.status-icon');
+    const presentBtn = row.querySelector('.present-btn');
+    const absentBtn = row.querySelector('.absent-btn');
+
+    row.classList.remove('border-green-400', 'bg-green-50', 'border-red-400', 'bg-red-50', 'border-gray-200');
+    avatar.classList.remove('bg-green-500', 'bg-red-500', 'bg-gradient-to-br', 'from-primary', 'to-secondary');
+    statusIcon.classList.remove('bg-green-600', 'bg-red-600', 'bg-gray-400');
+    presentBtn.classList.remove('bg-green-500', 'text-white', 'shadow-lg', 'shadow-green-500/30', 'bg-green-100', 'text-green-600');
+    absentBtn.classList.remove('bg-red-500', 'text-white', 'shadow-lg', 'shadow-red-500/30', 'bg-red-100', 'text-red-600');
+
+    if (status === 'Present') {
+        row.classList.add('border-green-400', 'bg-green-50');
+        avatar.classList.add('bg-green-500', 'text-white');
+        statusIcon.classList.add('bg-green-600', 'text-white');
+        statusIcon.innerHTML = '<i class="fas fa-check"></i>';
+        presentBtn.classList.add('bg-green-500', 'text-white', 'shadow-lg', 'shadow-green-500/30');
+        absentBtn.classList.add('bg-red-100', 'text-red-600');
+    } else if (status === 'Absent') {
+        row.classList.add('border-red-400', 'bg-red-50');
+        avatar.classList.add('bg-red-500', 'text-white');
+        statusIcon.classList.add('bg-red-600', 'text-white');
+        statusIcon.innerHTML = '<i class="fas fa-times"></i>';
+        presentBtn.classList.add('bg-green-100', 'text-green-600');
+        absentBtn.classList.add('bg-red-500', 'text-white', 'shadow-lg', 'shadow-red-500/30');
+    } else {
+        row.classList.add('border-gray-200');
+        avatar.classList.add('bg-gradient-to-br', 'from-primary', 'to-secondary', 'text-white');
+        statusIcon.classList.add('bg-gray-400', 'text-white');
+        statusIcon.innerHTML = '<i class="fas fa-minus"></i>';
+        presentBtn.classList.add('bg-green-100', 'text-green-600');
+        absentBtn.classList.add('bg-red-100', 'text-red-600');
+    }
+
+    row.dataset.status = status;
+    updateCounts();
+}
+
+// Toggle via row tap
+function toggleStaffRow(staffId) {
+    const row = document.querySelector(`[data-staff-id="${staffId}"]`);
+    const currentStatus = row.dataset.status;
+    let newStatus = 'Present';
+    if (currentStatus === 'Present') newStatus = 'Absent';
+    else if (currentStatus === 'Absent') newStatus = 'none';
+    markStaff(staffId, newStatus === 'none' ? currentStatus : newStatus);
+}
+
+// Mark single staff
+async function markStaff(staffId, status) {
+    const row = document.querySelector(`[data-staff-id="${staffId}"]`);
+    const currentStatus = row.dataset.status;
+    const newStatus = currentStatus === status ? 'none' : status;
+    const hoursInput = row.querySelector('.hours-input');
+    const hours = hoursInput.value ? parseFloat(hoursInput.value) : null;
+
+    updateRowState(row, newStatus === 'none' ? '' : newStatus);
+
+    try {
+        const response = await fetch('{% url "staff_toggle_attendance" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({
+                staff_id: staffId,
+                date: attendanceDate,
+                status: newStatus === 'none' ? null : newStatus,
+                hours: hours,
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            showToast(newStatus === 'none' ? 'Cleared' : newStatus);
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        showToast('Error', false);
+        updateRowState(row, currentStatus);
+    }
+}
+
+// Save hours with debounce
+function saveHours(staffId, value) {
+    updateCounts();
+    clearTimeout(hoursTimers[staffId]);
+    hoursTimers[staffId] = setTimeout(async () => {
+        const row = document.querySelector(`[data-staff-id="${staffId}"]`);
+        const status = row.dataset.status;
+        if (!status || status === 'none') return;
+
+        try {
+            const response = await fetch('{% url "staff_toggle_attendance" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                body: JSON.stringify({
+                    staff_id: staffId,
+                    date: attendanceDate,
+                    status: status,
+                    hours: value ? parseFloat(value) : null,
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                showToast('Hours saved');
+            }
+        } catch (e) {
+            showToast('Error saving hours', false);
+        }
+    }, 600);
+}
+
+// Mark All Present
+document.getElementById('markAllPresentBtn').addEventListener('click', async function() {
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        const response = await fetch('{% url "staff_mark_all_present" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ date: attendanceDate })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            document.querySelectorAll('.staff-row').forEach(row => updateRowState(row, 'Present'));
+            showToast('All Present!');
+        }
+    } catch (e) {
+        showToast('Error', false);
+    }
+
+    this.disabled = false;
+    this.innerHTML = '<i class="fas fa-check-double"></i> All Present';
+});
+
+// Mark All Absent
+document.getElementById('markAllAbsentBtn').addEventListener('click', async function() {
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    try {
+        const response = await fetch('{% url "staff_mark_all_absent" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ date: attendanceDate })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            document.querySelectorAll('.staff-row').forEach(row => updateRowState(row, 'Absent'));
+            showToast('All Absent!');
+        }
+    } catch (e) {
+        showToast('Error', false);
+    }
+
+    this.disabled = false;
+    this.innerHTML = '<i class="fas fa-times"></i> All Absent';
+});
+
+// Date change
+document.getElementById('attendanceDate').addEventListener('change', function() {
+    window.location.href = '{% url "staff_quick_attendance" %}?date=' + this.value;
+});
+
+// Initial counts
+updateCounts();
+</script>
+{% endblock %}

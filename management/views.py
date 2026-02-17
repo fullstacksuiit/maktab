@@ -22,8 +22,8 @@ import re
 logger = logging.getLogger('management')
 
 from .forms import (SignUpForm, LoginForm, CourseForm, BatchForm, StudentForm, StaffForm,
-                    AttendanceFilterForm, FeePaymentForm, SettingsForm, InviteUserForm, UserEditForm)
-from .models import User, Organization, Course, Batch, Student, Staff, Attendance, FeePayment
+                    AttendanceFilterForm, StaffAttendanceFilterForm, FeePaymentForm, SettingsForm, InviteUserForm, UserEditForm)
+from .models import User, Organization, Course, Batch, Student, Staff, Attendance, StaffAttendance, FeePayment
 from .decorators import role_required, admin_required, manager_or_admin_required, parent_required, internal_user_required
 from .indian_cities import CITY_DATA
 from .hijri_dates import get_upcoming_islamic_dates
@@ -185,6 +185,16 @@ def dashboard_view(request):
     today_total = today_attendance['today_total']
     today_present = today_attendance['today_present']
 
+    # Staff attendance for today
+    staff_today_attendance = StaffAttendance.objects.filter(
+        organization=org, date=today
+    ).aggregate(
+        staff_today_total=Count('id'),
+        staff_today_present=Count('id', filter=Q(status__in=['Present', 'Late'])),
+    )
+    staff_today_total = staff_today_attendance['staff_today_total']
+    staff_today_present = staff_today_attendance['staff_today_present']
+
     recent_students = Student.objects.filter(organization=org).prefetch_related('batches__course').order_by('-created_at')[:5]
     recent_payments = FeePayment.objects.filter(organization=org).select_related('student', 'batch__course').order_by('-created_at')[:5]
 
@@ -225,6 +235,8 @@ def dashboard_view(request):
         'bank_total': bank_total,
         'online_total': online_total,
         'islamic_dates': get_upcoming_islamic_dates(),
+        'staff_today_total': staff_today_total,
+        'staff_today_present': staff_today_present,
     }
     return render(request, 'management/dashboard_main.html', context)
 
@@ -941,6 +953,307 @@ def mark_all_absent(request):
             'success': True,
             'count': count,
             'message': f'All {count} students marked as Absent'
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+# ─── Staff Attendance Views ───────────────────────────────────────────────────
+
+@login_required(login_url='login')
+@internal_user_required
+def staff_attendance_list(request):
+    org = get_org(request)
+    attendances = StaffAttendance.objects.filter(organization=org).select_related('staff')
+
+    filter_date = request.GET.get('date')
+    staff_role = request.GET.get('role')
+    if filter_date:
+        attendances = attendances.filter(date=filter_date)
+    if staff_role:
+        attendances = attendances.filter(staff__staff_role=staff_role)
+
+    # Summary stats (before pagination)
+    summary = attendances.aggregate(
+        total_records=Count('id'),
+        present_count=Count('id', filter=Q(status='Present')),
+        absent_count=Count('id', filter=Q(status='Absent')),
+        late_count=Count('id', filter=Q(status='Late')),
+        total_hours=Sum('hours'),
+    )
+
+    # Calculate total earnings from filtered results
+    total_earnings = 0
+    if summary['total_hours']:
+        for att in attendances.select_related('staff'):
+            if att.hours:
+                total_earnings += float(att.hours) * att.staff.hourly_rate
+
+    paginator = Paginator(attendances, 50)
+    page_number = request.GET.get('page')
+    attendances_page = paginator.get_page(page_number)
+
+    context = {
+        'attendances': attendances_page,
+        'selected_date': filter_date,
+        'selected_role': staff_role,
+        'role_choices': Staff.ROLE_CHOICES,
+        'summary': summary,
+        'total_earnings': round(total_earnings, 2),
+    }
+    return render(request, 'management/staff_attendance_list.html', context)
+
+
+@login_required(login_url='login')
+@internal_user_required
+def staff_attendance_mark(request):
+    org = get_org(request)
+    if request.method == 'POST':
+        attendance_date = request.POST.get('date')
+        staff_members = list(Staff.objects.filter(organization=org))
+        existing = {
+            a.staff_id: a for a in StaffAttendance.objects.filter(
+                date=attendance_date, organization=org,
+                staff__in=staff_members
+            )
+        }
+        to_create = []
+        to_update = []
+        for staff in staff_members:
+            status = request.POST.get(f'status_{staff.pk}', 'Absent')
+            notes = request.POST.get(f'notes_{staff.pk}', '')
+            hours_str = request.POST.get(f'hours_{staff.pk}', '')
+            hours = float(hours_str) if hours_str else None
+            if staff.pk in existing:
+                att = existing[staff.pk]
+                att.status = status
+                att.marked_by = request.user
+                att.notes = notes
+                att.hours = hours
+                to_update.append(att)
+            else:
+                to_create.append(StaffAttendance(
+                    date=attendance_date, staff=staff,
+                    organization=org, status=status,
+                    marked_by=request.user, notes=notes, hours=hours,
+                ))
+        with transaction.atomic():
+            if to_create:
+                StaffAttendance.objects.bulk_create(to_create)
+            if to_update:
+                StaffAttendance.objects.bulk_update(to_update, ['status', 'marked_by', 'notes', 'hours'])
+        marked_count = len(staff_members)
+        messages.success(request, f'Staff attendance marked for {marked_count} members!')
+        return redirect('staff_attendance_list')
+
+    form = StaffAttendanceFilterForm()
+    staff_data = None
+    selected_date = None
+
+    if request.GET.get('date'):
+        selected_date = request.GET['date']
+        staff_members = Staff.objects.filter(organization=org).order_by('first_name', 'last_name')
+        existing = StaffAttendance.objects.filter(
+            date=selected_date, organization=org
+        )
+        existing_attendance = {a.staff_id: a for a in existing}
+
+        staff_data = []
+        for staff in staff_members:
+            att = existing_attendance.get(staff.pk)
+            hours = att.hours if att else ''
+            earnings = round(float(hours) * staff.hourly_rate, 2) if hours else 0
+            staff_data.append({
+                'staff': staff,
+                'status': att.status if att else 'Present',
+                'notes': att.notes if att else '',
+                'hours': hours,
+                'earnings': earnings,
+            })
+
+        form.initial = {'date': selected_date}
+
+    context = {
+        'form': form,
+        'staff_data': staff_data,
+        'selected_date': selected_date,
+    }
+    return render(request, 'management/staff_attendance_mark.html', context)
+
+
+@login_required(login_url='login')
+@internal_user_required
+def staff_quick_attendance(request):
+    """Quick staff attendance view - tap to toggle attendance status"""
+    org = get_org(request)
+    today = date.today()
+    attendance_date = request.GET.get('date', str(today))
+
+    staff_members = Staff.objects.filter(organization=org).order_by('first_name', 'last_name')
+
+    existing = StaffAttendance.objects.filter(
+        date=attendance_date, organization=org
+    )
+    attendance_map = {a.staff_id: a for a in existing}
+
+    staff_data = []
+    for staff in staff_members:
+        att = attendance_map.get(staff.pk)
+        staff_data.append({
+            'staff': staff,
+            'status': att.status if att else None,
+            'hours': att.hours if att else None,
+        })
+
+    context = {
+        'staff_data': staff_data,
+        'attendance_date': attendance_date,
+        'today': str(today),
+        'present_count': sum(1 for s in staff_data if s['status'] == 'Present'),
+        'absent_count': sum(1 for s in staff_data if s['status'] == 'Absent'),
+        'total_count': len(staff_data),
+    }
+    return render(request, 'management/staff_quick_attendance.html', context)
+
+
+@login_required(login_url='login')
+@internal_user_required
+@require_POST
+def staff_toggle_attendance(request):
+    """AJAX endpoint to toggle staff attendance status"""
+    org = get_org(request)
+    try:
+        data = json.loads(request.body)
+        staff_id = data.get('staff_id')
+        attendance_date = data.get('date')
+        new_status = data.get('status')
+
+        staff = get_object_or_404(Staff, pk=staff_id, organization=org)
+        hours = data.get('hours')
+
+        if new_status in ['Present', 'Absent', 'Late', 'Excused']:
+            defaults = {
+                'status': new_status,
+                'marked_by': request.user,
+            }
+            if hours is not None:
+                defaults['hours'] = float(hours) if hours else None
+            StaffAttendance.objects.update_or_create(
+                date=attendance_date,
+                staff=staff,
+                organization=org,
+                defaults=defaults,
+            )
+            return JsonResponse({
+                'success': True,
+                'status': new_status,
+                'message': f'{staff.first_name} marked as {new_status}'
+            })
+        else:
+            StaffAttendance.objects.filter(
+                date=attendance_date,
+                staff=staff,
+                organization=org
+            ).delete()
+            return JsonResponse({
+                'success': True,
+                'status': None,
+                'message': f'{staff.first_name} attendance cleared'
+            })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@login_required(login_url='login')
+@internal_user_required
+@require_POST
+def staff_mark_all_present(request):
+    """AJAX endpoint to mark all staff present for a date"""
+    org = get_org(request)
+    try:
+        data = json.loads(request.body)
+        attendance_date = data.get('date')
+
+        staff_members = list(Staff.objects.filter(organization=org))
+        existing = {
+            a.staff_id: a for a in StaffAttendance.objects.filter(
+                date=attendance_date, organization=org,
+                staff__in=staff_members
+            )
+        }
+        to_create = []
+        to_update = []
+        for staff in staff_members:
+            if staff.pk in existing:
+                att = existing[staff.pk]
+                att.status = 'Present'
+                att.marked_by = request.user
+                to_update.append(att)
+            else:
+                to_create.append(StaffAttendance(
+                    date=attendance_date, staff=staff,
+                    organization=org, status='Present',
+                    marked_by=request.user,
+                ))
+        with transaction.atomic():
+            if to_create:
+                StaffAttendance.objects.bulk_create(to_create)
+            if to_update:
+                StaffAttendance.objects.bulk_update(to_update, ['status', 'marked_by'])
+        count = len(staff_members)
+
+        return JsonResponse({
+            'success': True,
+            'count': count,
+            'message': f'All {count} staff marked as Present'
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@login_required(login_url='login')
+@internal_user_required
+@require_POST
+def staff_mark_all_absent(request):
+    """AJAX endpoint to mark all staff absent for a date"""
+    org = get_org(request)
+    try:
+        data = json.loads(request.body)
+        attendance_date = data.get('date')
+
+        staff_members = list(Staff.objects.filter(organization=org))
+        existing = {
+            a.staff_id: a for a in StaffAttendance.objects.filter(
+                date=attendance_date, organization=org,
+                staff__in=staff_members
+            )
+        }
+        to_create = []
+        to_update = []
+        for staff in staff_members:
+            if staff.pk in existing:
+                att = existing[staff.pk]
+                att.status = 'Absent'
+                att.marked_by = request.user
+                to_update.append(att)
+            else:
+                to_create.append(StaffAttendance(
+                    date=attendance_date, staff=staff,
+                    organization=org, status='Absent',
+                    marked_by=request.user,
+                ))
+        with transaction.atomic():
+            if to_create:
+                StaffAttendance.objects.bulk_create(to_create)
+            if to_update:
+                StaffAttendance.objects.bulk_update(to_update, ['status', 'marked_by'])
+        count = len(staff_members)
+
+        return JsonResponse({
+            'success': True,
+            'count': count,
+            'message': f'All {count} staff marked as Absent'
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)

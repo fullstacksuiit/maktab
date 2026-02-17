@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Organization, Course, Batch, Student, Staff, Attendance, FeePayment
+from .models import User, Organization, Course, Batch, Student, Staff, Attendance, StaffAttendance, FeePayment
 
 
 @admin.register(Organization)
@@ -47,7 +47,7 @@ class StudentAdmin(admin.ModelAdmin):
 
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
-    list_display = ['staff_id', 'first_name', 'last_name', 'staff_role', 'department', 'joining_date']
+    list_display = ['staff_id', 'first_name', 'last_name', 'staff_role', 'department', 'working_hours_per_day', 'joining_date']
     list_filter = ['staff_role', 'department', 'gender']
     search_fields = ['staff_id', 'first_name', 'last_name', 'email']
 
@@ -57,6 +57,13 @@ class AttendanceAdmin(admin.ModelAdmin):
     list_display = ['date', 'student', 'batch', 'status', 'marked_by', 'created_at']
     list_filter = ['status', 'date', 'batch']
     search_fields = ['student__first_name', 'student__last_name', 'student__student_id']
+
+
+@admin.register(StaffAttendance)
+class StaffAttendanceAdmin(admin.ModelAdmin):
+    list_display = ['date', 'staff', 'status', 'hours', 'marked_by', 'created_at']
+    list_filter = ['status', 'date', 'staff__staff_role']
+    search_fields = ['staff__first_name', 'staff__last_name', 'staff__staff_id']
 
 
 @admin.register(FeePayment)

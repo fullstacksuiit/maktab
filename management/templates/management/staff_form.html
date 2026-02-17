@@ -155,7 +155,7 @@
                             <i class="fas fa-briefcase"></i> Work Details
                         </h6>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div>
                                 <label for="{{ form.department.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
                                     Department *
@@ -168,11 +168,21 @@
 
                             <div>
                                 <label for="{{ form.salary.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
-                                    Salary *
+                                    Monthly Salary *
                                 </label>
                                 {{ form.salary }}
                                 {% if form.salary.errors %}
                                     <div class="text-red-500 text-xs mt-1">{% for error in form.salary.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                {% endif %}
+                            </div>
+
+                            <div>
+                                <label for="{{ form.working_hours_per_day.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Working Hours/Day *
+                                </label>
+                                {{ form.working_hours_per_day }}
+                                {% if form.working_hours_per_day.errors %}
+                                    <div class="text-red-500 text-xs mt-1">{% for error in form.working_hours_per_day.errors %}<p>{{ error }}</p>{% endfor %}</div>
                                 {% endif %}
                             </div>
                         </div>

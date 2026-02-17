@@ -45,6 +45,14 @@ urlpatterns = [
     path('attendance/mark-all-present/', views.mark_all_present, name='mark_all_present'),
     path('attendance/mark-all-absent/', views.mark_all_absent, name='mark_all_absent'),
 
+    # Staff Attendance URLs
+    path('staff-attendance/', views.staff_attendance_list, name='staff_attendance_list'),
+    path('staff-attendance/mark/', views.staff_attendance_mark, name='staff_attendance_mark'),
+    path('staff-attendance/quick/', views.staff_quick_attendance, name='staff_quick_attendance'),
+    path('staff-attendance/toggle/', views.staff_toggle_attendance, name='staff_toggle_attendance'),
+    path('staff-attendance/mark-all-present/', views.staff_mark_all_present, name='staff_mark_all_present'),
+    path('staff-attendance/mark-all-absent/', views.staff_mark_all_absent, name='staff_mark_all_absent'),
+
     # Fee Payment URLs
     path('payments/', views.fee_payment_list, name='fee_payment_list'),
     path('payments/add/', views.fee_payment_add, name='fee_payment_add'),

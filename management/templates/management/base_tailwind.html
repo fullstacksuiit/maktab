@@ -331,7 +331,7 @@
                 <i class="fas fa-user-graduate w-6 text-center"></i>
                 <span>Students</span>
             </a>
-            <a href="{% url 'staff_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'staff' in request.path %}active{% endif %}">
+            <a href="{% url 'staff_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'staff' in request.path and 'staff-attendance' not in request.path %}active{% endif %}">
                 <i class="fas fa-chalkboard-teacher w-6 text-center"></i>
                 <span>Staff</span>
             </a>
@@ -345,9 +345,13 @@
             </a>
             {% endif %}
 
-            <a href="{% url 'attendance_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'attendance' in request.path %}active{% endif %}">
+            <a href="{% url 'attendance_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'attendance' in request.path and 'staff-attendance' not in request.path %}active{% endif %}">
                 <i class="fas fa-clipboard-check w-6 text-center"></i>
                 <span>Attendance</span>
+            </a>
+            <a href="{% url 'staff_attendance_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'staff-attendance' in request.path %}active{% endif %}">
+                <i class="fas fa-user-clock w-6 text-center"></i>
+                <span>Staff Attendance</span>
             </a>
 
             {% if request.user.can_create_edit %}

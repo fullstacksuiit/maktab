@@ -230,7 +230,7 @@ class StaffForm(forms.ModelForm):
         model = Staff
         fields = ['staff_id', 'first_name', 'last_name', 'email', 'phone',
                   'date_of_birth', 'gender', 'address', 'city', 'state', 'pin_code',
-                  'staff_role', 'department', 'joining_date', 'salary']
+                  'staff_role', 'department', 'joining_date', 'salary', 'working_hours_per_day']
         widgets = {
             'staff_id': styled_text_input('Enter staff ID (e.g., STF001)'),
             'first_name': styled_text_input('Enter first name'),
@@ -244,7 +244,8 @@ class StaffForm(forms.ModelForm):
             'pin_code': styled_text_input('Pin Code'),
             'staff_role': styled_select(),
             'department': styled_text_input('Enter department'),
-            'salary': styled_number_input('Enter salary', step='0.01', min_val=0),
+            'salary': styled_number_input('Enter monthly salary', step='0.01', min_val=0),
+            'working_hours_per_day': styled_number_input('e.g., 8', step='0.5', min_val=0.5),
         }
 
     def clean_date_of_birth(self):
@@ -277,6 +278,16 @@ class StaffForm(forms.ModelForm):
             raise forms.ValidationError('Salary cannot be negative.')
         return salary
 
+    def clean_working_hours_per_day(self):
+        """Ensure working hours is between 0.5 and 24."""
+        hours = self.cleaned_data.get('working_hours_per_day')
+        if hours is not None:
+            if hours < 0.5:
+                raise forms.ValidationError('Working hours must be at least 0.5.')
+            if hours > 24:
+                raise forms.ValidationError('Working hours cannot exceed 24.')
+        return hours
+
     def clean(self):
         """Cross-field validation."""
         cleaned_data = super().clean()
@@ -295,6 +306,14 @@ class AttendanceFilterForm(forms.Form):
         widget=searchable_select('Search batch...'),
         required=True
     )
+    date = forms.DateField(
+        widget=styled_date_input(),
+        required=True,
+        initial=date.today
+    )
+
+
+class StaffAttendanceFilterForm(forms.Form):
     date = forms.DateField(
         widget=styled_date_input(),
         required=True,
