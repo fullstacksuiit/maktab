@@ -89,7 +89,11 @@
                 <span class="bg-white/20 px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold backdrop-blur-sm border border-white/10">
                     <i class="fas fa-chart-pie mr-1"></i>{{ data.attendance_percentage }}%
                 </span>
-                {% if data.pending_fees > 0 %}
+                {% if data.student.is_orphan %}
+                <span class="bg-purple-500/80 px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold backdrop-blur-sm border border-purple-400/30">
+                    <i class="fas fa-heart mr-1"></i>Fees Waived
+                </span>
+                {% elif data.pending_fees > 0 %}
                 <span class="bg-red-500/80 px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold backdrop-blur-sm border border-red-400/30">
                     <i class="fas fa-exclamation-circle mr-1"></i>{{ currency_symbol }} {{ data.pending_fees }} Due
                 </span>
@@ -117,11 +121,15 @@
                 <p class="text-sm sm:text-lg font-bold text-green-500">{{ currency_symbol }} {{ data.total_paid }}</p>
                 <p class="text-[10px] sm:text-xs text-gray-500 font-medium">Paid</p>
             </div>
-            <div class="text-center p-2 sm:p-3 {% if data.pending_fees > 0 %}bg-red-50 border-red-100{% else %}bg-green-50 border-green-100{% endif %} rounded-lg sm:rounded-xl border hover:shadow-md transition-all duration-300 group">
-                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br {% if data.pending_fees > 0 %}from-red-500 to-red-600{% else %}from-green-500 to-green-600{% endif %} text-white flex items-center justify-center mx-auto mb-1.5 sm:mb-2 text-xs sm:text-sm shadow-sm group-hover:scale-110 transition-transform">
-                    <i class="fas {% if data.pending_fees > 0 %}fa-hourglass-half{% else %}fa-check-double{% endif %}"></i>
+            <div class="text-center p-2 sm:p-3 {% if data.student.is_orphan %}bg-purple-50 border-purple-100{% elif data.pending_fees > 0 %}bg-red-50 border-red-100{% else %}bg-green-50 border-green-100{% endif %} rounded-lg sm:rounded-xl border hover:shadow-md transition-all duration-300 group">
+                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br {% if data.student.is_orphan %}from-purple-500 to-purple-600{% elif data.pending_fees > 0 %}from-red-500 to-red-600{% else %}from-green-500 to-green-600{% endif %} text-white flex items-center justify-center mx-auto mb-1.5 sm:mb-2 text-xs sm:text-sm shadow-sm group-hover:scale-110 transition-transform">
+                    <i class="fas {% if data.student.is_orphan %}fa-heart{% elif data.pending_fees > 0 %}fa-hourglass-half{% else %}fa-check-double{% endif %}"></i>
                 </div>
+                {% if data.student.is_orphan %}
+                <p class="text-sm sm:text-lg font-bold text-purple-600">Waived</p>
+                {% else %}
                 <p class="text-sm sm:text-lg font-bold {% if data.pending_fees > 0 %}text-red-500{% else %}text-green-500{% endif %}">{{ currency_symbol }} {{ data.pending_fees }}</p>
+                {% endif %}
                 <p class="text-[10px] sm:text-xs text-gray-500 font-medium">Pending</p>
             </div>
         </div>
@@ -137,6 +145,9 @@
                 </button>
                 <button onclick="switchTab('fees', {{ data.student.pk }})" id="tab-fees-{{ data.student.pk }}" class="tab-btn-{{ data.student.pk }} pb-3 px-1 text-xs sm:text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-primary transition-colors whitespace-nowrap">
                     <i class="fas fa-money-bill-wave mr-1"></i>Fees
+                </button>
+                <button onclick="switchTab('behavior', {{ data.student.pk }})" id="tab-behavior-{{ data.student.pk }}" class="tab-btn-{{ data.student.pk }} pb-3 px-1 text-xs sm:text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-primary transition-colors whitespace-nowrap">
+                    <i class="fas fa-clipboard-list mr-1"></i>Behavior
                 </button>
             </div>
         </div>
@@ -329,11 +340,15 @@
                         <h3 class="text-lg sm:text-2xl font-bold text-green-500">{{ currency_symbol }} {{ data.total_paid }}</h3>
                         <p class="text-[9px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">Paid</p>
                     </div>
-                    <div class="{% if data.pending_fees > 0 %}bg-red-50 border-red-100{% else %}bg-green-50 border-green-100{% endif %} p-3 sm:p-4 rounded-lg sm:rounded-xl border text-center hover:shadow-md transition-all duration-300 group">
-                        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br {% if data.pending_fees > 0 %}from-red-500 to-red-600{% else %}from-green-500 to-green-600{% endif %} text-white flex items-center justify-center mx-auto mb-1.5 sm:mb-2 text-sm sm:text-base shadow-md group-hover:scale-110 transition-transform">
-                            <i class="fas {% if data.pending_fees > 0 %}fa-hourglass-half{% else %}fa-check-double{% endif %}"></i>
+                    <div class="{% if data.student.is_orphan %}bg-purple-50 border-purple-100{% elif data.pending_fees > 0 %}bg-red-50 border-red-100{% else %}bg-green-50 border-green-100{% endif %} p-3 sm:p-4 rounded-lg sm:rounded-xl border text-center hover:shadow-md transition-all duration-300 group">
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br {% if data.student.is_orphan %}from-purple-500 to-purple-600{% elif data.pending_fees > 0 %}from-red-500 to-red-600{% else %}from-green-500 to-green-600{% endif %} text-white flex items-center justify-center mx-auto mb-1.5 sm:mb-2 text-sm sm:text-base shadow-md group-hover:scale-110 transition-transform">
+                            <i class="fas {% if data.student.is_orphan %}fa-heart{% elif data.pending_fees > 0 %}fa-hourglass-half{% else %}fa-check-double{% endif %}"></i>
                         </div>
+                        {% if data.student.is_orphan %}
+                        <h3 class="text-lg sm:text-2xl font-bold text-purple-600">Waived</h3>
+                        {% else %}
                         <h3 class="text-lg sm:text-2xl font-bold {% if data.pending_fees > 0 %}text-red-500{% else %}text-green-500{% endif %}">{{ currency_symbol }} {{ data.pending_fees }}</h3>
+                        {% endif %}
                         <p class="text-[9px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">Pending</p>
                     </div>
                 </div>
@@ -414,6 +429,75 @@
                     </div>
                     <h5 class="text-gray-500 font-medium text-sm sm:text-base">No Payments Recorded</h5>
                     <p class="text-gray-400 text-xs sm:text-sm mt-1">No fee payments have been recorded for this student yet.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Behavior Tab (Read-Only) -->
+            <div id="content-behavior-{{ data.student.pk }}" class="tab-content-{{ data.student.pk }} hidden animate-[fadeIn_0.3s_ease-out]">
+                {% if data.behavior_notes %}
+                <!-- Mobile: Card Layout -->
+                <div class="sm:hidden space-y-2">
+                    {% for note in data.behavior_notes %}
+                    <div class="p-3 rounded-xl border border-gray-100 hover:bg-gray-50/50 transition-colors">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold
+                                {% if note.category == 'Homework' %}bg-blue-100 text-blue-700
+                                {% elif note.category == 'Discipline' %}bg-red-100 text-red-700
+                                {% elif note.category == 'Participation' %}bg-green-100 text-green-700
+                                {% elif note.category == 'Academic' %}bg-amber-100 text-amber-700
+                                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                {{ note.get_category_display }}
+                            </span>
+                            <span class="text-[10px] text-gray-500">{{ note.date|date:"M d, Y" }}</span>
+                        </div>
+                        <p class="text-xs font-semibold text-gray-800">{{ note.title }}</p>
+                        {% if note.description %}
+                            <p class="text-[10px] text-gray-500 mt-1">{{ note.description|truncatewords:30 }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Desktop: Table Layout -->
+                <div class="hidden sm:block overflow-x-auto rounded-xl border border-gray-100">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-gradient-to-r from-primary to-secondary text-white text-xs uppercase tracking-wider">
+                            <tr>
+                                <th class="px-4 py-3 font-semibold">Date</th>
+                                <th class="px-4 py-3 font-semibold">Category</th>
+                                <th class="px-4 py-3 font-semibold">Title</th>
+                                <th class="px-4 py-3 font-semibold">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            {% for note in data.behavior_notes %}
+                            <tr class="hover:bg-gray-50/50 transition-colors">
+                                <td class="px-4 py-3 text-sm text-gray-700 font-medium">{{ note.date|date:"M d, Y" }}</td>
+                                <td class="px-4 py-3">
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold
+                                        {% if note.category == 'Homework' %}bg-blue-100 text-blue-700
+                                        {% elif note.category == 'Discipline' %}bg-red-100 text-red-700
+                                        {% elif note.category == 'Participation' %}bg-green-100 text-green-700
+                                        {% elif note.category == 'Academic' %}bg-amber-100 text-amber-700
+                                        {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                        {{ note.get_category_display }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-sm font-semibold text-gray-800">{{ note.title }}</td>
+                                <td class="px-4 py-3 text-xs text-gray-500 max-w-[300px]">{{ note.description|truncatewords:20 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-8 sm:py-10">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 rounded-full bg-gray-50 flex items-center justify-center">
+                        <i class="fas fa-clipboard-list text-gray-200 text-3xl sm:text-4xl"></i>
+                    </div>
+                    <h5 class="text-gray-500 font-medium text-sm sm:text-base">No Behavior Notes</h5>
+                    <p class="text-gray-400 text-xs sm:text-sm mt-1">No behavior notes have been recorded yet.</p>
                 </div>
                 {% endif %}
             </div>

@@ -1,5 +1,6 @@
 
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -11,7 +12,8 @@ from django.db.models.functions import Coalesce
 from django.core.paginator import Paginator
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+import calendar as cal_module
 from django.conf import settings
 from django.core import signing
 import json
@@ -22,8 +24,11 @@ import re
 logger = logging.getLogger('management')
 
 from .forms import (SignUpForm, LoginForm, CourseForm, BatchForm, StudentForm, StaffForm,
-                    AttendanceFilterForm, StaffAttendanceFilterForm, FeePaymentForm, SettingsForm, InviteUserForm, UserEditForm)
-from .models import User, Organization, Course, Batch, Student, Staff, Attendance, StaffAttendance, FeePayment
+                    AttendanceFilterForm, StaffAttendanceFilterForm, FeePaymentForm, BehaviorNoteForm, SettingsForm, InviteUserForm, UserEditForm,
+                    AdmissionApplicationForm, ApplicationRejectForm, EventForm,
+                    LeaveRequestForm, LeaveRejectForm)
+from .models import (User, Organization, Course, Batch, Student, Staff, Attendance, StaffAttendance, FeePayment, BehaviorNote, AdmissionApplication, Event,
+                     LeaveType, LeaveBalance, LeaveRequest, ensure_leave_balances)
 from .decorators import role_required, admin_required, manager_or_admin_required, parent_required, internal_user_required
 from .indian_cities import CITY_DATA
 from .hijri_dates import get_upcoming_islamic_dates
@@ -47,6 +52,10 @@ def signup_view(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
+
+            # Create default leave types for the new organization
+            from .models import create_default_leave_types
+            create_default_leave_types(user.organization)
 
             # Send welcome email
             try:
@@ -498,9 +507,9 @@ def student_add(request):
 
 @login_required(login_url='login')
 @manager_or_admin_required
-def student_edit(request, pk):
+def student_edit(request, uuid):
     org = get_org(request)
-    student = get_object_or_404(Student, pk=pk, organization=org)
+    student = get_object_or_404(Student, uuid=uuid, organization=org)
     if request.method == 'POST':
         form = StudentForm(request.POST, instance=student)
         form.fields['batches'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
@@ -519,9 +528,9 @@ def student_edit(request, pk):
 @login_required(login_url='login')
 @manager_or_admin_required
 @require_POST
-def student_delete(request, pk):
+def student_delete(request, uuid):
     org = get_org(request)
-    student = get_object_or_404(Student, pk=pk, organization=org)
+    student = get_object_or_404(Student, uuid=uuid, organization=org)
     student_name = f"{student.first_name} {student.last_name}"
     student.delete()
     messages.success(request, f'Student "{student_name}" deleted successfully!')
@@ -530,11 +539,11 @@ def student_delete(request, pk):
 
 @login_required(login_url='login')
 @internal_user_required
-def student_detail(request, pk):
+def student_detail(request, uuid):
     org = get_org(request)
     student = get_object_or_404(
         Student.objects.prefetch_related('batches__course'),
-        pk=pk, organization=org
+        uuid=uuid, organization=org
     )
     attendances = Attendance.objects.filter(
         student=student, organization=org
@@ -542,6 +551,9 @@ def student_detail(request, pk):
     fee_payments = FeePayment.objects.filter(
         student=student, organization=org
     ).select_related('batch__course').order_by('-payment_date')
+    behavior_notes = BehaviorNote.objects.filter(
+        student=student, organization=org
+    ).select_related('noted_by')
 
     total_fees = student.get_total_fees()
     total_paid = student.get_total_paid()
@@ -550,6 +562,7 @@ def student_detail(request, pk):
         'student': student,
         'attendances': attendances,
         'fee_payments': fee_payments,
+        'behavior_notes': behavior_notes,
         'attendance_percentage': student.get_attendance_percentage(),
         'total_paid': total_paid,
         'pending_fees': total_fees - total_paid,
@@ -559,9 +572,9 @@ def student_detail(request, pk):
 
 @login_required(login_url='login')
 @internal_user_required
-def student_fee_history(request, pk):
+def student_fee_history(request, uuid):
     org = get_org(request)
-    student = get_object_or_404(Student.objects.prefetch_related('batches__course'), pk=pk, organization=org)
+    student = get_object_or_404(Student.objects.prefetch_related('batches__course'), uuid=uuid, organization=org)
     payments = FeePayment.objects.filter(student=student, organization=org).select_related('batch__course')
 
     total_fees = student.get_total_fees()
@@ -660,7 +673,16 @@ def staff_delete(request, pk):
 def staff_detail(request, pk):
     org = get_org(request)
     staff = get_object_or_404(Staff, pk=pk, organization=org)
-    return render(request, 'management/staff_detail.html', {'staff': staff})
+    from datetime import date
+    current_year = date.today().year
+    ensure_leave_balances(staff, current_year)
+    leave_balances = LeaveBalance.objects.filter(
+        organization=org, staff=staff, year=current_year
+    ).select_related('leave_type')
+    return render(request, 'management/staff_detail.html', {
+        'staff': staff,
+        'leave_balances': leave_balances,
+    })
 
 
 # ─── Attendance Views ────────────────────────────────────────────────────────
@@ -1315,9 +1337,13 @@ def fee_payment_add(request):
         form.fields['student'].queryset = Student.objects.filter(organization=org)
         form.fields['batch'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
 
-        student_id = request.GET.get('student')
-        if student_id:
-            form.initial['student'] = student_id
+        student_uuid = request.GET.get('student')
+        if student_uuid:
+            try:
+                student_obj = Student.objects.get(uuid=student_uuid, organization=org)
+                form.initial['student'] = student_obj.pk
+            except Student.DoesNotExist:
+                pass
 
     return render(request, 'management/fee_payment_add.html', {'form': form, 'action': 'Record'})
 
@@ -1362,6 +1388,63 @@ def print_receipt(request, pk):
     org = get_org(request)
     payment = get_object_or_404(FeePayment, pk=pk, organization=org)
     return render(request, 'management/receipt_print.html', {'payment': payment, 'organization': org})
+
+
+# ─── Behavior Notes Views ────────────────────────────────────────────────────
+
+@login_required(login_url='login')
+@internal_user_required
+def behavior_note_add(request, student_uuid):
+    org = get_org(request)
+    student = get_object_or_404(Student, uuid=student_uuid, organization=org)
+    if request.method == 'POST':
+        form = BehaviorNoteForm(request.POST)
+        form.fields['student'].queryset = Student.objects.filter(organization=org)
+        if form.is_valid():
+            note = form.save(commit=False)
+            note.organization = org
+            note.noted_by = request.user
+            note.save()
+            messages.success(request, f'Behavior note added for {note.student.first_name}.')
+            return redirect('student_detail', uuid=note.student.uuid)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = BehaviorNoteForm(initial={'student': student.pk})
+        form.fields['student'].queryset = Student.objects.filter(organization=org)
+    return render(request, 'management/behavior_note_form.html', {'form': form, 'action': 'Add', 'student': student})
+
+
+@login_required(login_url='login')
+@internal_user_required
+def behavior_note_edit(request, pk):
+    org = get_org(request)
+    note = get_object_or_404(BehaviorNote, pk=pk, organization=org)
+    if request.method == 'POST':
+        form = BehaviorNoteForm(request.POST, instance=note)
+        form.fields['student'].queryset = Student.objects.filter(organization=org)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Behavior note updated.')
+            return redirect('student_detail', uuid=note.student.uuid)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = BehaviorNoteForm(instance=note)
+        form.fields['student'].queryset = Student.objects.filter(organization=org)
+    return render(request, 'management/behavior_note_form.html', {'form': form, 'action': 'Edit', 'student': note.student})
+
+
+@login_required(login_url='login')
+@internal_user_required
+@require_POST
+def behavior_note_delete(request, pk):
+    org = get_org(request)
+    note = get_object_or_404(BehaviorNote, pk=pk, organization=org)
+    student_uuid = note.student.uuid
+    note.delete()
+    messages.success(request, 'Behavior note deleted.')
+    return redirect('student_detail', uuid=student_uuid)
 
 
 # ─── API: Cities by State ────────────────────────────────────────────────────
@@ -1922,6 +2005,401 @@ def import_students(request):
     return render(request, 'management/student_import.html', context)
 
 
+# ─── Staff Leave Views ──────────────────────────────────────────────────────
+
+@login_required(login_url='login')
+@internal_user_required
+def staff_leave_list(request):
+    """List leave requests. Staff sees own, admin/manager sees all."""
+    org = get_org(request)
+    leaves = LeaveRequest.objects.filter(organization=org).select_related('staff', 'leave_type', 'reviewed_by')
+
+    # Staff role: only show own leaves
+    if request.user.role == 'staff' and request.user.staff_profile:
+        leaves = leaves.filter(staff=request.user.staff_profile)
+
+    status_filter = request.GET.get('status', '').strip()
+    if status_filter in ('pending', 'approved', 'rejected', 'cancelled'):
+        leaves = leaves.filter(status=status_filter)
+
+    search_query = request.GET.get('q', '').strip()
+    if search_query:
+        leaves = leaves.filter(
+            Q(staff__first_name__icontains=search_query) |
+            Q(staff__last_name__icontains=search_query) |
+            Q(leave_type__name__icontains=search_query)
+        )
+
+    status_counts = LeaveRequest.objects.filter(organization=org)
+    if request.user.role == 'staff' and request.user.staff_profile:
+        status_counts = status_counts.filter(staff=request.user.staff_profile)
+    status_counts = status_counts.values('status').annotate(count=Count('id'))
+    counts = {item['status']: item['count'] for item in status_counts}
+
+    paginator = Paginator(leaves, 20)
+    leaves_page = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'management/staff_leave_list.html', {
+        'leaves': leaves_page,
+        'status_filter': status_filter,
+        'search_query': search_query,
+        'pending_count': counts.get('pending', 0),
+        'approved_count': counts.get('approved', 0),
+        'rejected_count': counts.get('rejected', 0),
+        'cancelled_count': counts.get('cancelled', 0),
+        'total_count': sum(counts.values()),
+    })
+
+
+@login_required(login_url='login')
+@internal_user_required
+def staff_leave_request(request):
+    """Request leave. Staff for self, admin/manager for any staff."""
+    org = get_org(request)
+
+    # Pre-fill staff from query param (e.g., from staff detail page)
+    initial = {}
+    staff_id = request.GET.get('staff')
+    if staff_id and request.user.can_create_edit():
+        try:
+            initial['staff'] = Staff.objects.get(pk=staff_id, organization=org)
+        except Staff.DoesNotExist:
+            pass
+
+    if request.method == 'POST':
+        form = LeaveRequestForm(request.POST, organization=org, user=request.user)
+        if form.is_valid():
+            leave = form.save(commit=False)
+            leave.organization = org
+            leave.requested_by = request.user
+            leave.days = form.cleaned_data.get('_days', 1)
+            if leave.half_day:
+                leave.end_date = leave.start_date
+                leave.days = 0.5
+            elif not leave.days:
+                leave.days = (leave.end_date - leave.start_date).days + 1
+            # Ensure balances exist
+            ensure_leave_balances(leave.staff, leave.start_date.year)
+            leave.save()
+            messages.success(request, f'Leave request submitted for {leave.staff.first_name} {leave.staff.last_name}.')
+            return redirect('staff_leave_list')
+    else:
+        form = LeaveRequestForm(organization=org, user=request.user, initial=initial)
+
+    return render(request, 'management/staff_leave_request.html', {
+        'form': form,
+    })
+
+
+@login_required(login_url='login')
+@internal_user_required
+def staff_leave_detail(request, pk):
+    """View leave request details."""
+    org = get_org(request)
+    leave = get_object_or_404(LeaveRequest, pk=pk, organization=org)
+
+    # Staff can only view their own
+    if request.user.role == 'staff' and request.user.staff_profile:
+        if leave.staff != request.user.staff_profile:
+            messages.error(request, 'You do not have permission to view this leave request.')
+            return redirect('staff_leave_list')
+
+    reject_form = LeaveRejectForm()
+    return render(request, 'management/staff_leave_detail.html', {
+        'leave': leave,
+        'reject_form': reject_form,
+    })
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def staff_leave_approve(request, pk):
+    """Approve a leave request."""
+    from django.utils import timezone
+    from datetime import timedelta
+
+    org = get_org(request)
+    leave = get_object_or_404(LeaveRequest, pk=pk, organization=org)
+
+    if leave.status != 'pending':
+        messages.error(request, 'This leave request has already been processed.')
+        return redirect('staff_leave_detail', pk=pk)
+
+    with transaction.atomic():
+        # Ensure balance exists and deduct
+        ensure_leave_balances(leave.staff, leave.start_date.year)
+        balance = LeaveBalance.objects.select_for_update().get(
+            organization=org, staff=leave.staff,
+            leave_type=leave.leave_type, year=leave.start_date.year
+        )
+
+        # Check sufficient balance for paid leave
+        if leave.leave_type.days_per_year > 0 and balance.remaining < float(leave.days):
+            messages.error(request, f'Insufficient leave balance. {balance.remaining} days remaining.')
+            return redirect('staff_leave_detail', pk=pk)
+
+        balance.used += leave.days
+        balance.save()
+
+        # Update leave status
+        leave.status = 'approved'
+        leave.reviewed_by = request.user
+        leave.reviewed_at = timezone.now()
+        leave.save()
+
+        # Auto-create StaffAttendance as "Excused" for each leave day
+        current_date = leave.start_date
+        while current_date <= leave.end_date:
+            StaffAttendance.objects.update_or_create(
+                organization=org, staff=leave.staff, date=current_date,
+                defaults={
+                    'status': 'Excused',
+                    'marked_by': request.user,
+                    'notes': f'Leave: {leave.leave_type.name}',
+                    'hours': 0,
+                }
+            )
+            current_date += timedelta(days=1)
+
+    messages.success(request, f'Leave approved for {leave.staff.first_name} {leave.staff.last_name}.')
+    return redirect('staff_leave_list')
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def staff_leave_reject(request, pk):
+    """Reject a leave request."""
+    from django.utils import timezone
+
+    org = get_org(request)
+    leave = get_object_or_404(LeaveRequest, pk=pk, organization=org)
+
+    if leave.status != 'pending':
+        messages.error(request, 'This leave request has already been processed.')
+        return redirect('staff_leave_detail', pk=pk)
+
+    form = LeaveRejectForm(request.POST)
+    if form.is_valid():
+        leave.status = 'rejected'
+        leave.rejection_reason = form.cleaned_data.get('rejection_reason', '')
+        leave.reviewed_by = request.user
+        leave.reviewed_at = timezone.now()
+        leave.save()
+        messages.success(request, f'Leave request from {leave.staff.first_name} {leave.staff.last_name} rejected.')
+    return redirect('staff_leave_list')
+
+
+@login_required(login_url='login')
+@internal_user_required
+@require_POST
+def staff_leave_cancel(request, pk):
+    """Cancel a leave request. Staff cancels own pending. Manager can cancel any."""
+    from django.utils import timezone
+    from datetime import timedelta
+
+    org = get_org(request)
+    leave = get_object_or_404(LeaveRequest, pk=pk, organization=org)
+
+    # Staff can only cancel their own pending leaves
+    if request.user.role == 'staff':
+        if not request.user.staff_profile or leave.staff != request.user.staff_profile:
+            messages.error(request, 'You can only cancel your own leave requests.')
+            return redirect('staff_leave_list')
+        if leave.status != 'pending':
+            messages.error(request, 'You can only cancel pending leave requests.')
+            return redirect('staff_leave_detail', pk=pk)
+
+    if leave.status not in ('pending', 'approved'):
+        messages.error(request, 'This leave request cannot be cancelled.')
+        return redirect('staff_leave_detail', pk=pk)
+
+    with transaction.atomic():
+        # If it was approved, restore balance and clean up attendance
+        if leave.status == 'approved':
+            balance = LeaveBalance.objects.filter(
+                organization=org, staff=leave.staff,
+                leave_type=leave.leave_type, year=leave.start_date.year
+            ).first()
+            if balance:
+                balance.used = max(0, float(balance.used) - float(leave.days))
+                balance.save()
+
+            # Delete auto-created attendance records
+            current_date = leave.start_date
+            while current_date <= leave.end_date:
+                StaffAttendance.objects.filter(
+                    organization=org, staff=leave.staff, date=current_date,
+                    notes__startswith='Leave:'
+                ).delete()
+                current_date += timedelta(days=1)
+
+        leave.status = 'cancelled'
+        leave.reviewed_by = request.user
+        leave.reviewed_at = timezone.now()
+        leave.save()
+
+    messages.success(request, f'Leave request cancelled.')
+    return redirect('staff_leave_list')
+
+
+# ─── Admission Application Views ────────────────────────────────────────────
+
+def admission_apply(request, org_slug):
+    """Public admission application form. No login required."""
+    org = get_object_or_404(Organization, slug=org_slug)
+
+    if request.method == 'POST':
+        form = AdmissionApplicationForm(request.POST)
+        if form.is_valid():
+            application = form.save(commit=False)
+            application.organization = org
+            application.save()
+            return redirect('admission_apply_success', org_slug=org_slug)
+    else:
+        form = AdmissionApplicationForm()
+
+    return render(request, 'management/admission_apply.html', {
+        'form': form,
+        'organization': org,
+    })
+
+
+def admission_apply_success(request, org_slug):
+    """Success page after submitting admission application."""
+    org = get_object_or_404(Organization, slug=org_slug)
+    return render(request, 'management/admission_apply_success.html', {
+        'organization': org,
+    })
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def application_list(request):
+    """List admission applications with status filter."""
+    org = get_org(request)
+    applications = AdmissionApplication.objects.filter(organization=org)
+
+    status_filter = request.GET.get('status', '').strip()
+    if status_filter in ('pending', 'accepted', 'rejected'):
+        applications = applications.filter(status=status_filter)
+
+    search_query = request.GET.get('q', '').strip()
+    if search_query:
+        applications = applications.filter(
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(phone__icontains=search_query) |
+            Q(email__icontains=search_query)
+        )
+
+    status_counts = AdmissionApplication.objects.filter(organization=org).values('status').annotate(
+        count=Count('id')
+    )
+    counts = {item['status']: item['count'] for item in status_counts}
+
+    paginator = Paginator(applications, 20)
+    applications_page = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'management/application_list.html', {
+        'applications': applications_page,
+        'status_filter': status_filter,
+        'search_query': search_query,
+        'pending_count': counts.get('pending', 0),
+        'accepted_count': counts.get('accepted', 0),
+        'rejected_count': counts.get('rejected', 0),
+        'total_count': sum(counts.values()),
+    })
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def application_detail(request, pk):
+    """View admission application details."""
+    org = get_org(request)
+    application = get_object_or_404(AdmissionApplication, pk=pk, organization=org)
+    reject_form = ApplicationRejectForm()
+    return render(request, 'management/application_detail.html', {
+        'application': application,
+        'reject_form': reject_form,
+    })
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def application_accept(request, pk):
+    """Accept an admission application and create a Student record."""
+    from django.utils import timezone
+
+    org = get_org(request)
+    application = get_object_or_404(AdmissionApplication, pk=pk, organization=org)
+
+    if application.status != 'pending':
+        messages.error(request, 'This application has already been processed.')
+        return redirect('application_detail', pk=pk)
+
+    with transaction.atomic():
+        student = Student(
+            first_name=application.first_name,
+            last_name=application.last_name,
+            phone=application.phone,
+            email=application.email,
+            date_of_birth=application.date_of_birth,
+            gender=application.gender,
+            address=application.address,
+            city=application.city,
+            state=application.state,
+            pin_code=application.pin_code,
+            enrollment_date=date.today(),
+            organization=org,
+        )
+        student.save()
+
+        application.status = 'accepted'
+        application.student = student
+        application.reviewed_by = request.user
+        application.reviewed_at = timezone.now()
+        application.save()
+
+    messages.success(
+        request,
+        f'Application accepted! Student "{student.first_name} {student.last_name}" '
+        f'created with ID {student.student_id}. You can now assign batches.'
+    )
+    return redirect('student_edit', uuid=student.uuid)
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def application_reject(request, pk):
+    """Reject an admission application."""
+    from django.utils import timezone
+
+    org = get_org(request)
+    application = get_object_or_404(AdmissionApplication, pk=pk, organization=org)
+
+    if application.status != 'pending':
+        messages.error(request, 'This application has already been processed.')
+        return redirect('application_detail', pk=pk)
+
+    form = ApplicationRejectForm(request.POST)
+    if form.is_valid():
+        application.status = 'rejected'
+        application.rejection_reason = form.cleaned_data.get('rejection_reason', '')
+        application.reviewed_by = request.user
+        application.reviewed_at = timezone.now()
+        application.save()
+
+        messages.success(
+            request,
+            f'Application from "{application.first_name} {application.last_name}" has been rejected.'
+        )
+    return redirect('application_list')
+
+
 # ─── Parent Portal Views ────────────────────────────────────────────────────
 
 @login_required(login_url='login')
@@ -1953,6 +2431,11 @@ def parent_dashboard(request):
             queryset=FeePayment.objects.select_related('batch__course').order_by('-payment_date'),
             to_attr='all_fee_payments'
         ),
+        Prefetch(
+            'behavior_notes',
+            queryset=BehaviorNote.objects.select_related('noted_by').order_by('-date'),
+            to_attr='all_behavior_notes'
+        ),
     ).annotate(
         att_total=Count('attendances'),
         att_present=Count('attendances', filter=Q(attendances__status='Present')),
@@ -1980,6 +2463,7 @@ def parent_dashboard(request):
             'student': student,
             'attendances': student.all_attendances[:20],
             'fee_payments': student.all_fee_payments,
+            'behavior_notes': student.all_behavior_notes,
             'attendance_percentage': attendance_pct,
             'total_fees': total_fees,
             'total_paid': total_paid,
@@ -2023,3 +2507,164 @@ def parent_change_password(request):
         form = PasswordChangeForm(request.user)
 
     return render(request, 'management/parent_change_password.html', {'form': form})
+
+
+# ─── Calendar / Event Views ──────────────────────────────────────────────────
+
+@login_required(login_url='login')
+def calendar_view(request):
+    org = get_org(request)
+    today = date.today()
+
+    try:
+        year = int(request.GET.get('year', today.year))
+        month = int(request.GET.get('month', today.month))
+        if month < 1 or month > 12:
+            month = today.month
+        if year < 2000 or year > 2100:
+            year = today.year
+    except (ValueError, TypeError):
+        year = today.year
+        month = today.month
+
+    cal = cal_module.Calendar(firstweekday=6)  # Sunday first
+    month_days = cal.monthdayscalendar(year, month)
+
+    first_day = date(year, month, 1)
+    if month == 12:
+        last_day = date(year + 1, 1, 1)
+    else:
+        last_day = date(year, month + 1, 1)
+
+    events = Event.objects.filter(
+        organization=org,
+        start_date__lt=last_day,
+        end_date__gte=first_day,
+    ).order_by('start_date', 'title')
+
+    events_by_day = {}
+    for event in events:
+        event_start = max(event.start_date, first_day)
+        event_end = min(event.end_date, last_day - timedelta(days=1))
+        current = event_start
+        while current <= event_end:
+            if current.month == month and current.year == year:
+                events_by_day.setdefault(current.day, []).append(event)
+            current += timedelta(days=1)
+
+    weeks = []
+    for week in month_days:
+        week_data = []
+        for day_num in week:
+            if day_num == 0:
+                week_data.append({'day': 0, 'events': [], 'is_today': False})
+            else:
+                is_today = (day_num == today.day and month == today.month and year == today.year)
+                week_data.append({
+                    'day': day_num,
+                    'events': events_by_day.get(day_num, []),
+                    'is_today': is_today,
+                })
+        weeks.append(week_data)
+
+    if month == 1:
+        prev_month, prev_year = 12, year - 1
+    else:
+        prev_month, prev_year = month - 1, year
+    if month == 12:
+        next_month, next_year = 1, year + 1
+    else:
+        next_month, next_year = month + 1, year
+
+    month_name = cal_module.month_name[month]
+
+    selected_day = request.GET.get('day')
+    selected_day_events = []
+    selected_date = None
+    if selected_day:
+        try:
+            selected_day = int(selected_day)
+            if 1 <= selected_day <= cal_module.monthrange(year, month)[1]:
+                selected_day_events = events_by_day.get(selected_day, [])
+                selected_date = date(year, month, selected_day)
+            else:
+                selected_day = None
+        except (ValueError, TypeError):
+            selected_day = None
+
+    context = {
+        'weeks': weeks,
+        'month': month,
+        'year': year,
+        'month_name': month_name,
+        'prev_month': prev_month,
+        'prev_year': prev_year,
+        'next_month': next_month,
+        'next_year': next_year,
+        'today': today,
+        'selected_day': selected_day,
+        'selected_day_events': selected_day_events,
+        'selected_date': selected_date,
+        'can_manage_events': request.user.can_create_edit(),
+    }
+    return render(request, 'management/calendar.html', context)
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def event_add(request):
+    org = get_org(request)
+    if request.method == 'POST':
+        form = EventForm(request.POST)
+        if form.is_valid():
+            event = form.save(commit=False)
+            event.organization = org
+            event.created_by = request.user
+            event.save()
+            messages.success(request, f'Event "{event.title}" created successfully!')
+            return redirect(f"{reverse('calendar')}?year={event.start_date.year}&month={event.start_date.month}&day={event.start_date.day}")
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        initial = {}
+        day = request.GET.get('day')
+        month = request.GET.get('month')
+        year = request.GET.get('year')
+        if day and month and year:
+            try:
+                initial['start_date'] = date(int(year), int(month), int(day))
+            except (ValueError, TypeError):
+                pass
+        form = EventForm(initial=initial)
+    return render(request, 'management/event_form.html', {'form': form, 'action': 'Add'})
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def event_edit(request, pk):
+    org = get_org(request)
+    event = get_object_or_404(Event, pk=pk, organization=org)
+    if request.method == 'POST':
+        form = EventForm(request.POST, instance=event)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Event "{event.title}" updated successfully!')
+            return redirect(f"{reverse('calendar')}?year={event.start_date.year}&month={event.start_date.month}&day={event.start_date.day}")
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = EventForm(instance=event)
+    return render(request, 'management/event_form.html', {'form': form, 'action': 'Edit'})
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def event_delete(request, pk):
+    org = get_org(request)
+    event = get_object_or_404(Event, pk=pk, organization=org)
+    event_title = event.title
+    start = event.start_date
+    event.delete()
+    messages.success(request, f'Event "{event_title}" deleted successfully!')
+    return redirect(f"{reverse('calendar')}?year={start.year}&month={start.month}")

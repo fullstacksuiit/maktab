@@ -315,6 +315,10 @@
                 <i class="fas fa-child w-6 text-center"></i>
                 <span>My Children</span>
             </a>
+            <a href="{% url 'calendar' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'calendar' in request.path %}active{% endif %}">
+                <i class="fas fa-calendar-alt w-6 text-center"></i>
+                <span>Calendar</span>
+            </a>
             <a href="{% url 'parent_change_password' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'change-password' in request.path %}active{% endif %}">
                 <i class="fas fa-key w-6 text-center"></i>
                 <span>Change Password</span>
@@ -330,6 +334,13 @@
             <a href="{% url 'student_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'student' in request.path %}active{% endif %}">
                 <i class="fas fa-user-graduate w-6 text-center"></i>
                 <span>Students</span>
+            </a>
+            <a href="{% url 'application_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'application' in request.path %}active{% endif %}">
+                <i class="fas fa-file-alt w-6 text-center"></i>
+                <span>Applications</span>
+                {% if pending_application_count %}
+                <span class="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{{ pending_application_count }}</span>
+                {% endif %}
             </a>
             <a href="{% url 'staff_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'staff' in request.path and 'staff-attendance' not in request.path %}active{% endif %}">
                 <i class="fas fa-chalkboard-teacher w-6 text-center"></i>
@@ -353,6 +364,13 @@
                 <i class="fas fa-user-clock w-6 text-center"></i>
                 <span>Staff Attendance</span>
             </a>
+            <a href="{% url 'staff_leave_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'staff-leave' in request.path %}active{% endif %}">
+                <i class="fas fa-calendar-minus w-6 text-center"></i>
+                <span>Staff Leave</span>
+                {% if pending_leave_count %}
+                <span class="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{{ pending_leave_count }}</span>
+                {% endif %}
+            </a>
 
             {% if request.user.can_create_edit %}
             <a href="{% url 'fee_payment_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'payment' in request.path %}active{% endif %}">
@@ -360,6 +378,11 @@
                 <span>Fees</span>
             </a>
             {% endif %}
+
+            <a href="{% url 'calendar' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'calendar' in request.path %}active{% endif %}">
+                <i class="fas fa-calendar-alt w-6 text-center"></i>
+                <span>Calendar</span>
+            </a>
 
             {% if request.user.is_admin %}
             <a href="{% url 'user_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'users' in request.path %}active{% endif %}">
@@ -472,8 +495,20 @@
                 {% block content %}{% endblock %}
             </div>
 
+            <!-- Spacer so content doesn't hide behind fixed footer -->
+            <div class="h-14"></div>
+
         </div>
     </main>
+
+    <!-- Fixed Footer -->
+    <footer class="fixed bottom-0 left-0 right-0 z-20 md:left-64 bg-white/80 backdrop-blur-md border-t border-gray-200/60">
+        <div class="flex items-center justify-center h-11">
+            <span class="text-sm font-bold text-gray-700">Maktab Management System</span>
+            <span class="text-gray-300 mx-2">|</span>
+            <span class="text-sm text-gray-600">A <a href="http://strix.co.in/" target="_blank" rel="noopener noreferrer" class="font-bold text-primary hover:text-secondary hover:underline transition-colors">Strix</a> Venture</span>
+        </div>
+    </footer>
 
     <!-- Overlay for mobile sidebar -->
     <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 hidden md:hidden glass-dark transition-opacity"></div>

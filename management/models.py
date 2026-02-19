@@ -2,6 +2,8 @@ from django.db import models, transaction
 from django.db.models import Sum, Count, Q
 from django.contrib.auth.models import AbstractUser
 from django.db.utils import IntegrityError
+from django.utils.text import slugify
+import uuid
 import time
 
 
@@ -23,6 +25,7 @@ class Organization(models.Model):
     ifsc_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="IFSC Code")
     account_holder = models.CharField(max_length=100, blank=True, null=True, verbose_name="Account Holder Name")
     upi_id = models.CharField(max_length=50, blank=True, null=True, verbose_name="UPI ID")
+    slug = models.SlugField(max_length=255, unique=True, blank=True, verbose_name="URL Slug")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -42,6 +45,17 @@ class Organization(models.Model):
 
     def __str__(self):
         return self.org_name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.org_name) or 'org'
+            slug = base_slug
+            counter = 1
+            while Organization.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
 
 
 class User(AbstractUser):
@@ -254,6 +268,7 @@ class Student(models.Model):
         ('O', 'Other'),
     ]
 
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
     student_id = models.CharField(max_length=50, blank=True, verbose_name="Student ID")
     first_name = models.CharField(max_length=100, verbose_name="First Name")
     last_name = models.CharField(max_length=100, verbose_name="Last Name")
@@ -265,6 +280,9 @@ class Student(models.Model):
     city = models.CharField(max_length=100, blank=True, default='', verbose_name="City")
     state = models.CharField(max_length=100, blank=True, default='', verbose_name="State")
     pin_code = models.CharField(max_length=10, blank=True, default='', verbose_name="Pin Code")
+    is_orphan = models.BooleanField(default=False, verbose_name="Orphan")
+    guardian_name = models.CharField(max_length=100, blank=True, default='', verbose_name="Guardian Name")
+    guardian_phone = models.CharField(max_length=20, blank=True, default='', verbose_name="Guardian Phone")
     batches = models.ManyToManyField('Batch', related_name='students', verbose_name="Enrolled Batches", blank=True)
     enrollment_date = models.DateField(verbose_name="Enrollment Date")
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='students')
@@ -335,6 +353,8 @@ class Student(models.Model):
         return total or 0
 
     def get_pending_fees(self):
+        if self.is_orphan:
+            return 0
         return self.get_total_fees() - self.get_total_paid()
 
     def get_attendance_percentage(self):
@@ -446,6 +466,36 @@ class Attendance(models.Model):
         return f"{self.student} - {self.batch} - {self.date} - {self.status}"
 
 
+class BehaviorNote(models.Model):
+    CATEGORY_CHOICES = [
+        ('Homework', 'Homework'),
+        ('Discipline', 'Discipline'),
+        ('Participation', 'Participation'),
+        ('Academic', 'Academic Performance'),
+        ('General', 'General'),
+    ]
+
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='behavior_notes')
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='General', verbose_name="Category")
+    title = models.CharField(max_length=200, verbose_name="Title")
+    description = models.TextField(verbose_name="Description")
+    date = models.DateField(verbose_name="Date")
+    noted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='behavior_notes', verbose_name="Noted By")
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='behavior_notes')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-date', '-created_at']
+        indexes = [
+            models.Index(fields=['organization', 'student']),
+            models.Index(fields=['organization', 'date']),
+        ]
+
+    def __str__(self):
+        return f"{self.student} - {self.title} ({self.date})"
+
+
 class StaffAttendance(models.Model):
     STATUS_CHOICES = [
         ('Present', 'Present'),
@@ -539,3 +589,230 @@ class FeePayment(models.Model):
                         continue
         else:
             super().save(*args, **kwargs)
+
+
+class AdmissionApplication(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+    ]
+
+    GENDER_CHOICES = [
+        ('M', 'Male'),
+        ('F', 'Female'),
+        ('O', 'Other'),
+    ]
+
+    first_name = models.CharField(max_length=100, verbose_name="First Name")
+    last_name = models.CharField(max_length=100, verbose_name="Last Name")
+    phone = models.CharField(max_length=20, verbose_name="Phone Number")
+    email = models.EmailField(blank=True, default='', verbose_name="Email Address")
+    date_of_birth = models.DateField(blank=True, null=True, verbose_name="Date of Birth")
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name="Gender")
+    address = models.TextField(verbose_name="Address")
+    city = models.CharField(max_length=100, blank=True, default='', verbose_name="City")
+    state = models.CharField(max_length=100, blank=True, default='', verbose_name="State")
+    pin_code = models.CharField(max_length=10, blank=True, default='', verbose_name="Pin Code")
+    notes = models.TextField(blank=True, default='', verbose_name="Notes / Message")
+
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name="Status")
+    rejection_reason = models.TextField(blank=True, default='', verbose_name="Rejection Reason")
+
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name='admission_applications'
+    )
+    student = models.OneToOneField(
+        'Student', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='admission_application', verbose_name="Created Student"
+    )
+    reviewed_by = models.ForeignKey(
+        'User', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='reviewed_applications', verbose_name="Reviewed By"
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name="Reviewed At")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['organization', 'status']),
+            models.Index(fields=['organization', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.get_status_display()})"
+
+
+class Event(models.Model):
+    EVENT_TYPE_CHOICES = [
+        ('holiday', 'Holiday'),
+        ('exam', 'Exam'),
+        ('meeting', 'Meeting'),
+        ('parent_teacher', 'Parent-Teacher Day'),
+        ('fee_deadline', 'Fee Deadline'),
+        ('other', 'Other'),
+    ]
+
+    EVENT_TYPE_COLORS = {
+        'holiday': '#ef4444',
+        'exam': '#f59e0b',
+        'meeting': '#3b82f6',
+        'parent_teacher': '#8b5cf6',
+        'fee_deadline': '#f97316',
+        'other': '#6b7280',
+    }
+
+    title = models.CharField(max_length=200, verbose_name="Title")
+    description = models.TextField(blank=True, default='', verbose_name="Description")
+    event_type = models.CharField(
+        max_length=20, choices=EVENT_TYPE_CHOICES, default='other',
+        verbose_name="Event Type"
+    )
+    start_date = models.DateField(verbose_name="Start Date")
+    end_date = models.DateField(verbose_name="End Date")
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True,
+        related_name='created_events', verbose_name="Created By"
+    )
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name='events'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['start_date', 'title']
+        indexes = [
+            models.Index(fields=['organization', 'start_date']),
+            models.Index(fields=['organization', 'end_date']),
+        ]
+
+    def __str__(self):
+        return f"{self.title} ({self.start_date})"
+
+    @property
+    def color(self):
+        return self.EVENT_TYPE_COLORS.get(self.event_type, '#6b7280')
+
+    @property
+    def is_multi_day(self):
+        return self.start_date != self.end_date
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.start_date and self.end_date and self.end_date < self.start_date:
+            raise ValidationError({'end_date': 'End date cannot be before start date.'})
+
+
+class LeaveType(models.Model):
+    name = models.CharField(max_length=100, verbose_name="Leave Type")
+    code = models.CharField(max_length=10, verbose_name="Code")
+    days_per_year = models.PositiveIntegerField(default=0, verbose_name="Days Per Year")
+    is_paid = models.BooleanField(default=True, verbose_name="Is Paid")
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='leave_types')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(fields=['organization', 'code'], name='unique_leave_type_code_per_org'),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class LeaveBalance(models.Model):
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='leave_balances')
+    leave_type = models.ForeignKey(LeaveType, on_delete=models.CASCADE, related_name='balances')
+    year = models.PositiveIntegerField(verbose_name="Year")
+    allocated = models.DecimalField(max_digits=5, decimal_places=1, default=0, verbose_name="Allocated Days")
+    used = models.DecimalField(max_digits=5, decimal_places=1, default=0, verbose_name="Used Days")
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='leave_balances')
+
+    class Meta:
+        ordering = ['leave_type__name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['organization', 'staff', 'leave_type', 'year'],
+                name='unique_leave_balance_per_staff_type_year'
+            ),
+        ]
+
+    @property
+    def remaining(self):
+        return float(self.allocated) - float(self.used)
+
+    def __str__(self):
+        return f"{self.staff} - {self.leave_type.code} ({self.year}): {self.remaining} remaining"
+
+
+class LeaveRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='leave_requests')
+    leave_type = models.ForeignKey(LeaveType, on_delete=models.CASCADE, related_name='leave_requests')
+    start_date = models.DateField(verbose_name="Start Date")
+    end_date = models.DateField(verbose_name="End Date")
+    days = models.DecimalField(max_digits=5, decimal_places=1, verbose_name="Total Days")
+    half_day = models.BooleanField(default=False, verbose_name="Half Day")
+    reason = models.TextField(verbose_name="Reason")
+
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name="Status")
+    rejection_reason = models.TextField(blank=True, default='', verbose_name="Rejection Reason")
+
+    requested_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True,
+        related_name='leave_requests_made', verbose_name="Requested By"
+    )
+    reviewed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='leave_requests_reviewed', verbose_name="Reviewed By"
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name="Reviewed At")
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='leave_requests')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['organization', 'status']),
+            models.Index(fields=['organization', 'staff', 'start_date']),
+        ]
+
+    def __str__(self):
+        return f"{self.staff} - {self.leave_type.code} ({self.start_date} to {self.end_date})"
+
+
+def create_default_leave_types(organization):
+    """Create default leave types for a new organization."""
+    defaults = [
+        ('Casual Leave', 'CL', 12, True),
+        ('Sick Leave', 'SL', 12, True),
+        ('Earned Leave', 'EL', 15, True),
+        ('Unpaid Leave', 'UL', 0, False),
+    ]
+    for name, code, days, is_paid in defaults:
+        LeaveType.objects.get_or_create(
+            organization=organization, code=code,
+            defaults={'name': name, 'days_per_year': days, 'is_paid': is_paid}
+        )
+
+
+def ensure_leave_balances(staff, year):
+    """Ensure LeaveBalance records exist for all leave types for this staff and year."""
+    org = staff.organization
+    leave_types = LeaveType.objects.filter(organization=org)
+    for lt in leave_types:
+        LeaveBalance.objects.get_or_create(
+            organization=org, staff=staff, leave_type=lt, year=year,
+            defaults={'allocated': lt.days_per_year}
+        )

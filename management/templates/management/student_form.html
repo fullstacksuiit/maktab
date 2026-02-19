@@ -214,6 +214,47 @@
                         </div>
                     </div>
 
+                    <!-- Orphan & Guardian Section -->
+                    <div>
+                        <h6 class="text-primary font-bold mb-4 flex items-center gap-2 pb-2 border-b border-gray-100 mt-2">
+                            <i class="fas fa-hand-holding-heart"></i> Orphan & Guardian
+                        </h6>
+
+                        <div class="mb-6">
+                            <label for="{{ form.is_orphan.id_for_label }}" class="flex items-center gap-3 cursor-pointer group">
+                                {{ form.is_orphan }}
+                                <span class="text-sm font-semibold text-gray-700 group-hover:text-primary transition-colors">This student is an orphan</span>
+                            </label>
+                            <p class="text-gray-400 text-xs mt-1.5 ml-8">Fees will be automatically waived for orphan students.</p>
+                        </div>
+
+                        <div id="guardian-fields" class="grid grid-cols-1 md:grid-cols-2 gap-6" style="display: none;">
+                            <div>
+                                <label for="{{ form.guardian_name.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Guardian Name
+                                </label>
+                                {{ form.guardian_name }}
+                                {% if form.guardian_name.errors %}
+                                    <div class="text-red-500 text-xs mt-1">
+                                        {% for error in form.guardian_name.errors %}<p>{{ error }}</p>{% endfor %}
+                                    </div>
+                                {% endif %}
+                                <p class="text-gray-400 text-xs mt-1">Person responsible for the student</p>
+                            </div>
+                            <div>
+                                <label for="{{ form.guardian_phone.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Guardian Phone
+                                </label>
+                                {{ form.guardian_phone }}
+                                {% if form.guardian_phone.errors %}
+                                    <div class="text-red-500 text-xs mt-1">
+                                        {% for error in form.guardian_phone.errors %}<p>{{ error }}</p>{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="pt-6 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                         <a href="{% url 'student_list' %}" class="px-6 py-2.5 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors text-center">
                             Cancel
@@ -227,4 +268,18 @@
         </div>
     </div>
 </div>
+
+<script>
+    (function() {
+        var checkbox = document.getElementById('{{ form.is_orphan.id_for_label }}');
+        var guardianFields = document.getElementById('guardian-fields');
+
+        function toggleGuardian() {
+            guardianFields.style.display = checkbox.checked ? '' : 'none';
+        }
+
+        toggleGuardian();
+        checkbox.addEventListener('change', toggleGuardian);
+    })();
+</script>
 {% endblock %}

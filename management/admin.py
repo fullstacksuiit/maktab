@@ -1,12 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Organization, Course, Batch, Student, Staff, Attendance, StaffAttendance, FeePayment
+from .models import User, Organization, Course, Batch, Student, Staff, Attendance, StaffAttendance, FeePayment, BehaviorNote, AdmissionApplication, Event, LeaveType, LeaveBalance, LeaveRequest
 
 
 @admin.register(Organization)
 class OrganizationAdmin(admin.ModelAdmin):
-    list_display = ['org_name', 'contact', 'license', 'created_at']
-    search_fields = ['org_name', 'contact']
+    list_display = ['org_name', 'slug', 'contact', 'license', 'created_at']
+    search_fields = ['org_name', 'contact', 'slug']
+    prepopulated_fields = {'slug': ('org_name',)}
 
 
 class CustomUserAdmin(UserAdmin):
@@ -72,6 +73,51 @@ class FeePaymentAdmin(admin.ModelAdmin):
     list_filter = ['payment_method', 'payment_date']
     search_fields = ['receipt_number', 'student__first_name', 'student__last_name']
     readonly_fields = ['receipt_number']
+
+
+@admin.register(BehaviorNote)
+class BehaviorNoteAdmin(admin.ModelAdmin):
+    list_display = ['date', 'student', 'category', 'title', 'noted_by', 'created_at']
+    list_filter = ['category', 'date', 'organization']
+    search_fields = ['title', 'description', 'student__first_name', 'student__last_name']
+
+
+@admin.register(AdmissionApplication)
+class AdmissionApplicationAdmin(admin.ModelAdmin):
+    list_display = ['first_name', 'last_name', 'phone', 'status', 'organization', 'created_at', 'reviewed_by']
+    list_filter = ['status', 'organization', 'created_at']
+    search_fields = ['first_name', 'last_name', 'phone', 'email']
+    readonly_fields = ['created_at', 'updated_at', 'reviewed_at']
+
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    list_display = ['title', 'event_type', 'start_date', 'end_date', 'organization', 'created_by', 'created_at']
+    list_filter = ['event_type', 'start_date', 'organization']
+    search_fields = ['title', 'description']
+    readonly_fields = ['created_at', 'updated_at']
+
+
+@admin.register(LeaveType)
+class LeaveTypeAdmin(admin.ModelAdmin):
+    list_display = ['name', 'code', 'days_per_year', 'is_paid', 'organization']
+    list_filter = ['is_paid', 'organization']
+    search_fields = ['name', 'code']
+
+
+@admin.register(LeaveBalance)
+class LeaveBalanceAdmin(admin.ModelAdmin):
+    list_display = ['staff', 'leave_type', 'year', 'allocated', 'used', 'organization']
+    list_filter = ['year', 'leave_type', 'organization']
+    search_fields = ['staff__first_name', 'staff__last_name', 'staff__staff_id']
+
+
+@admin.register(LeaveRequest)
+class LeaveRequestAdmin(admin.ModelAdmin):
+    list_display = ['staff', 'leave_type', 'start_date', 'end_date', 'days', 'status', 'requested_by', 'created_at']
+    list_filter = ['status', 'leave_type', 'organization']
+    search_fields = ['staff__first_name', 'staff__last_name', 'staff__staff_id']
+    readonly_fields = ['created_at', 'updated_at', 'reviewed_at']
 
 
 admin.site.register(User, CustomUserAdmin)

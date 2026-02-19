@@ -1,0 +1,231 @@
+{% extends 'management/base_tailwind.html' %}
+
+{% block title %}Application - {{ application.first_name }} {{ application.last_name }} - Maktab{% endblock %}
+{% block header_title %}Application Detail{% endblock %}
+
+{% block content %}
+<div class="animate-[slideUp_0.4s_ease-out]">
+    <div class="mb-6 flex flex-wrap justify-end gap-3">
+        <a href="{% url 'application_list' %}" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+        {% if application.status == 'pending' %}
+        <form method="post" action="{% url 'application_accept' application.pk %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all font-medium flex items-center gap-2"
+                    onclick="return confirm('Accept this application? A student record will be created.')">
+                <i class="fas fa-check"></i> Accept
+            </button>
+        </form>
+        <button type="button" onclick="document.getElementById('rejectModal').classList.remove('hidden')"
+                class="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 shadow-lg shadow-red-600/20 transition-all font-medium flex items-center gap-2">
+            <i class="fas fa-times"></i> Reject
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column: Profile Card -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
+                <div class="bg-gradient-to-r from-primary to-secondary px-6 py-8 text-center text-white">
+                    <div class="w-24 h-24 rounded-full bg-white/20 border-4 border-white/30 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 backdrop-blur-sm">
+                        {{ application.first_name|first }}{{ application.last_name|first }}
+                    </div>
+                    <h4 class="text-xl font-bold mb-2">{{ application.first_name }} {{ application.last_name }}</h4>
+                    {% if application.status == 'pending' %}
+                    <span class="inline-block bg-yellow-400/30 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm">
+                        <i class="fas fa-clock mr-1"></i>Pending Review
+                    </span>
+                    {% elif application.status == 'accepted' %}
+                    <span class="inline-block bg-green-400/30 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm">
+                        <i class="fas fa-check-circle mr-1"></i>Accepted
+                    </span>
+                    {% elif application.status == 'rejected' %}
+                    <span class="inline-block bg-red-400/30 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm">
+                        <i class="fas fa-times-circle mr-1"></i>Rejected
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="p-0">
+                    <div class="divide-y divide-gray-50">
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-medium text-gray-500 uppercase">Phone</p>
+                                <p class="text-sm font-semibold text-gray-800">{{ application.phone }}</p>
+                            </div>
+                        </div>
+
+                        {% if application.email %}
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-medium text-gray-500 uppercase">Email</p>
+                                <p class="text-sm font-semibold text-gray-800 truncate">{{ application.email }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if application.date_of_birth %}
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                                <i class="fas fa-calendar"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-medium text-gray-500 uppercase">Date of Birth</p>
+                                <p class="text-sm font-semibold text-gray-800">{{ application.date_of_birth|date:"d M Y" }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                                <i class="fas fa-venus-mars"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-medium text-gray-500 uppercase">Gender</p>
+                                <p class="text-sm font-semibold text-gray-800">{{ application.get_gender_display }}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-medium text-gray-500 uppercase">Address</p>
+                                <p class="text-sm font-semibold text-gray-800">
+                                    {{ application.address }}{% if application.city %}, {{ application.city }}{% endif %}{% if application.state %}, {{ application.state }}{% endif %}{% if application.pin_code %} - {{ application.pin_code }}{% endif %}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-medium text-gray-500 uppercase">Applied On</p>
+                                <p class="text-sm font-semibold text-gray-800">{{ application.created_at|date:"d M Y, h:i A" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Details -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Notes from Applicant -->
+            {% if application.notes %}
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-4">
+                    <h5 class="text-white font-semibold flex items-center gap-2">
+                        <i class="fas fa-comment-dots"></i> Message from Applicant
+                    </h5>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-700 leading-relaxed whitespace-pre-line">{{ application.notes }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Review Info (if processed) -->
+            {% if application.status != 'pending' %}
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="bg-gradient-to-r {% if application.status == 'accepted' %}from-green-600 to-green-500{% else %}from-red-600 to-red-500{% endif %} px-6 py-4">
+                    <h5 class="text-white font-semibold flex items-center gap-2">
+                        <i class="fas {% if application.status == 'accepted' %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
+                        {% if application.status == 'accepted' %}Accepted{% else %}Rejected{% endif %}
+                    </h5>
+                </div>
+                <div class="p-6 space-y-4">
+                    {% if application.reviewed_by %}
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-gray-500 uppercase">Reviewed By</p>
+                            <p class="text-sm font-semibold text-gray-800">{{ application.reviewed_by.get_full_name|default:application.reviewed_by.username }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if application.reviewed_at %}
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-medium text-gray-500 uppercase">Reviewed On</p>
+                            <p class="text-sm font-semibold text-gray-800">{{ application.reviewed_at|date:"d M Y, h:i A" }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if application.status == 'accepted' and application.student %}
+                    <div class="mt-4 p-4 bg-green-50 rounded-xl border border-green-200">
+                        <p class="text-sm text-green-700 mb-2"><i class="fas fa-user-graduate mr-1"></i> Student record created:</p>
+                        <a href="{% url 'student_detail' application.student.uuid %}" class="text-green-700 font-semibold hover:text-green-800 underline">
+                            {{ application.student.student_id }} - {{ application.student.first_name }} {{ application.student.last_name }}
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    {% if application.status == 'rejected' and application.rejection_reason %}
+                    <div class="mt-4 p-4 bg-red-50 rounded-xl border border-red-200">
+                        <p class="text-sm text-red-700 font-medium mb-1"><i class="fas fa-comment mr-1"></i> Rejection Reason:</p>
+                        <p class="text-sm text-red-600 whitespace-pre-line">{{ application.rejection_reason }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+{% if application.status == 'pending' %}
+<div id="rejectModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-[slideUp_0.3s_ease-out]">
+        <div class="p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-500">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800">Reject Application</h3>
+                    <p class="text-sm text-gray-500">{{ application.first_name }} {{ application.last_name }}</p>
+                </div>
+            </div>
+
+            <form method="post" action="{% url 'application_reject' application.pk %}">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Reason (optional)</label>
+                    {{ reject_form.rejection_reason }}
+                </div>
+                <div class="flex gap-3 justify-end">
+                    <button type="button" onclick="document.getElementById('rejectModal').classList.add('hidden')"
+                            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium transition-colors flex items-center gap-2">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

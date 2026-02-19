@@ -25,10 +25,15 @@ urlpatterns = [
     path('students/add/', views.student_add, name='student_add'),
     path('students/import/', views.import_students, name='import_students'),
     path('students/import/template/', views.download_student_template, name='download_student_template'),
-    path('students/<int:pk>/', views.student_detail, name='student_detail'),
-    path('students/edit/<int:pk>/', views.student_edit, name='student_edit'),
-    path('students/delete/<int:pk>/', views.student_delete, name='student_delete'),
-    path('students/<int:pk>/fees/', views.student_fee_history, name='student_fee_history'),
+    path('students/<uuid:uuid>/', views.student_detail, name='student_detail'),
+    path('students/edit/<uuid:uuid>/', views.student_edit, name='student_edit'),
+    path('students/delete/<uuid:uuid>/', views.student_delete, name='student_delete'),
+    path('students/<uuid:uuid>/fees/', views.student_fee_history, name='student_fee_history'),
+
+    # Behavior Notes URLs
+    path('students/<uuid:student_uuid>/behavior-notes/add/', views.behavior_note_add, name='behavior_note_add'),
+    path('behavior-notes/edit/<int:pk>/', views.behavior_note_edit, name='behavior_note_edit'),
+    path('behavior-notes/delete/<int:pk>/', views.behavior_note_delete, name='behavior_note_delete'),
 
     # Staff URLs
     path('staff/', views.staff_list, name='staff_list'),
@@ -53,6 +58,14 @@ urlpatterns = [
     path('staff-attendance/mark-all-present/', views.staff_mark_all_present, name='staff_mark_all_present'),
     path('staff-attendance/mark-all-absent/', views.staff_mark_all_absent, name='staff_mark_all_absent'),
 
+    # Staff Leave URLs
+    path('staff-leave/', views.staff_leave_list, name='staff_leave_list'),
+    path('staff-leave/request/', views.staff_leave_request, name='staff_leave_request'),
+    path('staff-leave/<int:pk>/', views.staff_leave_detail, name='staff_leave_detail'),
+    path('staff-leave/<int:pk>/approve/', views.staff_leave_approve, name='staff_leave_approve'),
+    path('staff-leave/<int:pk>/reject/', views.staff_leave_reject, name='staff_leave_reject'),
+    path('staff-leave/<int:pk>/cancel/', views.staff_leave_cancel, name='staff_leave_cancel'),
+
     # Fee Payment URLs
     path('payments/', views.fee_payment_list, name='fee_payment_list'),
     path('payments/add/', views.fee_payment_add, name='fee_payment_add'),
@@ -72,9 +85,25 @@ urlpatterns = [
     # API
     path('api/cities/', views.get_cities_for_state, name='api_cities'),
 
+    # Admission Application - Public URLs
+    path('apply/<slug:org_slug>/', views.admission_apply, name='admission_apply'),
+    path('apply/<slug:org_slug>/success/', views.admission_apply_success, name='admission_apply_success'),
+
+    # Admission Application - Admin URLs
+    path('applications/', views.application_list, name='application_list'),
+    path('applications/<int:pk>/', views.application_detail, name='application_detail'),
+    path('applications/<int:pk>/accept/', views.application_accept, name='application_accept'),
+    path('applications/<int:pk>/reject/', views.application_reject, name='application_reject'),
+
     # Parent Portal URLs
     path('parent/', views.parent_dashboard, name='parent_dashboard'),
     path('parent/change-password/', views.parent_change_password, name='parent_change_password'),
+
+    # Calendar & Event URLs
+    path('calendar/', views.calendar_view, name='calendar'),
+    path('calendar/events/add/', views.event_add, name='event_add'),
+    path('calendar/events/edit/<int:pk>/', views.event_edit, name='event_edit'),
+    path('calendar/events/delete/<int:pk>/', views.event_delete, name='event_delete'),
 
     # Export URLs
     path('export/students/', views.export_students_excel, name='export_students'),

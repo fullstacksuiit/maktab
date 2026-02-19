@@ -58,6 +58,32 @@
                 </div>
             </div>
 
+            <!-- Admission Application Link -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-600 to-blue-500 px-6 py-4">
+                    <h5 class="text-white font-semibold flex items-center gap-2">
+                        <i class="fas fa-link"></i> Admission Application Link
+                    </h5>
+                    <p class="text-blue-100 text-xs mt-1">Share this link with prospective students to accept applications online</p>
+                </div>
+                <div class="p-6 md:p-8">
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" readonly
+                               value="{{ request.scheme }}://{{ request.get_host }}{% url 'admission_apply' org_slug=form.instance.slug %}"
+                               id="admissionLink"
+                               class="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl bg-gray-50 text-gray-700 text-sm font-mono">
+                        <button type="button" onclick="copyAdmissionLink()"
+                                class="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2 whitespace-nowrap">
+                            <i class="fas fa-copy" id="copyIcon"></i> <span id="copyText">Copy Link</span>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-3">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Anyone with this link can submit an admission application. No login required.
+                    </p>
+                </div>
+            </div>
+
             <!-- Currency Settings -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="bg-gradient-to-r from-primary to-secondary px-6 py-4">
@@ -167,6 +193,19 @@
         // Update on input
         currencyInput.addEventListener('input', function() {
             preview.textContent = this.value || 'Rs.';
+        });
+    }
+
+    // Copy admission link
+    function copyAdmissionLink() {
+        var input = document.getElementById('admissionLink');
+        navigator.clipboard.writeText(input.value).then(function() {
+            document.getElementById('copyIcon').className = 'fas fa-check';
+            document.getElementById('copyText').textContent = 'Copied!';
+            setTimeout(function() {
+                document.getElementById('copyIcon').className = 'fas fa-copy';
+                document.getElementById('copyText').textContent = 'Copy Link';
+            }, 2000);
         });
     }
 

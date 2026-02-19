@@ -1,0 +1,205 @@
+{% extends 'management/base_tailwind.html' %}
+
+{% block title %}Apply - {{ organization.org_name }}{% endblock %}
+
+{% block content %}
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-50 overflow-auto" style="padding: max(env(safe-area-inset-top), 2.5rem) env(safe-area-inset-right) max(env(safe-area-inset-bottom), 2.5rem) env(safe-area-inset-left)">
+    <!-- Background Elements -->
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div class="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-primary/20 to-gold/20 blur-3xl opacity-60"></div>
+        <div class="absolute top-[30%] -right-[10%] w-[40%] h-[60%] rounded-full bg-gradient-to-bl from-secondary/20 to-primary/10 blur-3xl opacity-60"></div>
+    </div>
+
+    <div class="relative w-full max-w-2xl p-4 sm:p-8 mx-3 sm:mx-4 my-auto glass rounded-2xl sm:rounded-3xl shadow-2xl border border-white/50 animate-[slideUp_0.6s_ease-out] overflow-y-auto max-h-[90vh]">
+
+        <div class="text-center mb-4 sm:mb-8">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-mosque text-3xl text-white"></i>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-gold">{{ organization.org_name }}</h2>
+            <p class="text-gray-500 mt-1 text-xs sm:text-base">Admission Application</p>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+            {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" novalidate id="admissionForm" class="space-y-3 sm:space-y-4">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
+                <!-- First Name -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">First Name *</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        {{ form.first_name }}
+                    </div>
+                    {% if form.first_name.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.first_name.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- Last Name -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">Last Name *</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        {{ form.last_name }}
+                    </div>
+                    {% if form.last_name.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.last_name.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- Phone -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">Phone Number *</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        {{ form.phone }}
+                    </div>
+                    {% if form.phone.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.phone.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">Email</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        {{ form.email }}
+                    </div>
+                    {% if form.email.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.email.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- Date of Birth -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">Date of Birth</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                            <i class="fas fa-calendar"></i>
+                        </div>
+                        {{ form.date_of_birth }}
+                    </div>
+                    {% if form.date_of_birth.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.date_of_birth.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- Gender -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">Gender *</label>
+                    {{ form.gender }}
+                    {% if form.gender.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.gender.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- Address -->
+                <div class="md:col-span-2">
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">Address *</label>
+                    <div class="relative">
+                        <div class="absolute top-3 left-0 pl-3 pointer-events-none text-gray-400">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        {{ form.address }}
+                    </div>
+                    {% if form.address.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.address.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- City -->
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">City</label>
+                    {{ form.city }}
+                    {% if form.city.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.city.errors.0 }}</p>{% endif %}
+                </div>
+
+                <!-- State & Pin Code -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">State</label>
+                        {{ form.state }}
+                        {% if form.state.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.state.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">Pin Code</label>
+                        {{ form.pin_code }}
+                        {% if form.pin_code.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.pin_code.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="md:col-span-2">
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-0.5 sm:mb-1 ml-1">Message / Notes</label>
+                    <div class="relative">
+                        <div class="absolute top-3 left-0 pl-3 pointer-events-none text-gray-400">
+                            <i class="fas fa-comment-dots"></i>
+                        </div>
+                        {{ form.notes }}
+                    </div>
+                    {% if form.notes.errors %}<p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.notes.errors.0 }}</p>{% endif %}
+                </div>
+            </div>
+
+            <div class="pt-2 sm:pt-4">
+                <button type="submit" class="w-full py-3 sm:py-3.5 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 group text-sm sm:text-base">
+                    <span>Submit Application</span>
+                    <i class="fas fa-paper-plane group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    #admissionForm input, #admissionForm textarea {
+        width: 100%;
+        padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+    }
+    @media (min-width: 640px) {
+        #admissionForm input, #admissionForm textarea {
+            padding: 0.65rem 1rem 0.65rem 2.5rem;
+            font-size: 0.95rem;
+        }
+    }
+    #admissionForm input:focus, #admissionForm textarea:focus {
+        outline: none;
+        border-color: #0d6b4e;
+        box-shadow: 0 0 0 4px rgba(13, 107, 78, 0.1);
+        background-color: #ffffff;
+    }
+    #sidebar, header, #mobile-header { display: none !important; }
+    main { margin-left: 0 !important; }
+    #admissionForm select {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        appearance: auto;
+    }
+    @media (min-width: 640px) {
+        #admissionForm select {
+            padding: 0.65rem 1rem;
+            font-size: 0.95rem;
+        }
+    }
+    #admissionForm select:focus {
+        outline: none;
+        border-color: #0d6b4e;
+        box-shadow: 0 0 0 4px rgba(13, 107, 78, 0.1);
+        background-color: #ffffff;
+    }
+</style>
+{% endblock %}

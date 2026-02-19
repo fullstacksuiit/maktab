@@ -2,7 +2,7 @@ import re
 from datetime import date
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import User, Organization, Course, Batch, Student, Staff, Attendance, FeePayment
+from .models import User, Organization, Course, Batch, Student, Staff, Attendance, FeePayment, BehaviorNote, AdmissionApplication, Event, LeaveType, LeaveRequest
 from .widgets import (
     styled_text_input, styled_email_input, styled_password_input,
     styled_textarea, styled_date_input, styled_number_input,
@@ -168,6 +168,7 @@ class StudentForm(forms.ModelForm):
         model = Student
         fields = ['student_id', 'first_name', 'last_name', 'email', 'phone',
                   'date_of_birth', 'gender', 'address', 'city', 'state', 'pin_code',
+                  'is_orphan', 'guardian_name', 'guardian_phone',
                   'batches', 'enrollment_date']
         widgets = {
             'student_id': styled_text_input('Auto-generated if left blank'),
@@ -180,6 +181,9 @@ class StudentForm(forms.ModelForm):
             'city': styled_text_input('City'),
             'state': styled_text_input('State'),
             'pin_code': styled_text_input('Pin Code'),
+            'is_orphan': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary/50 cursor-pointer'}),
+            'guardian_name': styled_text_input('Guardian full name'),
+            'guardian_phone': styled_text_input('Guardian phone number'),
             'batches': searchable_select_multiple('Search batches...'),
         }
 
@@ -500,6 +504,29 @@ class UserEditForm(forms.ModelForm):
         ]
 
 
+class BehaviorNoteForm(forms.ModelForm):
+    date = forms.DateField(
+        widget=styled_date_input(max_date=date.today()),
+        initial=date.today
+    )
+
+    class Meta:
+        model = BehaviorNote
+        fields = ['student', 'category', 'title', 'description', 'date']
+        widgets = {
+            'student': searchable_select('Search student...'),
+            'category': styled_select(),
+            'title': styled_text_input('e.g. Not completing homework'),
+            'description': styled_textarea('Describe the behavior in detail...', rows=4),
+        }
+
+    def clean_date(self):
+        note_date = self.cleaned_data.get('date')
+        if note_date and note_date > date.today():
+            raise forms.ValidationError('Date cannot be in the future.')
+        return note_date
+
+
 class UserProfileForm(forms.ModelForm):
     """Form for users to edit their own profile."""
     class Meta:
@@ -510,3 +537,176 @@ class UserProfileForm(forms.ModelForm):
             'last_name': styled_text_input('Last Name'),
             'email': styled_email_input('Email Address'),
         }
+
+
+class AdmissionApplicationForm(forms.ModelForm):
+    date_of_birth = forms.DateField(
+        required=False,
+        widget=styled_date_input(max_date=date.today())
+    )
+
+    class Meta:
+        model = AdmissionApplication
+        fields = [
+            'first_name', 'last_name', 'phone', 'email',
+            'date_of_birth', 'gender', 'address', 'city', 'state', 'pin_code',
+            'notes',
+        ]
+        widgets = {
+            'first_name': styled_text_input('Enter first name'),
+            'last_name': styled_text_input('Enter last name'),
+            'phone': styled_text_input('Enter phone number'),
+            'email': styled_email_input('Enter email address (optional)'),
+            'gender': styled_select(),
+            'address': styled_textarea('Street / Area', rows=2),
+            'city': styled_text_input('City'),
+            'state': styled_text_input('State'),
+            'pin_code': styled_text_input('Pin Code'),
+            'notes': styled_textarea('Any message or notes for the institute (optional)', rows=3),
+        }
+
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone')
+        if phone and not re.match(r'^[\d\s\-\+\(\)]{7,20}$', phone):
+            raise forms.ValidationError('Please enter a valid phone number (7-20 digits).')
+        return phone
+
+    def clean_date_of_birth(self):
+        dob = self.cleaned_data.get('date_of_birth')
+        if dob and dob > date.today():
+            raise forms.ValidationError('Date of birth cannot be in the future.')
+        if dob and dob < date(1900, 1, 1):
+            raise forms.ValidationError('Please enter a valid date of birth.')
+        return dob
+
+
+class ApplicationRejectForm(forms.Form):
+    rejection_reason = forms.CharField(
+        required=False,
+        widget=styled_textarea('Reason for rejection (optional)', rows=3),
+    )
+
+
+class EventForm(forms.ModelForm):
+    start_date = forms.DateField(
+        widget=styled_date_input(),
+        label='Start Date'
+    )
+    end_date = forms.DateField(
+        required=False,
+        widget=styled_date_input(),
+        label='End Date'
+    )
+
+    class Meta:
+        model = Event
+        fields = ['title', 'event_type', 'start_date', 'end_date', 'description']
+        widgets = {
+            'title': styled_text_input('e.g., Eid Holiday, Final Exam'),
+            'event_type': styled_select(),
+            'description': styled_textarea('Optional details about this event', rows=3),
+        }
+
+    def clean_end_date(self):
+        start_date = self.cleaned_data.get('start_date')
+        end_date = self.cleaned_data.get('end_date')
+        if not end_date and start_date:
+            return start_date
+        return end_date
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        if start_date and end_date and end_date < start_date:
+            self.add_error('end_date', 'End date cannot be before start date.')
+        return cleaned_data
+
+
+class LeaveRequestForm(forms.ModelForm):
+    start_date = forms.DateField(widget=styled_date_input())
+    end_date = forms.DateField(required=False, widget=styled_date_input())
+
+    class Meta:
+        model = LeaveRequest
+        fields = ['staff', 'leave_type', 'start_date', 'end_date', 'half_day', 'reason']
+        widgets = {
+            'staff': searchable_select('Select staff member...'),
+            'leave_type': styled_select(),
+            'half_day': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary/50 cursor-pointer'}),
+            'reason': styled_textarea('Reason for leave', rows=3),
+        }
+
+    def __init__(self, *args, organization=None, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.organization = organization
+        self.user = user
+        if organization:
+            self.fields['staff'].queryset = Staff.objects.filter(organization=organization)
+            self.fields['leave_type'].queryset = LeaveType.objects.filter(organization=organization)
+
+        # If the user is a staff member (not admin/manager), hide the staff field
+        if user and user.role == 'staff' and user.staff_profile:
+            self.fields['staff'].initial = user.staff_profile
+            self.fields['staff'].widget = forms.HiddenInput()
+
+    def clean_end_date(self):
+        end_date = self.cleaned_data.get('end_date')
+        start_date = self.cleaned_data.get('start_date')
+        half_day = self.data.get('half_day')
+        if half_day and start_date:
+            return start_date
+        if not end_date and start_date:
+            return start_date
+        return end_date
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        half_day = cleaned_data.get('half_day')
+        staff = cleaned_data.get('staff')
+        leave_type = cleaned_data.get('leave_type')
+
+        if start_date and end_date and end_date < start_date:
+            self.add_error('end_date', 'End date cannot be before start date.')
+            return cleaned_data
+
+        if start_date and end_date and staff and leave_type:
+            # Calculate days
+            if half_day:
+                cleaned_data['end_date'] = start_date
+                days = 0.5
+            else:
+                days = (end_date - start_date).days + 1
+            cleaned_data['_days'] = days
+
+            # Check balance (skip for unpaid leave with 0 quota)
+            if leave_type.days_per_year > 0:
+                from .models import LeaveBalance
+                balance = LeaveBalance.objects.filter(
+                    organization=self.organization, staff=staff,
+                    leave_type=leave_type, year=start_date.year
+                ).first()
+                if balance and balance.remaining < days:
+                    self.add_error('leave_type',
+                        f'Insufficient balance. {leave_type.name}: {balance.remaining} days remaining, requesting {days} days.')
+
+            # Check overlapping approved leaves
+            overlapping = LeaveRequest.objects.filter(
+                staff=staff, status__in=['pending', 'approved'],
+                start_date__lte=end_date, end_date__gte=start_date
+            )
+            if self.instance and self.instance.pk:
+                overlapping = overlapping.exclude(pk=self.instance.pk)
+            if overlapping.exists():
+                self.add_error('start_date', 'There is an overlapping leave request for these dates.')
+
+        return cleaned_data
+
+
+class LeaveRejectForm(forms.Form):
+    rejection_reason = forms.CharField(
+        required=False,
+        widget=styled_textarea('Reason for rejection (optional)', rows=3),
+    )

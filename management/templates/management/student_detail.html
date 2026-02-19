@@ -9,10 +9,10 @@
         <a href="{% url 'student_list' %}" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors flex items-center gap-2">
             <i class="fas fa-arrow-left"></i> Back
         </a>
-        <a href="{% url 'student_edit' student.pk %}" class="px-4 py-2 bg-white text-primary border border-primary/20 rounded-xl hover:bg-primary/5 transition-colors font-medium flex items-center gap-2">
+        <a href="{% url 'student_edit' student.uuid %}" class="px-4 py-2 bg-white text-primary border border-primary/20 rounded-xl hover:bg-primary/5 transition-colors font-medium flex items-center gap-2">
             <i class="fas fa-edit"></i> Edit
         </a>
-        <a href="{% url 'fee_payment_add' %}?student={{ student.pk }}" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium flex items-center gap-2">
+        <a href="{% url 'fee_payment_add' %}?student={{ student.uuid }}" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium flex items-center gap-2">
             <i class="fas fa-money-bill-wave"></i> Record Payment
         </a>
     </div>
@@ -21,77 +21,120 @@
         <!-- Left Column: Profile Card -->
         <div class="lg:col-span-1">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
-                <div class="bg-gradient-to-r from-primary to-secondary px-6 py-8 text-center text-white">
-                    <div class="w-24 h-24 rounded-full bg-white/20 border-4 border-white/30 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 backdrop-blur-sm">
+                <div class="bg-gradient-to-br from-primary via-secondary to-primary px-6 py-8 text-center text-white relative overflow-hidden">
+                    <div class="absolute top-0 right-0 -mr-12 -mt-12 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                    <div class="absolute bottom-0 left-0 -ml-10 -mb-10 w-32 h-32 bg-gold/20 rounded-full blur-3xl"></div>
+
+                    <div class="relative z-10 w-24 h-24 rounded-full bg-white/20 border-4 border-white/30 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 backdrop-blur-sm shadow-lg shadow-black/10">
                         {{ student.first_name|first }}{{ student.last_name|first }}
                     </div>
-                    <h4 class="text-xl font-bold mb-2">{{ student.first_name }} {{ student.last_name }}</h4>
-                    <span class="inline-block bg-white/20 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm">
+                    <h4 class="relative z-10 text-xl font-bold mb-2">{{ student.first_name }} {{ student.last_name }}</h4>
+                    <span class="relative z-10 inline-block bg-white/20 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm border border-white/10">
                         <i class="fas fa-id-card mr-1"></i>{{ student.student_id }}
                     </span>
+
+                    <!-- Quick Status Badges -->
+                    <div class="relative z-10 flex flex-wrap justify-center gap-2 mt-4">
+                        {% if student.is_orphan %}
+                        <span class="bg-purple-500/80 px-2.5 py-1 rounded-full text-[11px] font-semibold backdrop-blur-sm border border-purple-400/30">
+                            <i class="fas fa-hand-holding-heart mr-1"></i>Orphan
+                        </span>
+                        {% endif %}
+                        <span class="bg-white/20 px-2.5 py-1 rounded-full text-[11px] font-semibold backdrop-blur-sm border border-white/10">
+                            <i class="fas fa-chart-pie mr-1"></i>{{ attendance_percentage }}% Attendance
+                        </span>
+                        {% if student.is_orphan %}
+                        <span class="bg-purple-500/80 px-2.5 py-1 rounded-full text-[11px] font-semibold backdrop-blur-sm border border-purple-400/30">
+                            <i class="fas fa-heart mr-1"></i>Fees Waived
+                        </span>
+                        {% elif pending_fees > 0 %}
+                        <span class="bg-red-500/80 px-2.5 py-1 rounded-full text-[11px] font-semibold backdrop-blur-sm border border-red-400/30">
+                            <i class="fas fa-exclamation-circle mr-1"></i>{{ currency_symbol }} {{ pending_fees }} Due
+                        </span>
+                        {% else %}
+                        <span class="bg-green-500/80 px-2.5 py-1 rounded-full text-[11px] font-semibold backdrop-blur-sm border border-green-400/30">
+                            <i class="fas fa-check-circle mr-1"></i>Fees Clear
+                        </span>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <div class="p-0">
                     <div class="divide-y divide-gray-50">
-                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
-                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors group">
+                            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-sm mr-3 shadow-sm group-hover:scale-110 transition-transform">
                                 <i class="fas fa-envelope"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-xs font-medium text-gray-500 uppercase">Email</p>
-                                <p class="text-sm font-semibold text-gray-800 truncate">{{ student.email }}</p>
+                                <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Email</p>
+                                <p class="text-sm font-semibold text-gray-800 truncate">{% if student.email %}{{ student.email }}{% else %}<span class="text-gray-300 font-normal">Not provided</span>{% endif %}</p>
                             </div>
                         </div>
 
-                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
-                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors group">
+                            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-green-500 to-green-600 text-white flex items-center justify-center text-sm mr-3 shadow-sm group-hover:scale-110 transition-transform">
                                 <i class="fas fa-phone"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-xs font-medium text-gray-500 uppercase">Phone</p>
+                                <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Phone</p>
                                 <p class="text-sm font-semibold text-gray-800">{{ student.phone }}</p>
                             </div>
                         </div>
 
-                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
-                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors group">
+                            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center text-sm mr-3 shadow-sm group-hover:scale-110 transition-transform">
                                 <i class="fas fa-calendar"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-xs font-medium text-gray-500 uppercase">Date of Birth</p>
-                                <p class="text-sm font-semibold text-gray-800">{{ student.date_of_birth }}</p>
+                                <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Date of Birth</p>
+                                <p class="text-sm font-semibold text-gray-800">{% if student.date_of_birth %}{{ student.date_of_birth|date:"M d, Y" }}{% else %}<span class="text-gray-300 font-normal">Not provided</span>{% endif %}</p>
                             </div>
                         </div>
 
-                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
-                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors group">
+                            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-pink-500 to-pink-600 text-white flex items-center justify-center text-sm mr-3 shadow-sm group-hover:scale-110 transition-transform">
                                 <i class="fas fa-venus-mars"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-xs font-medium text-gray-500 uppercase">Gender</p>
+                                <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Gender</p>
                                 <p class="text-sm font-semibold text-gray-800">{{ student.get_gender_display }}</p>
                             </div>
                         </div>
 
-                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
-                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors group">
+                            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white flex items-center justify-center text-sm mr-3 shadow-sm group-hover:scale-110 transition-transform">
                                 <i class="fas fa-map-marker-alt"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-xs font-medium text-gray-500 uppercase">Address</p>
-                                <p class="text-sm font-semibold text-gray-800">{{ student.full_address }}</p>
+                                <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Address</p>
+                                <p class="text-sm font-semibold text-gray-800">{% if student.full_address %}{{ student.full_address }}{% else %}<span class="text-gray-300 font-normal">Not provided</span>{% endif %}</p>
                             </div>
                         </div>
 
-                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors">
-                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-primary text-sm mr-3">
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors group">
+                            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-gold to-yellow-500 text-white flex items-center justify-center text-sm mr-3 shadow-sm group-hover:scale-110 transition-transform">
                                 <i class="fas fa-calendar-check"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-xs font-medium text-gray-500 uppercase">Enrollment</p>
-                                <p class="text-sm font-semibold text-gray-800">{{ student.enrollment_date }}</p>
+                                <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Enrollment</p>
+                                <p class="text-sm font-semibold text-gray-800">{{ student.enrollment_date|date:"M d, Y" }}</p>
                             </div>
                         </div>
+
+                        {% if student.is_orphan and student.guardian_name %}
+                        <div class="flex items-center p-4 hover:bg-gray-50 transition-colors group">
+                            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center text-sm mr-3 shadow-sm group-hover:scale-110 transition-transform">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Guardian</p>
+                                <p class="text-sm font-semibold text-gray-800">{{ student.guardian_name }}</p>
+                                {% if student.guardian_phone %}
+                                    <p class="text-xs text-gray-500"><i class="fas fa-phone text-[10px] mr-1"></i>{{ student.guardian_phone }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -99,57 +142,112 @@
 
         <!-- Right Column: Tabs -->
         <div class="lg:col-span-2">
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-4 gap-3 mb-6">
+                <div class="bg-white p-3 rounded-xl border border-gray-100 text-center hover:shadow-md hover:border-primary/20 transition-all duration-300 group cursor-pointer" onclick="switchTab('courses')">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center mx-auto mb-1.5 text-xs shadow-sm group-hover:scale-110 transition-transform">
+                        <i class="fas fa-book-quran"></i>
+                    </div>
+                    <p class="text-lg font-bold text-primary">{{ student.batches.count }}</p>
+                    <p class="text-[10px] text-gray-500 font-medium uppercase tracking-wide">Courses</p>
+                </div>
+                <div class="bg-white p-3 rounded-xl border border-gray-100 text-center hover:shadow-md hover:border-blue-200 transition-all duration-300 group cursor-pointer" onclick="switchTab('attendance')">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center mx-auto mb-1.5 text-xs shadow-sm group-hover:scale-110 transition-transform">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <p class="text-lg font-bold text-blue-600">{{ attendance_percentage }}%</p>
+                    <p class="text-[10px] text-gray-500 font-medium uppercase tracking-wide">Attendance</p>
+                </div>
+                <div class="bg-white p-3 rounded-xl border border-gray-100 text-center hover:shadow-md {% if student.is_orphan %}hover:border-purple-200{% elif pending_fees > 0 %}hover:border-red-200{% else %}hover:border-green-200{% endif %} transition-all duration-300 group cursor-pointer" onclick="switchTab('fees')">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br {% if student.is_orphan %}from-purple-500 to-purple-600{% elif pending_fees > 0 %}from-red-500 to-red-600{% else %}from-green-500 to-green-600{% endif %} text-white flex items-center justify-center mx-auto mb-1.5 text-xs shadow-sm group-hover:scale-110 transition-transform">
+                        <i class="fas {% if student.is_orphan %}fa-heart{% elif pending_fees > 0 %}fa-hourglass-half{% else %}fa-check-circle{% endif %}"></i>
+                    </div>
+                    {% if student.is_orphan %}
+                    <p class="text-lg font-bold text-purple-600">Waived</p>
+                    {% else %}
+                    <p class="text-lg font-bold {% if pending_fees > 0 %}text-red-500{% else %}text-green-500{% endif %}">{{ currency_symbol }} {{ pending_fees }}</p>
+                    {% endif %}
+                    <p class="text-[10px] text-gray-500 font-medium uppercase tracking-wide">Pending</p>
+                </div>
+                <div class="bg-white p-3 rounded-xl border border-gray-100 text-center hover:shadow-md hover:border-amber-200 transition-all duration-300 group cursor-pointer" onclick="switchTab('behavior')">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-white flex items-center justify-center mx-auto mb-1.5 text-xs shadow-sm group-hover:scale-110 transition-transform">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <p class="text-lg font-bold text-amber-600">{{ behavior_notes|length }}</p>
+                    <p class="text-[10px] text-gray-500 font-medium uppercase tracking-wide">Notes</p>
+                </div>
+            </div>
+
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <!-- Tab Navigation -->
-                <div class="border-b border-gray-100 px-6 pt-4">
-                    <div class="flex gap-6 overflow-x-auto">
-                        <button onclick="switchTab('courses')" id="tab-courses" class="tab-btn pb-3 px-1 text-sm font-semibold text-primary border-b-2 border-primary transition-colors">
-                            <i class="fas fa-book-quran mr-2"></i>Courses
+                <div class="border-b border-gray-100 px-4 sm:px-6 pt-4">
+                    <div class="flex gap-4 sm:gap-6 overflow-x-auto">
+                        <button onclick="switchTab('courses')" id="tab-courses" class="tab-btn pb-3 px-1 text-sm font-semibold text-primary border-b-2 border-primary transition-colors whitespace-nowrap">
+                            <i class="fas fa-book-quran mr-1.5"></i>Courses
                         </button>
-                        <button onclick="switchTab('attendance')" id="tab-attendance" class="tab-btn pb-3 px-1 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-primary transition-colors">
-                            <i class="fas fa-clipboard-check mr-2"></i>Attendance
+                        <button onclick="switchTab('attendance')" id="tab-attendance" class="tab-btn pb-3 px-1 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-primary transition-colors whitespace-nowrap">
+                            <i class="fas fa-clipboard-check mr-1.5"></i>Attendance
                         </button>
-                        <button onclick="switchTab('fees')" id="tab-fees" class="tab-btn pb-3 px-1 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-primary transition-colors">
-                            <i class="fas fa-money-bill-wave mr-2"></i>Fees
+                        <button onclick="switchTab('fees')" id="tab-fees" class="tab-btn pb-3 px-1 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-primary transition-colors whitespace-nowrap">
+                            <i class="fas fa-money-bill-wave mr-1.5"></i>Fees
+                        </button>
+                        <button onclick="switchTab('behavior')" id="tab-behavior" class="tab-btn pb-3 px-1 text-sm font-medium text-gray-500 border-b-2 border-transparent hover:text-primary transition-colors whitespace-nowrap">
+                            <i class="fas fa-clipboard-list mr-1.5"></i>Behavior
                         </button>
                     </div>
                 </div>
 
                 <!-- Tab Content -->
-                <div class="p-6">
+                <div class="p-4 sm:p-6">
                     <!-- Courses Tab -->
                     <div id="content-courses" class="tab-content block animate-[fadeIn_0.3s_ease-out]">
                         {% if student.batches.all %}
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {% for batch in student.batches.all %}
-                                <div class="border border-gray-100 rounded-xl p-4 hover:border-primary hover:shadow-md transition-all group">
-                                    <h6 class="font-bold text-primary mb-3 flex items-center">
-                                        <i class="fas fa-book-quran mr-2"></i>{{ batch.course.course_name }}
-                                    </h6>
-                                    <div class="flex flex-wrap gap-2 text-xs">
-                                        <span class="px-2 py-1 bg-primary/10 text-primary rounded-lg font-medium">
-                                            <i class="fas fa-code mr-1"></i>{{ batch.course.course_code }}
-                                        </span>
-                                        <span class="px-2 py-1 bg-blue-50 text-blue-600 rounded-lg font-medium">
-                                            <i class="fas fa-layer-group mr-1"></i>{{ batch.batch_name }}
-                                        </span>
-                                        <span class="px-2 py-1 bg-gold/10 text-gold rounded-lg font-medium">
-                                            <i class="fas fa-coins mr-1"></i>{{ currency_symbol }} {{ batch.course.fees }}
-                                        </span>
-                                        <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg font-medium">
-                                            <i class="fas fa-clock mr-1"></i>{{ batch.course.duration_value }} {{ batch.course.get_duration_unit_display }}
-                                        </span>
-                                        <span class="px-2 py-1 bg-primary/10 text-primary rounded-lg font-medium">
-                                            <i class="fas fa-calendar-alt mr-1"></i>{{ batch.course.get_fee_period_display }}
-                                        </span>
+                                <div class="border border-gray-100 rounded-xl p-4 sm:p-5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group relative overflow-hidden">
+                                    <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-primary/5 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                    <div class="relative z-10">
+                                        <div class="flex items-center gap-3 mb-3">
+                                            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-sm shadow-md group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                                                <i class="fas fa-book-quran"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <h6 class="font-bold text-gray-800 group-hover:text-primary transition-colors truncate">{{ batch.course.course_name }}</h6>
+                                                <p class="text-xs text-gray-500">{{ batch.batch_name }}</p>
+                                            </div>
+                                        </div>
+                                        {% if batch.get_schedule_display %}
+                                        <div class="mb-3 flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">
+                                            <div class="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center shrink-0">
+                                                <i class="fas fa-calendar-week text-[10px]"></i>
+                                            </div>
+                                            <span class="text-xs font-medium text-blue-700">{{ batch.get_schedule_display }}</span>
+                                        </div>
+                                        {% endif %}
+                                        <div class="flex flex-wrap gap-1.5 text-[11px]">
+                                            <span class="px-2 py-1 bg-primary/10 text-primary rounded-lg font-medium">
+                                                <i class="fas fa-code mr-0.5"></i>{{ batch.course.course_code }}
+                                            </span>
+                                            <span class="px-2 py-1 bg-gold/10 text-gold rounded-lg font-medium">
+                                                <i class="fas fa-coins mr-0.5"></i>{{ currency_symbol }} {{ batch.course.fees }}
+                                            </span>
+                                            <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg font-medium">
+                                                <i class="fas fa-clock mr-0.5"></i>{{ batch.course.duration_value }} {{ batch.course.get_duration_unit_display }}
+                                            </span>
+                                            <span class="px-2 py-1 bg-primary/10 text-primary rounded-lg font-medium">
+                                                <i class="fas fa-calendar-alt mr-0.5"></i>{{ batch.course.get_fee_period_display }}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 {% endfor %}
                             </div>
                         {% else %}
-                            <div class="text-center py-8">
-                                <i class="fas fa-book-quran text-gray-200 text-5xl mb-3"></i>
-                                <h5 class="text-gray-500 font-medium">No Courses Enrolled</h5>
+                            <div class="text-center py-10">
+                                <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-50 flex items-center justify-center">
+                                    <i class="fas fa-book-quran text-gray-200 text-4xl"></i>
+                                </div>
+                                <h5 class="text-gray-500 font-semibold mb-1">No Courses Enrolled</h5>
                                 <p class="text-gray-400 text-sm">This student has not been enrolled in any batches yet.</p>
                             </div>
                         {% endif %}
@@ -157,15 +255,47 @@
 
                     <!-- Attendance Tab -->
                     <div id="content-attendance" class="tab-content hidden animate-[fadeIn_0.3s_ease-out]">
-                        <div class="flex items-center justify-between mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                            <h6 class="font-bold text-gray-700">Attendance Records</h6>
+                        <div class="flex items-center justify-between mb-6 bg-gradient-to-r from-gray-50 to-white p-4 rounded-xl border border-gray-100">
+                            <h6 class="font-bold text-gray-700 flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-xs shadow-sm">
+                                    <i class="fas fa-clipboard-check"></i>
+                                </div>
+                                Attendance Records
+                            </h6>
                             <span class="px-4 py-1.5 bg-gradient-to-r from-primary to-secondary text-white rounded-full text-sm font-bold shadow-sm">
                                 <i class="fas fa-chart-pie mr-1"></i>{{ attendance_percentage }}% Present
                             </span>
                         </div>
 
                         {% if attendances %}
-                        <div class="overflow-x-auto rounded-xl border border-gray-100">
+                        <!-- Mobile: Card Layout -->
+                        <div class="sm:hidden space-y-2">
+                            {% for record in attendances %}
+                            <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50/50 transition-colors">
+                                <div class="w-9 h-9 rounded-lg flex items-center justify-center text-white text-xs shrink-0 shadow-sm
+                                    {% if record.status == 'Present' %}bg-gradient-to-br from-primary to-secondary
+                                    {% elif record.status == 'Absent' %}bg-gradient-to-br from-red-500 to-red-600
+                                    {% elif record.status == 'Late' %}bg-gradient-to-br from-gold to-yellow-500
+                                    {% else %}bg-gradient-to-br from-gray-400 to-gray-500{% endif %}">
+                                    <i class="fas {% if record.status == 'Present' %}fa-check{% elif record.status == 'Absent' %}fa-times{% elif record.status == 'Late' %}fa-clock{% else %}fa-minus{% endif %}"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-semibold text-gray-800">{{ record.date|date:"M d, Y" }}</p>
+                                    <p class="text-[10px] text-gray-500 truncate">{% if record.batch %}{{ record.batch.course.course_name }}{% else %}-{% endif %}</p>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold text-white shrink-0
+                                    {% if record.status == 'Present' %}bg-primary
+                                    {% elif record.status == 'Absent' %}bg-red-500
+                                    {% elif record.status == 'Late' %}bg-gold
+                                    {% else %}bg-gray-500{% endif %}">
+                                    {{ record.status }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Desktop: Table Layout -->
+                        <div class="hidden sm:block overflow-x-auto rounded-xl border border-gray-100">
                             <table class="w-full text-left border-collapse">
                                 <thead class="bg-gradient-to-r from-primary to-secondary text-white text-xs uppercase tracking-wider">
                                     <tr>
@@ -176,8 +306,8 @@
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
                                     {% for record in attendances %}
-                                    <tr class="hover:bg-gray-50/50">
-                                        <td class="px-4 py-3 text-sm text-gray-700 font-medium">{{ record.date }}</td>
+                                    <tr class="hover:bg-gray-50/50 transition-colors">
+                                        <td class="px-4 py-3 text-sm text-gray-700 font-medium">{{ record.date|date:"M d, Y" }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-600">{% if record.batch %}{{ record.batch.course.course_name }}{% else %}-{% endif %}</td>
                                         <td class="px-4 py-3 text-center">
                                             <span class="px-3 py-1 rounded-full text-xs font-bold text-white
@@ -194,9 +324,11 @@
                             </table>
                         </div>
                         {% else %}
-                        <div class="text-center py-8">
-                            <i class="fas fa-clipboard-check text-gray-200 text-5xl mb-3"></i>
-                            <h5 class="text-gray-500 font-medium">No Attendance Records</h5>
+                        <div class="text-center py-10">
+                            <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-50 flex items-center justify-center">
+                                <i class="fas fa-clipboard-check text-gray-200 text-4xl"></i>
+                            </div>
+                            <h5 class="text-gray-500 font-semibold mb-1">No Attendance Records</h5>
                             <p class="text-gray-400 text-sm">No attendance has been recorded for this student yet.</p>
                         </div>
                         {% endif %}
@@ -205,27 +337,57 @@
                     <!-- Fees Tab -->
                     <div id="content-fees" class="tab-content hidden animate-[fadeIn_0.3s_ease-out]">
                         <!-- Summary Cards -->
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                            <div class="bg-primary/5 p-4 rounded-xl border border-primary/10 text-center">
-                                <i class="fas fa-file-invoice-dollar text-primary text-2xl mb-2"></i>
-                                <h3 class="text-2xl font-bold text-primary">{{ currency_symbol }} {{ student.get_total_fees }}</h3>
-                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Fees</p>
+                        <div class="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
+                            <div class="bg-primary/5 p-3 sm:p-4 rounded-xl border border-primary/10 text-center hover:shadow-md hover:shadow-primary/10 transition-all duration-300 group">
+                                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center mx-auto mb-1.5 sm:mb-2 text-sm shadow-md group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                </div>
+                                <h3 class="text-lg sm:text-2xl font-bold text-primary">{{ currency_symbol }} {{ student.get_total_fees }}</h3>
+                                <p class="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">Total Fees</p>
                             </div>
-                            <div class="bg-green-50 p-4 rounded-xl border border-green-100 text-center">
-                                <i class="fas fa-check-circle text-green-500 text-2xl mb-2"></i>
-                                <h3 class="text-2xl font-bold text-green-500">{{ currency_symbol }} {{ total_paid }}</h3>
-                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Paid</p>
+                            <div class="bg-green-50 p-3 sm:p-4 rounded-xl border border-green-100 text-center hover:shadow-md hover:shadow-green-500/10 transition-all duration-300 group">
+                                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-green-500 to-green-600 text-white flex items-center justify-center mx-auto mb-1.5 sm:mb-2 text-sm shadow-md shadow-green-500/30 group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <h3 class="text-lg sm:text-2xl font-bold text-green-500">{{ currency_symbol }} {{ total_paid }}</h3>
+                                <p class="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">Paid</p>
                             </div>
-                            <div class="{% if pending_fees > 0 %}bg-red-50 border-red-100{% else %}bg-green-50 border-green-100{% endif %} p-4 rounded-xl border text-center">
-                                <i class="fas {% if pending_fees > 0 %}fa-hourglass-half text-red-500{% else %}fa-check-double text-green-500{% endif %} text-2xl mb-2"></i>
-                                <h3 class="text-2xl font-bold {% if pending_fees > 0 %}text-red-500{% else %}text-green-500{% endif %}">{{ currency_symbol }} {{ pending_fees }}</h3>
-                                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Pending</p>
+                            <div class="{% if student.is_orphan %}bg-purple-50 border-purple-100{% elif pending_fees > 0 %}bg-red-50 border-red-100{% else %}bg-green-50 border-green-100{% endif %} p-3 sm:p-4 rounded-xl border text-center hover:shadow-md transition-all duration-300 group">
+                                <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br {% if student.is_orphan %}from-purple-500 to-purple-600{% elif pending_fees > 0 %}from-red-500 to-red-600{% else %}from-green-500 to-green-600{% endif %} text-white flex items-center justify-center mx-auto mb-1.5 sm:mb-2 text-sm shadow-md group-hover:scale-110 transition-transform">
+                                    <i class="fas {% if student.is_orphan %}fa-heart{% elif pending_fees > 0 %}fa-hourglass-half{% else %}fa-check-double{% endif %}"></i>
+                                </div>
+                                {% if student.is_orphan %}
+                                <h3 class="text-lg sm:text-2xl font-bold text-purple-600">Waived</h3>
+                                {% else %}
+                                <h3 class="text-lg sm:text-2xl font-bold {% if pending_fees > 0 %}text-red-500{% else %}text-green-500{% endif %}">{{ currency_symbol }} {{ pending_fees }}</h3>
+                                {% endif %}
+                                <p class="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">Pending</p>
                             </div>
                         </div>
 
                         <!-- Payments Table -->
                         {% if fee_payments %}
-                        <div class="overflow-x-auto rounded-xl border border-gray-100">
+                        <!-- Mobile: Card Layout -->
+                        <div class="sm:hidden space-y-2">
+                            {% for payment in fee_payments %}
+                            <div class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50/50 transition-colors">
+                                <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-green-500 to-green-600 text-white flex items-center justify-center text-xs shrink-0 shadow-sm">
+                                    <i class="fas fa-receipt"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-semibold text-gray-800">{{ payment.receipt_number }}</p>
+                                    <p class="text-[10px] text-gray-500 truncate">{% if payment.batch %}{{ payment.batch.course.course_name }}{% else %}-{% endif %} &middot; {{ payment.payment_date|date:"M d" }}</p>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <p class="text-xs font-bold text-green-600">{{ currency_symbol }} {{ payment.amount }}</p>
+                                    <span class="text-[9px] font-medium text-gold">{{ payment.payment_method }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Desktop: Table Layout -->
+                        <div class="hidden sm:block overflow-x-auto rounded-xl border border-gray-100">
                             <table class="w-full text-left border-collapse">
                                 <thead class="bg-gradient-to-r from-primary to-secondary text-white text-xs uppercase tracking-wider">
                                     <tr>
@@ -238,13 +400,13 @@
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
                                     {% for payment in fee_payments %}
-                                    <tr class="hover:bg-gray-50/50">
+                                    <tr class="hover:bg-gray-50/50 transition-colors">
                                         <td class="px-4 py-3 text-sm font-bold text-primary">{{ payment.receipt_number }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-600">
                                             {% if payment.batch %}{{ payment.batch.course.course_name }}{% else %}<span class="text-gray-400">-</span>{% endif %}
                                         </td>
                                         <td class="px-4 py-3 text-sm font-bold text-green-600">{{ currency_symbol }} {{ payment.amount }}</td>
-                                        <td class="px-4 py-3 text-sm text-gray-600">{{ payment.payment_date }}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-600">{{ payment.payment_date|date:"M d, Y" }}</td>
                                         <td class="px-4 py-3">
                                             <span class="px-2 py-0.5 rounded-lg text-xs font-medium bg-gold/10 text-gold border border-gold/20">
                                                 {{ payment.payment_method }}
@@ -256,12 +418,136 @@
                             </table>
                         </div>
                         {% else %}
-                        <div class="text-center py-8">
-                            <i class="fas fa-money-bill-wave text-gray-200 text-5xl mb-3"></i>
-                            <h5 class="text-gray-500 font-medium">No Payments Recorded</h5>
+                        <div class="text-center py-10">
+                            <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-50 flex items-center justify-center">
+                                <i class="fas fa-money-bill-wave text-gray-200 text-4xl"></i>
+                            </div>
+                            <h5 class="text-gray-500 font-semibold mb-1">No Payments Recorded</h5>
                             <p class="text-gray-400 text-sm mb-4">No fee payments have been recorded for this student yet.</p>
-                            <a href="{% url 'fee_payment_add' %}?student={{ student.pk }}" class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors">
+                            <a href="{% url 'fee_payment_add' %}?student={{ student.uuid }}" class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-sm">
                                 <i class="fas fa-plus mr-2"></i>Record Payment
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Behavior Tab -->
+                    <div id="content-behavior" class="tab-content hidden animate-[fadeIn_0.3s_ease-out]">
+                        <div class="flex items-center justify-between mb-6 bg-gradient-to-r from-gray-50 to-white p-4 rounded-xl border border-gray-100">
+                            <h6 class="font-bold text-gray-700 flex items-center gap-2">
+                                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 text-white flex items-center justify-center text-xs shadow-sm">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </div>
+                                Behavior Notes
+                                {% if behavior_notes %}
+                                    <span class="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full font-bold">{{ behavior_notes|length }}</span>
+                                {% endif %}
+                            </h6>
+                            <a href="{% url 'behavior_note_add' student.uuid %}" class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-sm">
+                                <i class="fas fa-plus mr-2"></i>Add Note
+                            </a>
+                        </div>
+
+                        {% if behavior_notes %}
+                        <!-- Mobile: Card Layout -->
+                        <div class="sm:hidden space-y-2">
+                            {% for note in behavior_notes %}
+                            <div class="p-3 rounded-xl border border-gray-100 hover:bg-gray-50/50 transition-colors">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold
+                                        {% if note.category == 'Homework' %}bg-blue-100 text-blue-700
+                                        {% elif note.category == 'Discipline' %}bg-red-100 text-red-700
+                                        {% elif note.category == 'Participation' %}bg-green-100 text-green-700
+                                        {% elif note.category == 'Academic' %}bg-amber-100 text-amber-700
+                                        {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                        {{ note.get_category_display }}
+                                    </span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] text-gray-500">{{ note.date|date:"M d, Y" }}</span>
+                                        <a href="{% url 'behavior_note_edit' note.pk %}" class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition-colors">
+                                            <i class="fas fa-pencil-alt text-[10px]"></i>
+                                        </a>
+                                        <form method="post" action="{% url 'behavior_note_delete' note.pk %}" onsubmit="return confirm('Delete this behavior note?');" class="inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors">
+                                                <i class="fas fa-trash-alt text-[10px]"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <p class="text-xs font-semibold text-gray-800">{{ note.title }}</p>
+                                {% if note.description %}
+                                    <p class="text-[10px] text-gray-500 mt-1">{{ note.description|truncatewords:30 }}</p>
+                                {% endif %}
+                                {% if note.noted_by %}
+                                    <p class="text-[10px] text-gray-400 mt-1"><i class="fas fa-user mr-1"></i>{{ note.noted_by.get_full_name|default:note.noted_by.username }}</p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Desktop: Table Layout -->
+                        <div class="hidden sm:block overflow-x-auto rounded-xl border border-gray-100">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-gradient-to-r from-primary to-secondary text-white text-xs uppercase tracking-wider">
+                                    <tr>
+                                        <th class="px-4 py-3 font-semibold">Date</th>
+                                        <th class="px-4 py-3 font-semibold">Category</th>
+                                        <th class="px-4 py-3 font-semibold">Title</th>
+                                        <th class="px-4 py-3 font-semibold">Noted By</th>
+                                        <th class="px-4 py-3 font-semibold text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    {% for note in behavior_notes %}
+                                    <tr class="hover:bg-gray-50/50 transition-colors group">
+                                        <td class="px-4 py-3 text-sm text-gray-700 font-medium">{{ note.date|date:"M d, Y" }}</td>
+                                        <td class="px-4 py-3">
+                                            <span class="px-2.5 py-1 rounded-full text-xs font-bold
+                                                {% if note.category == 'Homework' %}bg-blue-100 text-blue-700
+                                                {% elif note.category == 'Discipline' %}bg-red-100 text-red-700
+                                                {% elif note.category == 'Participation' %}bg-green-100 text-green-700
+                                                {% elif note.category == 'Academic' %}bg-amber-100 text-amber-700
+                                                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                                {{ note.get_category_display }}
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <p class="text-sm font-semibold text-gray-800">{{ note.title }}</p>
+                                            {% if note.description %}
+                                                <p class="text-xs text-gray-500 mt-0.5 line-clamp-1">{{ note.description|truncatewords:15 }}</p>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-600">
+                                            {% if note.noted_by %}{{ note.noted_by.get_full_name|default:note.noted_by.username }}{% else %}-{% endif %}
+                                        </td>
+                                        <td class="px-4 py-3 text-center">
+                                            <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <a href="{% url 'behavior_note_edit' note.pk %}" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition-colors" title="Edit">
+                                                    <i class="fas fa-pencil-alt text-xs"></i>
+                                                </a>
+                                                <form method="post" action="{% url 'behavior_note_delete' note.pk %}" onsubmit="return confirm('Delete this behavior note?');">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors" title="Delete">
+                                                        <i class="fas fa-trash-alt text-xs"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-10">
+                            <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-50 flex items-center justify-center">
+                                <i class="fas fa-clipboard-list text-gray-200 text-4xl"></i>
+                            </div>
+                            <h5 class="text-gray-500 font-semibold mb-1">No Behavior Notes</h5>
+                            <p class="text-gray-400 text-sm mb-4">No behavior notes have been recorded for this student yet.</p>
+                            <a href="{% url 'behavior_note_add' student.uuid %}" class="inline-flex items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors shadow-sm">
+                                <i class="fas fa-plus mr-2"></i>Add Note
                             </a>
                         </div>
                         {% endif %}
