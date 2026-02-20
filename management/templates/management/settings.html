@@ -64,10 +64,10 @@
                     <h5 class="text-white font-semibold flex items-center gap-2">
                         <i class="fas fa-link"></i> Admission Application Link
                     </h5>
-                    <p class="text-blue-100 text-xs mt-1">Share this link with prospective students to accept applications online</p>
+                    <p class="text-blue-100 text-xs mt-1">Share this link or QR code with prospective students to accept applications online</p>
                 </div>
                 <div class="p-6 md:p-8">
-                    <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="flex flex-col sm:flex-row gap-3 mb-4">
                         <input type="text" readonly
                                value="{{ request.scheme }}://{{ request.get_host }}{% url 'admission_apply' org_slug=form.instance.slug %}"
                                id="admissionLink"
@@ -77,9 +77,25 @@
                             <i class="fas fa-copy" id="copyIcon"></i> <span id="copyText">Copy Link</span>
                         </button>
                     </div>
+
+                    <!-- QR Code -->
+                    <div class="flex flex-col sm:flex-row items-center gap-6 p-5 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                        <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+                            <div id="admissionQR"></div>
+                        </div>
+                        <div class="text-center sm:text-left flex-1">
+                            <h6 class="font-bold text-gray-800 mb-1"><i class="fas fa-qrcode text-blue-500 mr-1"></i> Scan to Apply</h6>
+                            <p class="text-sm text-gray-500 mb-3">Students can scan this QR code with their phone camera to open the admission form directly.</p>
+                            <button type="button" onclick="downloadQR()"
+                                    class="px-4 py-2 bg-white border border-blue-600 text-blue-700 rounded-xl hover:bg-blue-50 font-medium transition-colors text-sm inline-flex items-center gap-2">
+                                <i class="fas fa-download"></i> Download QR Code
+                            </button>
+                        </div>
+                    </div>
+
                     <p class="text-xs text-gray-500 mt-3">
                         <i class="fas fa-info-circle mr-1"></i>
-                        Anyone with this link can submit an admission application. No login required.
+                        Anyone with this link or QR code can submit an admission application. No login required.
                     </p>
                 </div>
             </div>
@@ -185,15 +201,40 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
     const currencyInput = document.getElementById('id_currency_symbol');
     const preview = document.getElementById('currencyPreview');
-    
+
     if (currencyInput && preview) {
         // Update on input
         currencyInput.addEventListener('input', function() {
             preview.textContent = this.value || 'Rs.';
         });
+    }
+
+    // Generate QR Code
+    var admissionLink = document.getElementById('admissionLink').value;
+    var qrContainer = document.getElementById('admissionQR');
+    if (qrContainer && admissionLink) {
+        new QRCode(qrContainer, {
+            text: admissionLink,
+            width: 180,
+            height: 180,
+            colorDark: '#1e293b',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    }
+
+    // Download QR Code as PNG
+    function downloadQR() {
+        var canvas = document.querySelector('#admissionQR canvas');
+        if (!canvas) return;
+        var link = document.createElement('a');
+        link.download = 'admission-qr-code.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
     }
 
     // Copy admission link
