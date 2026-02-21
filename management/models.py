@@ -384,7 +384,7 @@ class Staff(models.Model):
     staff_id = models.CharField(max_length=50, verbose_name="Staff ID")
     first_name = models.CharField(max_length=100, verbose_name="First Name")
     last_name = models.CharField(max_length=100, verbose_name="Last Name")
-    email = models.EmailField(verbose_name="Email Address")
+    email = models.EmailField(blank=True, default='', verbose_name="Email Address")
     phone = models.CharField(max_length=20, verbose_name="Phone Number")
     date_of_birth = models.DateField(verbose_name="Date of Birth")
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name="Gender")
