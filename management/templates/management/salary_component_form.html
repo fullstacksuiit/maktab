@@ -1,0 +1,58 @@
+{% extends "management/base_tailwind.html" %}
+{% block title %}{{ action }} Salary Component{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <a href="{% url 'salary_component_list' %}" class="text-sm text-gray-600 hover:text-primary mb-4 inline-block">
+        <i class="fas fa-arrow-left mr-1"></i> Back to Salary Components
+    </a>
+
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">{{ action }} Salary Component</h1>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <form method="post">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Component Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<p class="text-sm text-red-600 mt-1">{{ form.name.errors.0 }}</p>{% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Code</label>
+                    {{ form.code }}
+                    {% if form.code.errors %}<p class="text-sm text-red-600 mt-1">{{ form.code.errors.0 }}</p>{% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    {{ form.component_type }}
+                </div>
+                <div class="flex items-center gap-3">
+                    {{ form.is_percentage }}
+                    <label class="text-sm font-medium text-gray-700">Is Percentage of Base Salary</label>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Default Amount / Percentage</label>
+                    {{ form.default_amount }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    {{ form.description }}
+                </div>
+                <div class="flex items-center gap-3">
+                    {{ form.is_active }}
+                    <label class="text-sm font-medium text-gray-700">Active</label>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 mt-6">
+                <button type="submit" class="px-6 py-2.5 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">
+                    {{ action }} Component
+                </button>
+                <a href="{% url 'salary_component_list' %}" class="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

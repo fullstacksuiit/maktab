@@ -105,6 +105,30 @@ urlpatterns = [
     path('calendar/events/edit/<int:pk>/', views.event_edit, name='event_edit'),
     path('calendar/events/delete/<int:pk>/', views.event_delete, name='event_delete'),
 
+    # Staff Self-Service Portal URLs
+    path('my/', views.staff_portal, name='staff_portal'),
+    path('my/profile/', views.staff_my_profile, name='staff_my_profile'),
+    path('my/attendance/', views.staff_my_attendance, name='staff_my_attendance'),
+    path('my/punch/', views.staff_punch, name='staff_punch'),
+    path('my/salary/', views.staff_my_salary, name='staff_my_salary'),
+    path('my/salary/<int:pk>/', views.staff_my_payslip, name='staff_my_payslip'),
+    path('my/change-password/', views.staff_change_password, name='staff_change_password'),
+
+    # Admin Payroll Management URLs
+    path('payroll/', views.payroll_list, name='payroll_list'),
+    path('payroll/generate/', views.payroll_generate, name='payroll_generate'),
+    path('payroll/<int:pk>/', views.payroll_detail, name='payroll_detail'),
+    path('payroll/<int:pk>/edit/', views.payroll_edit, name='payroll_edit'),
+    path('payroll/<int:pk>/process/', views.payroll_process, name='payroll_process'),
+    path('payroll/<int:pk>/mark-paid/', views.payroll_mark_paid, name='payroll_mark_paid'),
+    path('payroll/<int:pk>/payslip/', views.payroll_payslip_print, name='payroll_payslip_print'),
+
+    # Salary Components Management URLs
+    path('salary-components/', views.salary_component_list, name='salary_component_list'),
+    path('salary-components/add/', views.salary_component_add, name='salary_component_add'),
+    path('salary-components/edit/<int:pk>/', views.salary_component_edit, name='salary_component_edit'),
+    path('salary-components/delete/<int:pk>/', views.salary_component_delete, name='salary_component_delete'),
+
     # Export URLs
     path('export/students/', views.export_students_excel, name='export_students'),
     path('export/staff/', views.export_staff_excel, name='export_staff'),

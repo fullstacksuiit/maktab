@@ -103,15 +103,15 @@
                     </td>
                     <td class="px-6 py-4 max-w-[150px] text-center last:pr-8">
                         <div class="flex items-center justify-center gap-2">
-                            <a href="{% url 'quick_attendance' batch.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="Take Attendance">
+                            <a href="{% url 'quick_attendance' batch.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="Take Attendance" aria-label="Take attendance for {{ batch.batch_name }}">
                                 <i class="fas fa-clipboard-check"></i>
                             </a>
-                            <a href="{% url 'batch_edit' batch.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit">
+                            <a href="{% url 'batch_edit' batch.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit" aria-label="Edit {{ batch.batch_name }}">
                                 <i class="fas fa-edit"></i>
                             </a>
                             <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
                                 onclick="openDeleteModal('{% url 'batch_delete' batch.pk %}', '{{ batch.batch_name|escapejs }}')"
-                                title="Delete">
+                                title="Delete" aria-label="Delete {{ batch.batch_name }}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>

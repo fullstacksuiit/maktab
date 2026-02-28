@@ -1,0 +1,105 @@
+<ul class="sidebar-menu">
+    {% if request.user.is_staff_role %}
+    <!-- Staff Self-Service -->
+    <li class="sidebar-section-title">My Portal</li>
+    <li>
+        <a href="{% url 'staff_portal' %}" class="{% if request.path == '/my/' %}active{% endif %}">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'staff_my_profile' %}" class="{% if 'my/profile' in request.path %}active{% endif %}">
+            <i class="fas fa-user"></i>
+            <span>My Profile</span>
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'staff_my_attendance' %}" class="{% if 'my/attendance' in request.path %}active{% endif %}">
+            <i class="fas fa-clipboard-check"></i>
+            <span>My Attendance</span>
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'staff_leave_list' %}" class="{% if 'staff-leave' in request.path %}active{% endif %}">
+            <i class="fas fa-calendar-minus"></i>
+            <span>My Leaves</span>
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'staff_my_salary' %}" class="{% if 'my/salary' in request.path %}active{% endif %}">
+            <i class="fas fa-money-check-alt"></i>
+            <span>My Salary</span>
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'calendar' %}" class="{% if 'calendar' in request.path %}active{% endif %}">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Calendar</span>
+        </a>
+    </li>
+    {% else %}
+    <!-- Admin/Manager Navigation -->
+    <li class="sidebar-section-title">Main</li>
+    <li>
+        <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+    </li>
+
+    <li class="sidebar-section-title">Academics</li>
+    <li>
+        <a href="{% url 'course_list' %}" class="{% if 'course' in request.path %}active{% endif %}">
+            <i class="fas fa-book-quran"></i>
+            <span>Courses</span>
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'student_list' %}" class="{% if 'student' in request.path %}active{% endif %}">
+            <i class="fas fa-user-graduate"></i>
+            <span>Students</span>
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'attendance_list' %}" class="{% if 'attendance' in request.path %}active{% endif %}">
+            <i class="fas fa-clipboard-check"></i>
+            <span>Attendance</span>
+        </a>
+    </li>
+
+    <li class="sidebar-section-title">Finance</li>
+    <li>
+        <a href="{% url 'fee_payment_list' %}" class="{% if 'payment' in request.path %}active{% endif %}">
+            <i class="fas fa-money-bill-wave"></i>
+            <span>Fee Payments</span>
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'payroll_list' %}" class="{% if 'payroll' in request.path %}active{% endif %}">
+            <i class="fas fa-file-invoice-dollar"></i>
+            <span>Payroll</span>
+        </a>
+    </li>
+
+    <li class="sidebar-section-title">Administration</li>
+    <li>
+        <a href="{% url 'staff_list' %}" class="{% if 'staff' in request.path %}active{% endif %}">
+            <i class="fas fa-users-cog"></i>
+            <span>Staff</span>
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'salary_component_list' %}" class="{% if 'salary-component' in request.path %}active{% endif %}">
+            <i class="fas fa-sliders-h"></i>
+            <span>Salary Components</span>
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'settings' %}" class="{% if 'settings' in request.path %}active{% endif %}">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+        </a>
+    </li>
+    {% endif %}
+</ul>

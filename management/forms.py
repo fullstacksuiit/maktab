@@ -2,7 +2,9 @@ import re
 from datetime import date
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import User, Organization, Course, Batch, Student, Staff, Attendance, FeePayment, BehaviorNote, AdmissionApplication, Event, LeaveType, LeaveRequest
+from .models import (User, Organization, Course, Batch, Student, Staff, Attendance, FeePayment,
+                     BehaviorNote, AdmissionApplication, Event, LeaveType, LeaveRequest,
+                     SalaryComponent, PayrollComponent)
 from .widgets import (
     styled_text_input, styled_email_input, styled_password_input,
     styled_textarea, styled_date_input, styled_number_input,
@@ -710,3 +712,39 @@ class LeaveRejectForm(forms.Form):
         required=False,
         widget=styled_textarea('Reason for rejection (optional)', rows=3),
     )
+
+
+class SalaryComponentForm(forms.ModelForm):
+    class Meta:
+        model = SalaryComponent
+        fields = ['name', 'code', 'component_type', 'is_percentage', 'default_amount', 'description', 'is_active']
+        widgets = {
+            'name': styled_text_input('Component Name'),
+            'code': styled_text_input('Code (e.g., HRA, PF)'),
+            'component_type': styled_select(),
+            'is_percentage': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary'}),
+            'default_amount': styled_number_input('Amount or Percentage', step='0.01', min_val=0),
+            'description': styled_text_input('Optional description'),
+            'is_active': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary'}),
+        }
+
+
+class PayrollComponentForm(forms.ModelForm):
+    class Meta:
+        model = PayrollComponent
+        fields = ['salary_component', 'name', 'component_type', 'amount', 'notes']
+        widgets = {
+            'salary_component': styled_select(),
+            'name': styled_text_input('Component Name'),
+            'component_type': styled_select(),
+            'amount': styled_number_input('Amount', step='0.01', min_val=0),
+            'notes': styled_text_input('Notes (optional)'),
+        }
+
+    def __init__(self, *args, organization=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if organization:
+            self.fields['salary_component'].queryset = SalaryComponent.objects.filter(
+                organization=organization, is_active=True
+            )
+        self.fields['salary_component'].required = False

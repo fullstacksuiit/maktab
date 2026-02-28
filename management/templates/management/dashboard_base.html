@@ -472,57 +472,7 @@
                 <div style="font-size: 12px; color: #888; margin-top: 3px;">{{ user.organization.org_name }}</div>
                 {% endif %}
             </div>
-            <ul class="sidebar-menu">
-                <li class="sidebar-section-title">Main</li>
-                <li>
-                    <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                        <i class="fas fa-tachometer-alt"></i>
-                        <span>Dashboard</span>
-                    </a>
-                </li>
-
-                <li class="sidebar-section-title">Academics</li>
-                <li>
-                    <a href="{% url 'course_list' %}" class="{% if 'course' in request.path %}active{% endif %}">
-                        <i class="fas fa-book-quran"></i>
-                        <span>Courses</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{% url 'student_list' %}" class="{% if 'student' in request.path %}active{% endif %}">
-                        <i class="fas fa-user-graduate"></i>
-                        <span>Students</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{% url 'attendance_list' %}" class="{% if 'attendance' in request.path %}active{% endif %}">
-                        <i class="fas fa-clipboard-check"></i>
-                        <span>Attendance</span>
-                    </a>
-                </li>
-
-                <li class="sidebar-section-title">Finance</li>
-                <li>
-                    <a href="{% url 'fee_payment_list' %}" class="{% if 'payment' in request.path %}active{% endif %}">
-                        <i class="fas fa-money-bill-wave"></i>
-                        <span>Fee Payments</span>
-                    </a>
-                </li>
-
-                <li class="sidebar-section-title">Administration</li>
-                <li>
-                    <a href="{% url 'staff_list' %}" class="{% if 'staff' in request.path %}active{% endif %}">
-                        <i class="fas fa-users-cog"></i>
-                        <span>Staff</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{% url 'settings' %}" class="{% if 'settings' in request.path %}active{% endif %}">
-                        <i class="fas fa-cog"></i>
-                        <span>Settings</span>
-                    </a>
-                </li>
-            </ul>
+            {% include "management/_sidebar_menu.html" %}
         </div>
     </div>
 
@@ -530,57 +480,7 @@
         <div class="row">
             <!-- Desktop Sidebar -->
             <div class="col-md-2 sidebar d-none d-md-block">
-                <ul class="sidebar-menu">
-                    <li class="sidebar-section-title">Main</li>
-                    <li>
-                        <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                            <i class="fas fa-tachometer-alt"></i>
-                            <span>Dashboard</span>
-                        </a>
-                    </li>
-
-                    <li class="sidebar-section-title">Academics</li>
-                    <li>
-                        <a href="{% url 'course_list' %}" class="{% if 'course' in request.path %}active{% endif %}">
-                            <i class="fas fa-book-quran"></i>
-                            <span>Courses</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'student_list' %}" class="{% if 'student' in request.path %}active{% endif %}">
-                            <i class="fas fa-user-graduate"></i>
-                            <span>Students</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'attendance_list' %}" class="{% if 'attendance' in request.path %}active{% endif %}">
-                            <i class="fas fa-clipboard-check"></i>
-                            <span>Attendance</span>
-                        </a>
-                    </li>
-
-                    <li class="sidebar-section-title">Finance</li>
-                    <li>
-                        <a href="{% url 'fee_payment_list' %}" class="{% if 'payment' in request.path %}active{% endif %}">
-                            <i class="fas fa-money-bill-wave"></i>
-                            <span>Fee Payments</span>
-                        </a>
-                    </li>
-
-                    <li class="sidebar-section-title">Administration</li>
-                    <li>
-                        <a href="{% url 'staff_list' %}" class="{% if 'staff' in request.path %}active{% endif %}">
-                            <i class="fas fa-users-cog"></i>
-                            <span>Staff</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{% url 'settings' %}" class="{% if 'settings' in request.path %}active{% endif %}">
-                            <i class="fas fa-cog"></i>
-                            <span>Settings</span>
-                        </a>
-                    </li>
-                </ul>
+                {% include "management/_sidebar_menu.html" %}
             </div>
 
             <div class="col-md-10 main-content">

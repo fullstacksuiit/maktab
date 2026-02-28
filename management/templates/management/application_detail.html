@@ -3,6 +3,16 @@
 {% block title %}Application - {{ application.first_name }} {{ application.last_name }} - Maktab{% endblock %}
 {% block header_title %}Application Detail{% endblock %}
 
+{% block breadcrumb %}
+<nav class="mb-2 text-sm" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5 text-gray-500">
+        <li><a href="{% url 'application_list' %}" class="hover:text-primary transition-colors">Applications</a></li>
+        <li><i class="fas fa-chevron-right text-[10px] text-gray-300"></i></li>
+        <li class="text-gray-800 font-medium">{{ application.first_name }} {{ application.last_name }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="animate-[slideUp_0.4s_ease-out]">
     <div class="mb-6 flex flex-wrap justify-end gap-3">
@@ -10,13 +20,10 @@
             <i class="fas fa-arrow-left"></i> Back
         </a>
         {% if application.status == 'pending' %}
-        <form method="post" action="{% url 'application_accept' application.pk %}" class="inline">
-            {% csrf_token %}
-            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all font-medium flex items-center gap-2"
-                    onclick="return confirm('Accept this application? A student record will be created.')">
-                <i class="fas fa-check"></i> Accept
-            </button>
-        </form>
+        <button type="button" onclick="document.getElementById('acceptModal').classList.remove('hidden')"
+                class="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all font-medium flex items-center gap-2">
+            <i class="fas fa-check"></i> Accept
+        </button>
         <button type="button" onclick="document.getElementById('rejectModal').classList.remove('hidden')"
                 class="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 shadow-lg shadow-red-600/20 transition-all font-medium flex items-center gap-2">
             <i class="fas fa-times"></i> Reject
@@ -191,6 +198,39 @@
         </div>
     </div>
 </div>
+
+<!-- Accept Modal -->
+{% if application.status == 'pending' %}
+<div id="acceptModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-[slideUp_0.3s_ease-out]">
+        <div class="p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-500">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800">Accept Application</h3>
+                    <p class="text-sm text-gray-500">{{ application.first_name }} {{ application.last_name }}</p>
+                </div>
+            </div>
+            <p class="text-sm text-gray-600 mb-5">A student record will be created from this application. This action cannot be undone.</p>
+            <div class="flex gap-3 justify-end">
+                <button type="button" onclick="document.getElementById('acceptModal').classList.add('hidden')"
+                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-colors">
+                    Cancel
+                </button>
+                <form method="post" action="{% url 'application_accept' application.pk %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 font-medium transition-colors flex items-center gap-2">
+                        <i class="fas fa-check"></i> Accept
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Reject Modal -->
 {% if application.status == 'pending' %}

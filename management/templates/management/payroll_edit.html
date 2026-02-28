@@ -1,0 +1,137 @@
+{% extends "management/base_tailwind.html" %}
+{% block title %}Edit Payroll {{ payroll.payroll_number }}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <a href="{% url 'payroll_detail' payroll.pk %}" class="text-sm text-gray-600 hover:text-primary">
+        <i class="fas fa-arrow-left mr-1"></i> Back to Payroll Detail
+    </a>
+</div>
+
+<h1 class="text-2xl font-bold text-gray-800 mb-2">Edit Payroll: {{ payroll.payroll_number }}</h1>
+<p class="text-sm text-gray-500 mb-6">{{ payroll.staff.first_name }} {{ payroll.staff.last_name }} &middot; {{ payroll.month }}/{{ payroll.year }}</p>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Add Component Form -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h3 class="font-bold text-gray-800 mb-4">Add Component</h3>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_component">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Template (Optional)</label>
+                    {{ form.salary_component }}
+                    <p class="text-xs text-gray-400 mt-1">Select a predefined component or fill in manually below.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    {{ form.name }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                    {{ form.component_type }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount ({{ currency_symbol }})</label>
+                    {{ form.amount }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                    {{ form.notes }}
+                </div>
+            </div>
+            <button type="submit" class="mt-4 w-full py-2.5 px-6 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">
+                <i class="fas fa-plus mr-1"></i> Add Component
+            </button>
+        </form>
+    </div>
+
+    <!-- Current Components + Summary -->
+    <div class="space-y-6">
+        <!-- Financial Summary -->
+        <div class="bg-gradient-to-r from-primary to-secondary rounded-2xl p-6 text-white">
+            <div class="grid grid-cols-3 gap-4 text-center">
+                <div>
+                    <p class="text-sm opacity-80">Earnings</p>
+                    <p class="text-xl font-bold">{{ currency_symbol }} {{ payroll.total_earnings }}</p>
+                </div>
+                <div>
+                    <p class="text-sm opacity-80">Deductions</p>
+                    <p class="text-xl font-bold">{{ currency_symbol }} {{ payroll.total_deductions }}</p>
+                </div>
+                <div>
+                    <p class="text-sm opacity-80">Net Pay</p>
+                    <p class="text-xl font-bold">{{ currency_symbol }} {{ payroll.net_salary }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Earnings List -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-green-500"></span> Earnings
+            </h3>
+            <div class="space-y-2">
+                <div class="flex justify-between items-center py-2 px-3 bg-green-50 rounded-lg">
+                    <span class="text-sm text-gray-700">Base Salary</span>
+                    <span class="text-sm font-medium text-gray-800">{{ currency_symbol }} {{ payroll.base_salary }}</span>
+                </div>
+                {% for comp in earnings %}
+                <div class="flex justify-between items-center py-2 px-3 hover:bg-gray-50 rounded-lg group">
+                    <div>
+                        <span class="text-sm text-gray-700">{{ comp.name }}</span>
+                        {% if comp.notes %}<span class="text-xs text-gray-400 ml-1">({{ comp.notes }})</span>{% endif %}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-gray-800">{{ currency_symbol }} {{ comp.amount }}</span>
+                        <form method="post" class="inline opacity-0 group-hover:opacity-100 transition-opacity">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="remove_component">
+                            <input type="hidden" name="component_id" value="{{ comp.pk }}">
+                            <button type="submit" class="w-6 h-6 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center text-xs"
+                                    onclick="return confirm('Remove this component?')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-sm text-gray-400 py-2">No additional earnings.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Deductions List -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-red-500"></span> Deductions
+            </h3>
+            <div class="space-y-2">
+                {% for comp in deductions %}
+                <div class="flex justify-between items-center py-2 px-3 hover:bg-gray-50 rounded-lg group">
+                    <div>
+                        <span class="text-sm text-gray-700">{{ comp.name }}</span>
+                        {% if comp.notes %}<span class="text-xs text-gray-400 ml-1">({{ comp.notes }})</span>{% endif %}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-red-600">{{ currency_symbol }} {{ comp.amount }}</span>
+                        <form method="post" class="inline opacity-0 group-hover:opacity-100 transition-opacity">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="remove_component">
+                            <input type="hidden" name="component_id" value="{{ comp.pk }}">
+                            <button type="submit" class="w-6 h-6 rounded-full bg-red-100 text-red-600 hover:bg-red-200 flex items-center justify-center text-xs"
+                                    onclick="return confirm('Remove this component?')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-sm text-gray-400 py-2">No deductions.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

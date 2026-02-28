@@ -26,12 +26,15 @@ logger = logging.getLogger('management')
 from .forms import (SignUpForm, LoginForm, CourseForm, BatchForm, StudentForm, StaffForm,
                     AttendanceFilterForm, StaffAttendanceFilterForm, FeePaymentForm, BehaviorNoteForm, SettingsForm, InviteUserForm, UserEditForm,
                     AdmissionApplicationForm, ApplicationRejectForm, EventForm,
-                    LeaveRequestForm, LeaveRejectForm)
+                    LeaveRequestForm, LeaveRejectForm,
+                    SalaryComponentForm, PayrollComponentForm)
 from .models import (User, Organization, Course, Batch, Student, Staff, Attendance, StaffAttendance, FeePayment, BehaviorNote, AdmissionApplication, Event,
-                     LeaveType, LeaveBalance, LeaveRequest, ensure_leave_balances)
-from .decorators import role_required, admin_required, manager_or_admin_required, parent_required, internal_user_required
+                     LeaveType, LeaveBalance, LeaveRequest, ensure_leave_balances,
+                     PunchRecord, SalaryComponent, Payroll, PayrollComponent, create_default_salary_components)
+from .decorators import role_required, admin_required, manager_or_admin_required, parent_required, internal_user_required, staff_role_required
 from .indian_cities import CITY_DATA
 from .hijri_dates import get_upcoming_islamic_dates
+from .utils import normalize_phone
 
 
 def service_worker(request):
@@ -53,9 +56,10 @@ def signup_view(request):
             user = form.save()
             login(request, user)
 
-            # Create default leave types for the new organization
+            # Create default leave types and salary components for the new organization
             from .models import create_default_leave_types
             create_default_leave_types(user.organization)
+            create_default_salary_components(user.organization)
 
             # Send welcome email
             try:
@@ -95,7 +99,12 @@ def login_view(request):
                 remember_token = signing.dumps(user.pk, salt='remember-me')
                 display_name = user.first_name or username
                 messages.success(request, f'Assalamu Alaikum, {display_name}!')
-                redirect_url = 'parent_dashboard' if user.is_parent() else 'dashboard'
+                if user.is_parent():
+                    redirect_url = 'parent_dashboard'
+                elif user.is_staff_role():
+                    redirect_url = 'staff_portal'
+                else:
+                    redirect_url = 'dashboard'
                 response = redirect(redirect_url)
                 response.set_cookie(
                     'remember_token', remember_token,
@@ -118,6 +127,8 @@ def auto_login_view(request):
     if request.user.is_authenticated:
         if request.user.is_parent():
             return redirect('parent_dashboard')
+        elif request.user.is_staff_role():
+            return redirect('staff_portal')
         return redirect('dashboard')
 
     token = request.COOKIES.get('remember_token')
@@ -128,7 +139,12 @@ def auto_login_view(request):
             login(request, user, backend='management.backends.PhoneOrUsernameBackend')
             # Refresh the token
             new_token = signing.dumps(user.pk, salt='remember-me')
-            redirect_url = 'parent_dashboard' if user.is_parent() else 'dashboard'
+            if user.is_parent():
+                redirect_url = 'parent_dashboard'
+            elif user.is_staff_role():
+                redirect_url = 'staff_portal'
+            else:
+                redirect_url = 'dashboard'
             response = redirect(redirect_url)
             response.set_cookie(
                 'remember_token', new_token,
@@ -156,6 +172,9 @@ def logout_view(request):
 @login_required(login_url='login')
 @internal_user_required
 def dashboard_view(request):
+    # Redirect staff users to their own portal
+    if request.user.is_staff_role():
+        return redirect('staff_portal')
     org = get_org(request)
 
     # Single aggregate query for all counts instead of 4 separate COUNT queries
@@ -623,19 +642,64 @@ def staff_list(request):
 @manager_or_admin_required
 def staff_add(request):
     org = get_org(request)
+    leave_types = LeaveType.objects.filter(organization=org)
     if request.method == 'POST':
         form = StaffForm(request.POST)
         if form.is_valid():
             staff = form.save(commit=False)
             staff.organization = org
             staff.save()
+            # Auto-create a User account for staff login (staff_id + phone)
+            if not hasattr(staff, 'user_account') or staff.user_account is None:
+                from .models import User as UserModel
+                if not UserModel.objects.filter(username=staff.staff_id).exists():
+                    user_account = UserModel(
+                        username=staff.staff_id,
+                        first_name=staff.first_name,
+                        last_name=staff.last_name,
+                        email=staff.email,
+                        role='staff',
+                        organization=org,
+                        staff_profile=staff,
+                    )
+                    user_account.set_password(normalize_phone(staff.phone))
+                    user_account.save()
+            # Create leave balances with custom allocations
+            current_year = date.today().year
+            for lt in leave_types:
+                alloc_value = request.POST.get(f'leave_alloc_{lt.id}', '')
+                if alloc_value != '':
+                    days = int(alloc_value)
+                    yearly = days * 12 if lt.period == 'monthly' else days
+                else:
+                    yearly = lt.yearly_allocation
+                LeaveBalance.objects.create(
+                    organization=org, staff=staff, leave_type=lt,
+                    year=current_year, allocated=yearly
+                )
             messages.success(request, 'Staff member added successfully!')
             return redirect('staff_list')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
         form = StaffForm()
-    return render(request, 'management/staff_form.html', {'form': form, 'action': 'Add'})
+
+    # Build leave allocation data for template
+    leave_alloc_data = []
+    for lt in leave_types:
+        posted_val = request.POST.get(f'leave_alloc_{lt.id}', '') if request.method == 'POST' else ''
+        leave_alloc_data.append({
+            'id': lt.id,
+            'name': lt.name,
+            'code': lt.code,
+            'period': lt.get_period_display(),
+            'default_days': lt.days_per_year,
+            'value': posted_val if posted_val != '' else lt.days_per_year,
+        })
+
+    return render(request, 'management/staff_form.html', {
+        'form': form, 'action': 'Add', 'leave_alloc_data': leave_alloc_data,
+    })
 
 
 @login_required(login_url='login')
@@ -643,17 +707,71 @@ def staff_add(request):
 def staff_edit(request, pk):
     org = get_org(request)
     staff = get_object_or_404(Staff, pk=pk, organization=org)
+    leave_types = LeaveType.objects.filter(organization=org)
+    current_year = date.today().year
     if request.method == 'POST':
         form = StaffForm(request.POST, instance=staff)
         if form.is_valid():
-            form.save()
+            staff = form.save()
+            # Sync linked User account credentials if staff_id or phone changed
+            try:
+                user_account = staff.user_account
+                if user_account:
+                    user_account.username = staff.staff_id
+                    user_account.first_name = staff.first_name
+                    user_account.last_name = staff.last_name
+                    user_account.email = staff.email
+                    user_account.set_password(normalize_phone(staff.phone))
+                    user_account.save()
+            except User.DoesNotExist:
+                pass
+            # Update leave balances with custom allocations
+            for lt in leave_types:
+                alloc_value = request.POST.get(f'leave_alloc_{lt.id}', '')
+                if alloc_value != '':
+                    days = int(alloc_value)
+                    yearly = days * 12 if lt.period == 'monthly' else days
+                else:
+                    yearly = lt.yearly_allocation
+                LeaveBalance.objects.update_or_create(
+                    organization=org, staff=staff, leave_type=lt, year=current_year,
+                    defaults={'allocated': yearly}
+                )
             messages.success(request, 'Staff member updated successfully!')
             return redirect('staff_list')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
         form = StaffForm(instance=staff)
-    return render(request, 'management/staff_form.html', {'form': form, 'action': 'Edit'})
+
+    # Build leave allocation data for template
+    existing_balances = {
+        lb.leave_type_id: lb for lb in
+        LeaveBalance.objects.filter(organization=org, staff=staff, year=current_year)
+    }
+    leave_alloc_data = []
+    for lt in leave_types:
+        existing = existing_balances.get(lt.id)
+        if request.method == 'POST':
+            val = request.POST.get(f'leave_alloc_{lt.id}', '')
+            display_val = val if val != '' else lt.days_per_year
+        elif existing:
+            # Show per-period value (reverse the yearly conversion)
+            display_val = int(float(existing.allocated) / 12) if lt.period == 'monthly' else int(float(existing.allocated))
+        else:
+            display_val = lt.days_per_year
+        leave_alloc_data.append({
+            'id': lt.id,
+            'name': lt.name,
+            'code': lt.code,
+            'period': lt.get_period_display(),
+            'default_days': lt.days_per_year,
+            'value': display_val,
+        })
+
+    return render(request, 'management/staff_form.html', {
+        'form': form, 'action': 'Edit', 'leave_alloc_data': leave_alloc_data,
+    })
 
 
 @login_required(login_url='login')
@@ -2668,3 +2786,562 @@ def event_delete(request, pk):
     event.delete()
     messages.success(request, f'Event "{event_title}" deleted successfully!')
     return redirect(f"{reverse('calendar')}?year={start.year}&month={start.month}")
+
+
+# ─── Staff Self-Service Portal Views ───────────────────────────────────────────
+
+def _calculate_hours_from_punches(punches):
+    """Calculate total hours from a queryset of PunchRecords for a single day."""
+    total_seconds = 0
+    punch_in_time = None
+    for punch in punches:
+        if punch.punch_type == 'in':
+            punch_in_time = punch.timestamp
+        elif punch.punch_type == 'out' and punch_in_time:
+            total_seconds += (punch.timestamp - punch_in_time).total_seconds()
+            punch_in_time = None
+    # If still punched in, count time until now
+    if punch_in_time:
+        from django.utils import timezone
+        total_seconds += (timezone.now() - punch_in_time).total_seconds()
+    return round(total_seconds / 3600, 1)
+
+
+@login_required(login_url='login')
+@staff_role_required
+def staff_portal(request):
+    """Staff self-service dashboard."""
+    user = request.user
+    staff = user.staff_profile
+    org = user.organization
+    today = date.today()
+
+    # Today's punch status
+    today_punches = PunchRecord.objects.filter(
+        staff=staff, date=today, organization=org
+    ).order_by('timestamp')
+    last_punch = today_punches.last()
+    is_punched_in = last_punch and last_punch.punch_type == 'in'
+
+    # Calculate hours worked today
+    hours_today = _calculate_hours_from_punches(today_punches)
+
+    # This month's attendance summary
+    first_of_month = today.replace(day=1)
+    month_attendance = StaffAttendance.objects.filter(
+        staff=staff, organization=org,
+        date__gte=first_of_month, date__lte=today
+    ).aggregate(
+        total=Count('id'),
+        present=Count('id', filter=Q(status='Present')),
+        absent=Count('id', filter=Q(status='Absent')),
+        late=Count('id', filter=Q(status='Late')),
+        total_hours=Coalesce(Sum('hours'), 0, output_field=DecimalField()),
+    )
+
+    # Leave balance for current year
+    ensure_leave_balances(staff, today.year)
+    leave_balances = LeaveBalance.objects.filter(
+        staff=staff, year=today.year, organization=org
+    ).select_related('leave_type')
+
+    # Pending leave requests
+    pending_leaves = LeaveRequest.objects.filter(
+        staff=staff, organization=org, status='pending'
+    ).count()
+
+    # Latest payroll
+    latest_payroll = Payroll.objects.filter(
+        staff=staff, organization=org, status__in=['processed', 'paid']
+    ).order_by('-year', '-month').first()
+
+    context = {
+        'staff': staff,
+        'is_punched_in': is_punched_in,
+        'last_punch': last_punch,
+        'hours_today': hours_today,
+        'today_punches': today_punches,
+        'month_attendance': month_attendance,
+        'leave_balances': leave_balances,
+        'pending_leaves': pending_leaves,
+        'latest_payroll': latest_payroll,
+        'today': today,
+    }
+    return render(request, 'management/staff_portal.html', context)
+
+
+@login_required(login_url='login')
+@staff_role_required
+@require_POST
+def staff_punch(request):
+    """Toggle punch in/out for staff."""
+    staff = request.user.staff_profile
+    org = request.user.organization
+    today = date.today()
+
+    last_punch = PunchRecord.objects.filter(
+        staff=staff, date=today, organization=org
+    ).order_by('timestamp').last()
+
+    if last_punch and last_punch.punch_type == 'in':
+        punch_type = 'out'
+        msg = 'Punched out successfully!'
+    else:
+        punch_type = 'in'
+        msg = 'Punched in successfully!'
+
+    PunchRecord.objects.create(
+        staff=staff,
+        punch_type=punch_type,
+        date=today,
+        organization=org,
+    )
+    messages.success(request, msg)
+    return redirect('staff_portal')
+
+
+@login_required(login_url='login')
+@staff_role_required
+def staff_my_attendance(request):
+    """Staff views their own attendance history."""
+    staff = request.user.staff_profile
+    org = request.user.organization
+    today = date.today()
+
+    attendances = StaffAttendance.objects.filter(
+        staff=staff, organization=org
+    ).order_by('-date')
+
+    # Filter by month/year
+    month = request.GET.get('month', str(today.month))
+    year = request.GET.get('year', str(today.year))
+    if month and year:
+        try:
+            month = int(month)
+            year = int(year)
+            attendances = attendances.filter(date__month=month, date__year=year)
+        except (ValueError, TypeError):
+            month = today.month
+            year = today.year
+
+    summary = attendances.aggregate(
+        total=Count('id'),
+        present=Count('id', filter=Q(status='Present')),
+        absent=Count('id', filter=Q(status='Absent')),
+        late=Count('id', filter=Q(status='Late')),
+        excused=Count('id', filter=Q(status='Excused')),
+        total_hours=Coalesce(Sum('hours'), 0, output_field=DecimalField()),
+    )
+
+    paginator = Paginator(attendances, 31)
+    page = paginator.get_page(request.GET.get('page'))
+
+    context = {
+        'attendances': page,
+        'summary': summary,
+        'selected_month': month,
+        'selected_year': year,
+        'months': [(i, cal_module.month_name[i]) for i in range(1, 13)],
+        'years': list(range(today.year - 2, today.year + 1)),
+    }
+    return render(request, 'management/staff_my_attendance.html', context)
+
+
+@login_required(login_url='login')
+@staff_role_required
+def staff_my_profile(request):
+    """Staff views their own profile (read-only)."""
+    staff = request.user.staff_profile
+    org = request.user.organization
+    today = date.today()
+
+    ensure_leave_balances(staff, today.year)
+    leave_balances = LeaveBalance.objects.filter(
+        staff=staff, year=today.year, organization=org
+    ).select_related('leave_type')
+
+    context = {
+        'staff': staff,
+        'leave_balances': leave_balances,
+    }
+    return render(request, 'management/staff_my_profile.html', context)
+
+
+@login_required(login_url='login')
+@staff_role_required
+def staff_my_salary(request):
+    """Staff views their salary/payroll history."""
+    staff = request.user.staff_profile
+    org = request.user.organization
+
+    payrolls = Payroll.objects.filter(
+        staff=staff, organization=org, status__in=['processed', 'paid']
+    ).order_by('-year', '-month')
+
+    context = {
+        'payrolls': payrolls,
+        'staff': staff,
+    }
+    return render(request, 'management/staff_my_salary.html', context)
+
+
+@login_required(login_url='login')
+@staff_role_required
+def staff_my_payslip(request, pk):
+    """Staff views a single pay slip."""
+    staff = request.user.staff_profile
+    payroll = get_object_or_404(Payroll, pk=pk, staff=staff, organization=request.user.organization)
+
+    components = payroll.components.all()
+    earnings = components.filter(component_type='earning')
+    deductions = components.filter(component_type='deduction')
+
+    context = {
+        'payroll': payroll,
+        'earnings': earnings,
+        'deductions': deductions,
+        'staff': staff,
+        'org': request.user.organization,
+    }
+    return render(request, 'management/staff_my_payslip.html', context)
+
+
+@login_required(login_url='login')
+@staff_role_required
+def staff_change_password(request):
+    """Allow staff to change their password."""
+    from django.contrib.auth.forms import PasswordChangeForm
+    from django.contrib.auth import update_session_auth_hash
+
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Your password has been changed successfully!')
+            return redirect('staff_portal')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PasswordChangeForm(request.user)
+
+    return render(request, 'management/staff_change_password.html', {'form': form})
+
+
+# ─── Admin Payroll Management Views ────────────────────────────────────────────
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def salary_component_list(request):
+    """List all salary components for the organization."""
+    org = get_org(request)
+    components = SalaryComponent.objects.filter(organization=org)
+    return render(request, 'management/salary_component_list.html', {'components': components})
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def salary_component_add(request):
+    """Add a new salary component."""
+    org = get_org(request)
+    if request.method == 'POST':
+        form = SalaryComponentForm(request.POST)
+        if form.is_valid():
+            component = form.save(commit=False)
+            component.organization = org
+            component.save()
+            messages.success(request, f'Salary component "{component.name}" created successfully!')
+            return redirect('salary_component_list')
+    else:
+        form = SalaryComponentForm()
+    return render(request, 'management/salary_component_form.html', {'form': form, 'action': 'Add'})
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def salary_component_edit(request, pk):
+    """Edit a salary component."""
+    org = get_org(request)
+    component = get_object_or_404(SalaryComponent, pk=pk, organization=org)
+    if request.method == 'POST':
+        form = SalaryComponentForm(request.POST, instance=component)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Salary component "{component.name}" updated successfully!')
+            return redirect('salary_component_list')
+    else:
+        form = SalaryComponentForm(instance=component)
+    return render(request, 'management/salary_component_form.html', {'form': form, 'action': 'Edit'})
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def salary_component_delete(request, pk):
+    """Delete a salary component."""
+    org = get_org(request)
+    component = get_object_or_404(SalaryComponent, pk=pk, organization=org)
+    name = component.name
+    component.delete()
+    messages.success(request, f'Salary component "{name}" deleted successfully!')
+    return redirect('salary_component_list')
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def payroll_list(request):
+    """List all payrolls with filters."""
+    org = get_org(request)
+    today = date.today()
+
+    payrolls = Payroll.objects.filter(organization=org).select_related('staff')
+
+    # Filters
+    month = request.GET.get('month', str(today.month))
+    year = request.GET.get('year', str(today.year))
+    status_filter = request.GET.get('status', '')
+    search_query = request.GET.get('q', '').strip()
+
+    if month and year:
+        try:
+            payrolls = payrolls.filter(month=int(month), year=int(year))
+        except (ValueError, TypeError):
+            pass
+
+    if status_filter in ('draft', 'processed', 'paid'):
+        payrolls = payrolls.filter(status=status_filter)
+
+    if search_query:
+        payrolls = payrolls.filter(
+            Q(staff__first_name__icontains=search_query) |
+            Q(staff__last_name__icontains=search_query) |
+            Q(payroll_number__icontains=search_query)
+        )
+
+    # Status counts for current filter
+    base_qs = Payroll.objects.filter(organization=org)
+    if month and year:
+        try:
+            base_qs = base_qs.filter(month=int(month), year=int(year))
+        except (ValueError, TypeError):
+            pass
+    status_counts = base_qs.values('status').annotate(count=Count('id'))
+    counts = {item['status']: item['count'] for item in status_counts}
+
+    paginator = Paginator(payrolls, 20)
+    page = paginator.get_page(request.GET.get('page'))
+
+    context = {
+        'payrolls': page,
+        'selected_month': month,
+        'selected_year': year,
+        'status_filter': status_filter,
+        'search_query': search_query,
+        'months': [(i, cal_module.month_name[i]) for i in range(1, 13)],
+        'years': list(range(today.year - 2, today.year + 1)),
+        'draft_count': counts.get('draft', 0),
+        'processed_count': counts.get('processed', 0),
+        'paid_count': counts.get('paid', 0),
+        'total_count': sum(counts.values()),
+    }
+    return render(request, 'management/payroll_list.html', context)
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def payroll_generate(request):
+    """Generate payroll for all staff for a given month/year."""
+    org = get_org(request)
+    today = date.today()
+
+    if request.method == 'POST':
+        try:
+            month = int(request.POST.get('month'))
+            year = int(request.POST.get('year'))
+        except (TypeError, ValueError):
+            messages.error(request, 'Invalid month or year.')
+            return redirect('payroll_generate')
+
+        staff_members = Staff.objects.filter(organization=org)
+        created_count = 0
+        skipped_count = 0
+
+        for staff_member in staff_members:
+            if Payroll.objects.filter(organization=org, staff=staff_member, month=month, year=year).exists():
+                skipped_count += 1
+                continue
+
+            # Calculate attendance for the month
+            attendance = StaffAttendance.objects.filter(
+                staff=staff_member, organization=org,
+                date__month=month, date__year=year
+            ).aggregate(
+                present=Count('id', filter=Q(status='Present')),
+                absent=Count('id', filter=Q(status='Absent')),
+                late=Count('id', filter=Q(status='Late')),
+                total_hours=Coalesce(Sum('hours'), 0, output_field=DecimalField()),
+            )
+
+            payroll = Payroll(
+                staff=staff_member,
+                month=month,
+                year=year,
+                base_salary=staff_member.salary,
+                total_earnings=staff_member.salary,
+                total_deductions=0,
+                net_salary=staff_member.salary,
+                days_present=attendance['present'] or 0,
+                days_absent=attendance['absent'] or 0,
+                days_late=attendance['late'] or 0,
+                total_hours=attendance['total_hours'] or 0,
+                status='draft',
+                generated_by=request.user,
+                organization=org,
+            )
+            payroll.save()
+            created_count += 1
+
+        msg = f'Generated {created_count} payroll records for {cal_module.month_name[month]} {year}.'
+        if skipped_count:
+            msg += f' ({skipped_count} already existed.)'
+        messages.success(request, msg)
+        return redirect(f"{reverse('payroll_list')}?month={month}&year={year}")
+
+    context = {
+        'current_month': today.month,
+        'current_year': today.year,
+        'months': [(i, cal_module.month_name[i]) for i in range(1, 13)],
+        'years': list(range(today.year - 2, today.year + 1)),
+    }
+    return render(request, 'management/payroll_generate.html', context)
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def payroll_detail(request, pk):
+    """View a single payroll with components."""
+    org = get_org(request)
+    payroll = get_object_or_404(Payroll, pk=pk, organization=org)
+
+    components = payroll.components.all()
+    earnings = components.filter(component_type='earning')
+    deductions = components.filter(component_type='deduction')
+
+    context = {
+        'payroll': payroll,
+        'earnings': earnings,
+        'deductions': deductions,
+    }
+    return render(request, 'management/payroll_detail.html', context)
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def payroll_edit(request, pk):
+    """Add/remove components on a draft payroll."""
+    org = get_org(request)
+    payroll = get_object_or_404(Payroll, pk=pk, organization=org)
+
+    if payroll.status != 'draft':
+        messages.error(request, 'Only draft payrolls can be edited.')
+        return redirect('payroll_detail', pk=pk)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'add_component':
+            form = PayrollComponentForm(request.POST, organization=org)
+            if form.is_valid():
+                component = form.save(commit=False)
+                component.payroll = payroll
+                # If a salary_component was selected, snapshot its name and type
+                if component.salary_component:
+                    if not component.name:
+                        component.name = component.salary_component.name
+                    if not component.component_type:
+                        component.component_type = component.salary_component.component_type
+                component.save()
+                payroll.recalculate_totals()
+                messages.success(request, f'Component "{component.name}" added.')
+            else:
+                messages.error(request, 'Please correct the errors below.')
+
+        elif action == 'remove_component':
+            component_id = request.POST.get('component_id')
+            PayrollComponent.objects.filter(pk=component_id, payroll=payroll).delete()
+            payroll.recalculate_totals()
+            messages.success(request, 'Component removed.')
+
+        return redirect('payroll_edit', pk=pk)
+
+    form = PayrollComponentForm(organization=org)
+    components = payroll.components.all()
+    earnings = components.filter(component_type='earning')
+    deductions = components.filter(component_type='deduction')
+
+    context = {
+        'payroll': payroll,
+        'form': form,
+        'earnings': earnings,
+        'deductions': deductions,
+    }
+    return render(request, 'management/payroll_edit.html', context)
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def payroll_process(request, pk):
+    """Mark a draft payroll as processed."""
+    org = get_org(request)
+    payroll = get_object_or_404(Payroll, pk=pk, organization=org)
+
+    if payroll.status != 'draft':
+        messages.error(request, 'Only draft payrolls can be processed.')
+        return redirect('payroll_detail', pk=pk)
+
+    payroll.status = 'processed'
+    payroll.save(update_fields=['status', 'updated_at'])
+    messages.success(request, f'Payroll {payroll.payroll_number} marked as processed.')
+    return redirect('payroll_detail', pk=pk)
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def payroll_mark_paid(request, pk):
+    """Mark a processed payroll as paid."""
+    org = get_org(request)
+    payroll = get_object_or_404(Payroll, pk=pk, organization=org)
+
+    if payroll.status != 'processed':
+        messages.error(request, 'Only processed payrolls can be marked as paid.')
+        return redirect('payroll_detail', pk=pk)
+
+    payroll.status = 'paid'
+    payroll.payment_date = date.today()
+    payroll.payment_method = request.POST.get('payment_method', 'Cash')
+    payroll.save(update_fields=['status', 'payment_date', 'payment_method', 'updated_at'])
+    messages.success(request, f'Payroll {payroll.payroll_number} marked as paid.')
+    return redirect('payroll_detail', pk=pk)
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def payroll_payslip_print(request, pk):
+    """Printable pay slip for admin."""
+    org = get_org(request)
+    payroll = get_object_or_404(Payroll, pk=pk, organization=org)
+
+    components = payroll.components.all()
+    earnings = components.filter(component_type='earning')
+    deductions = components.filter(component_type='deduction')
+
+    context = {
+        'payroll': payroll,
+        'earnings': earnings,
+        'deductions': deductions,
+        'staff': payroll.staff,
+        'org': org,
+    }
+    return render(request, 'management/staff_my_payslip.html', context)

@@ -3,12 +3,19 @@
 {% block title %}{{ staff.first_name }} {{ staff.last_name }} - Staff Detail - Maktab{% endblock %}
 {% block header_title %}{{ staff.first_name }} {{ staff.last_name }}{% endblock %}
 
+{% block breadcrumb %}
+<nav class="mb-2 text-sm" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5 text-gray-500">
+        <li><a href="{% url 'staff_list' %}" class="hover:text-primary transition-colors">Staff</a></li>
+        <li><i class="fas fa-chevron-right text-[10px] text-gray-300"></i></li>
+        <li class="text-gray-800 font-medium">{{ staff.first_name }} {{ staff.last_name }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="animate-[slideUp_0.4s_ease-out]">
     <div class="mb-6 flex justify-end gap-3">
-        <a href="{% url 'staff_list' %}" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors flex items-center gap-2">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
         <a href="{% url 'staff_edit' staff.pk %}" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium flex items-center gap-2">
             <i class="fas fa-edit"></i> Edit Profile
         </a>

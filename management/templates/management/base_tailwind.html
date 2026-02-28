@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>{% block title %}Maktab{% endblock %}</title>
 
     <!-- PWA Meta Tags -->
@@ -292,7 +292,7 @@
         <div class="text-xl font-bold text-primary flex items-center gap-2">
             <i class="fas fa-mosque"></i> Maktab
         </div>
-        <button id="mobile-menu-btn" class="text-gray-600 focus:outline-none">
+        <button id="mobile-menu-btn" class="text-gray-600 focus:outline-none" aria-label="Open navigation menu">
             <i class="fas fa-bars text-2xl"></i>
         </button>
     </div>
@@ -323,8 +323,41 @@
                 <i class="fas fa-key w-6 text-center"></i>
                 <span>Change Password</span>
             </a>
+            {% elif request.user.is_staff_role %}
+            <!-- Staff Self-Service Navigation -->
+            <a href="{% url 'staff_portal' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if request.path == '/my/' %}active{% endif %}">
+                <i class="fas fa-th-large w-6 text-center"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'staff_my_profile' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'my/profile' in request.path %}active{% endif %}">
+                <i class="fas fa-user w-6 text-center"></i>
+                <span>My Profile</span>
+            </a>
+            <a href="{% url 'staff_my_attendance' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'my/attendance' in request.path %}active{% endif %}">
+                <i class="fas fa-clipboard-check w-6 text-center"></i>
+                <span>My Attendance</span>
+            </a>
+            <a href="{% url 'staff_leave_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'staff-leave' in request.path %}active{% endif %}">
+                <i class="fas fa-calendar-minus w-6 text-center"></i>
+                <span>My Leaves</span>
+                {% if pending_leave_count %}
+                <span class="ml-auto bg-yellow-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{{ pending_leave_count }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'staff_my_salary' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'my/salary' in request.path %}active{% endif %}">
+                <i class="fas fa-money-check-alt w-6 text-center"></i>
+                <span>My Salary</span>
+            </a>
+            <a href="{% url 'calendar' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'calendar' in request.path %}active{% endif %}">
+                <i class="fas fa-calendar-alt w-6 text-center"></i>
+                <span>Calendar</span>
+            </a>
+            <a href="{% url 'staff_change_password' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'change-password' in request.path %}active{% endif %}">
+                <i class="fas fa-key w-6 text-center"></i>
+                <span>Change Password</span>
+            </a>
             {% else %}
-            <!-- Internal User Navigation -->
+            <!-- Admin/Manager Navigation -->
             <a href="{% url 'dashboard' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if request.path == '/' or 'dashboard' in request.path and 'student' not in request.path and 'staff' not in request.path and 'course' not in request.path and 'payment' not in request.path and 'attendance' not in request.path and 'settings' not in request.path %}active{% endif %}">
                 <i class="fas fa-th-large w-6 text-center"></i>
                 <span>Dashboard</span>
@@ -342,7 +375,7 @@
                 <span class="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{{ pending_application_count }}</span>
                 {% endif %}
             </a>
-            <a href="{% url 'staff_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'staff' in request.path and 'staff-attendance' not in request.path %}active{% endif %}">
+            <a href="{% url 'staff_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'staff' in request.path and 'staff-attendance' not in request.path and 'staff-leave' not in request.path %}active{% endif %}">
                 <i class="fas fa-chalkboard-teacher w-6 text-center"></i>
                 <span>Staff</span>
             </a>
@@ -376,6 +409,14 @@
             <a href="{% url 'fee_payment_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'payment' in request.path %}active{% endif %}">
                 <i class="fas fa-money-bill-wave w-6 text-center"></i>
                 <span>Fees</span>
+            </a>
+            <a href="{% url 'payroll_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'payroll' in request.path and 'salary-component' not in request.path %}active{% endif %}">
+                <i class="fas fa-file-invoice-dollar w-6 text-center"></i>
+                <span>Payroll</span>
+            </a>
+            <a href="{% url 'salary_component_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'salary-component' in request.path %}active{% endif %}">
+                <i class="fas fa-sliders-h w-6 text-center"></i>
+                <span>Salary Components</span>
             </a>
             {% endif %}
 
@@ -473,11 +514,14 @@
 
         <!-- Content Scroll Area -->
         <div class="flex-1 overflow-auto px-4 md:px-8 pb-8 relative">
+            <!-- Breadcrumb -->
+            {% block breadcrumb %}{% endblock %}
+
             <!-- Messages -->
             {% if messages %}
                 <div class="mb-6 space-y-3 animate-[slideDown_0.3s_ease-out]">
                     {% for message in messages %}
-                        <div class="p-4 rounded-xl shadow-sm border-l-4 flex items-center gap-3 backdrop-blur-md
+                        <div role="alert" class="p-4 rounded-xl shadow-sm border-l-4 flex items-center gap-3 backdrop-blur-md
                             {% if message.tags == 'success' %} bg-green-50/80 border-green-500 text-green-700
                             {% elif message.tags == 'error' %} bg-red-50/80 border-red-500 text-red-700
                             {% else %} bg-blue-50/80 border-blue-500 text-blue-700 {% endif %}">

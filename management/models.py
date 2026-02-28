@@ -707,9 +707,15 @@ class Event(models.Model):
 
 
 class LeaveType(models.Model):
+    PERIOD_CHOICES = [
+        ('monthly', 'Monthly'),
+        ('yearly', 'Yearly'),
+    ]
+
     name = models.CharField(max_length=100, verbose_name="Leave Type")
     code = models.CharField(max_length=10, verbose_name="Code")
-    days_per_year = models.PositiveIntegerField(default=0, verbose_name="Days Per Year")
+    days_per_year = models.PositiveIntegerField(default=0, verbose_name="Default Days")
+    period = models.CharField(max_length=10, choices=PERIOD_CHOICES, default='yearly', verbose_name="Period")
     is_paid = models.BooleanField(default=True, verbose_name="Is Paid")
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='leave_types')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -719,6 +725,13 @@ class LeaveType(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['organization', 'code'], name='unique_leave_type_code_per_org'),
         ]
+
+    @property
+    def yearly_allocation(self):
+        """Return the total yearly allocation based on period."""
+        if self.period == 'monthly':
+            return self.days_per_year * 12
+        return self.days_per_year
 
     def __str__(self):
         return f"{self.name} ({self.code})"
@@ -814,5 +827,181 @@ def ensure_leave_balances(staff, year):
     for lt in leave_types:
         LeaveBalance.objects.get_or_create(
             organization=org, staff=staff, leave_type=lt, year=year,
-            defaults={'allocated': lt.days_per_year}
+            defaults={'allocated': lt.yearly_allocation}
+        )
+
+
+class PunchRecord(models.Model):
+    PUNCH_TYPE_CHOICES = [
+        ('in', 'Punch In'),
+        ('out', 'Punch Out'),
+    ]
+
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='punch_records')
+    punch_type = models.CharField(max_length=3, choices=PUNCH_TYPE_CHOICES, verbose_name="Punch Type")
+    timestamp = models.DateTimeField(auto_now_add=True, verbose_name="Timestamp")
+    date = models.DateField(verbose_name="Date")
+    notes = models.CharField(max_length=255, blank=True, default='', verbose_name="Notes")
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='punch_records')
+
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['organization', 'staff', 'date']),
+            models.Index(fields=['organization', 'date']),
+        ]
+
+    def __str__(self):
+        return f"{self.staff} - {self.get_punch_type_display()} at {self.timestamp}"
+
+
+class SalaryComponent(models.Model):
+    COMPONENT_TYPE_CHOICES = [
+        ('earning', 'Earning / Allowance'),
+        ('deduction', 'Deduction'),
+    ]
+
+    name = models.CharField(max_length=100, verbose_name="Component Name")
+    code = models.CharField(max_length=20, verbose_name="Code")
+    component_type = models.CharField(max_length=10, choices=COMPONENT_TYPE_CHOICES, verbose_name="Type")
+    is_percentage = models.BooleanField(default=False, verbose_name="Is Percentage of Base Salary")
+    default_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Default Amount / Percentage")
+    description = models.CharField(max_length=255, blank=True, default='', verbose_name="Description")
+    is_active = models.BooleanField(default=True, verbose_name="Active")
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='salary_components')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['component_type', 'name']
+        constraints = [
+            models.UniqueConstraint(fields=['organization', 'code'], name='unique_salary_component_code_per_org'),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.code}) - {self.get_component_type_display()}"
+
+
+class Payroll(models.Model):
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('processed', 'Processed'),
+        ('paid', 'Paid'),
+    ]
+
+    PAYMENT_METHOD_CHOICES = [
+        ('Cash', 'Cash'),
+        ('Bank Transfer', 'Bank Transfer'),
+        ('Online', 'Online'),
+    ]
+
+    payroll_number = models.CharField(max_length=50, blank=True, verbose_name="Payroll Number")
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='payrolls')
+    month = models.PositiveIntegerField(verbose_name="Month")
+    year = models.PositiveIntegerField(verbose_name="Year")
+    base_salary = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Base Salary")
+    total_earnings = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Total Earnings")
+    total_deductions = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Total Deductions")
+    net_salary = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Net Salary")
+    days_present = models.PositiveIntegerField(default=0, verbose_name="Days Present")
+    days_absent = models.PositiveIntegerField(default=0, verbose_name="Days Absent")
+    days_late = models.PositiveIntegerField(default=0, verbose_name="Days Late")
+    total_hours = models.DecimalField(max_digits=6, decimal_places=1, default=0, verbose_name="Total Hours Worked")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft', verbose_name="Status")
+    payment_date = models.DateField(null=True, blank=True, verbose_name="Payment Date")
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, blank=True, default='', verbose_name="Payment Method")
+    notes = models.TextField(blank=True, default='', verbose_name="Notes")
+    generated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='generated_payrolls')
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='payrolls')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-year', '-month', 'staff__first_name']
+        indexes = [
+            models.Index(fields=['organization', 'year', 'month']),
+            models.Index(fields=['organization', 'staff']),
+            models.Index(fields=['status']),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['organization', 'staff', 'month', 'year'], name='unique_payroll_per_staff_month'),
+        ]
+
+    def __str__(self):
+        return f"{self.payroll_number} - {self.staff} ({self.month}/{self.year})"
+
+    def recalculate_totals(self):
+        """Recalculate total_earnings, total_deductions, and net_salary from components."""
+        from django.db.models import Sum
+        components = self.components.all()
+        self.total_earnings = self.base_salary + (
+            components.filter(component_type='earning').aggregate(total=Sum('amount'))['total'] or 0
+        )
+        self.total_deductions = (
+            components.filter(component_type='deduction').aggregate(total=Sum('amount'))['total'] or 0
+        )
+        self.net_salary = self.total_earnings - self.total_deductions
+        self.save(update_fields=['total_earnings', 'total_deductions', 'net_salary', 'updated_at'])
+
+    def save(self, *args, **kwargs):
+        if not self.payroll_number:
+            for attempt in range(5):
+                with transaction.atomic():
+                    last = Payroll.objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
+                    if last and last.payroll_number.startswith('PAY'):
+                        try:
+                            num = int(last.payroll_number[3:]) + 1
+                        except ValueError:
+                            num = 1
+                    else:
+                        num = 1
+                    self.payroll_number = f"PAY{num:04d}"
+                    try:
+                        super().save(*args, **kwargs)
+                        return
+                    except IntegrityError:
+                        if attempt == 4:
+                            raise
+                        time.sleep(0.1)
+                        continue
+        else:
+            super().save(*args, **kwargs)
+
+
+class PayrollComponent(models.Model):
+    COMPONENT_TYPE_CHOICES = [
+        ('earning', 'Earning / Allowance'),
+        ('deduction', 'Deduction'),
+    ]
+
+    payroll = models.ForeignKey(Payroll, on_delete=models.CASCADE, related_name='components')
+    salary_component = models.ForeignKey(SalaryComponent, on_delete=models.SET_NULL, null=True, blank=True, related_name='payroll_usages')
+    name = models.CharField(max_length=100, verbose_name="Component Name")
+    component_type = models.CharField(max_length=10, choices=COMPONENT_TYPE_CHOICES, verbose_name="Type")
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Amount")
+    notes = models.CharField(max_length=255, blank=True, default='', verbose_name="Notes")
+
+    class Meta:
+        ordering = ['component_type', 'name']
+
+    def __str__(self):
+        return f"{self.name}: {self.amount}"
+
+
+def create_default_salary_components(organization):
+    """Create default salary components for a new organization."""
+    defaults = [
+        ('Late Deduction', 'LATE', 'deduction', False, 50),
+        ('Leave Without Pay', 'LWP', 'deduction', False, 0),
+        ('Transport Allowance', 'TA', 'earning', False, 500),
+        ('Performance Bonus', 'BONUS', 'earning', False, 0),
+    ]
+    for name, code, comp_type, is_pct, amount in defaults:
+        SalaryComponent.objects.get_or_create(
+            organization=organization, code=code,
+            defaults={
+                'name': name,
+                'component_type': comp_type,
+                'is_percentage': is_pct,
+                'default_amount': amount,
+            }
         )

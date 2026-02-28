@@ -100,8 +100,8 @@ class EventAdmin(admin.ModelAdmin):
 
 @admin.register(LeaveType)
 class LeaveTypeAdmin(admin.ModelAdmin):
-    list_display = ['name', 'code', 'days_per_year', 'is_paid', 'organization']
-    list_filter = ['is_paid', 'organization']
+    list_display = ['name', 'code', 'days_per_year', 'period', 'is_paid', 'organization']
+    list_filter = ['is_paid', 'period', 'organization']
     search_fields = ['name', 'code']
 
 

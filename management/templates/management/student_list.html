@@ -95,11 +95,11 @@
                     </td>
                     <td class="px-6 py-4 max-w-[120px] text-center last:pr-8">
                          <div class="flex items-center justify-center gap-2">
-                            <a href="{% url 'student_detail' student.uuid %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="View"><i class="fas fa-eye"></i></a>
-                            <a href="{% url 'student_edit' student.uuid %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'student_detail' student.uuid %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="View" aria-label="View {{ student.first_name }} {{ student.last_name }}"><i class="fas fa-eye"></i></a>
+                            <a href="{% url 'student_edit' student.uuid %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit" aria-label="Edit {{ student.first_name }} {{ student.last_name }}"><i class="fas fa-edit"></i></a>
                              <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
                                 onclick="openDeleteModal('{% url 'student_delete' student.uuid %}', '{{ student.first_name }} {{ student.last_name|escapejs }}')"
-                                title="Delete">
+                                title="Delete" aria-label="Delete {{ student.first_name }} {{ student.last_name }}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>

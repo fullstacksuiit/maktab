@@ -25,7 +25,11 @@
         <div class="flex bg-gray-100 rounded-xl p-1 mb-6 gap-1">
             <button type="button" id="tab-org" onclick="switchTab('org')"
                 class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 bg-gradient-to-r from-primary to-secondary text-white shadow-md shadow-primary/20">
-                <i class="fas fa-building text-xs"></i> Org Member
+                <i class="fas fa-building text-xs"></i> Admin
+            </button>
+            <button type="button" id="tab-staff" onclick="switchTab('staff')"
+                class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50">
+                <i class="fas fa-chalkboard-teacher text-xs"></i> Staff
             </button>
             <button type="button" id="tab-parent" onclick="switchTab('parent')"
                 class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50">
@@ -61,10 +65,10 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1.5 ml-1">Password</label>
+                <label id="password-label" class="block text-sm font-medium text-gray-700 mb-1.5 ml-1">Password</label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <i class="fas fa-lock"></i>
+                        <i id="password-icon" class="fas fa-lock"></i>
                     </div>
                     {{ form.password }}
                 </div>
@@ -112,29 +116,52 @@
 <script>
 function switchTab(type) {
     var tabOrg = document.getElementById('tab-org');
+    var tabStaff = document.getElementById('tab-staff');
     var tabParent = document.getElementById('tab-parent');
     var label = document.getElementById('username-label');
     var icon = document.getElementById('username-icon');
+    var pwLabel = document.getElementById('password-label');
+    var pwIcon = document.getElementById('password-icon');
     var subtitle = document.getElementById('login-subtitle');
     var input = document.getElementById('id_username');
+    var pwInput = document.getElementById('id_password');
 
     var activeClass = 'bg-gradient-to-r from-primary to-secondary text-white shadow-md shadow-primary/20';
     var inactiveClass = 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50';
+    var baseClass = 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ';
 
-    if (type === 'parent') {
-        tabParent.className = 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ' + activeClass;
-        tabOrg.className = 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ' + inactiveClass;
+    // Reset all tabs to inactive
+    tabOrg.className = baseClass + inactiveClass;
+    tabStaff.className = baseClass + inactiveClass;
+    tabParent.className = baseClass + inactiveClass;
+
+    if (type === 'staff') {
+        tabStaff.className = baseClass + activeClass;
+        label.textContent = 'Staff ID';
+        icon.className = 'fas fa-id-badge';
+        pwLabel.textContent = 'Phone Number';
+        pwIcon.className = 'fas fa-phone';
+        subtitle.textContent = 'Login with your Staff ID & phone number';
+        if (input) input.setAttribute('placeholder', 'Enter your Staff ID');
+        if (pwInput) pwInput.setAttribute('placeholder', 'Enter your phone number');
+    } else if (type === 'parent') {
+        tabParent.className = baseClass + activeClass;
         label.textContent = 'Phone Number';
         icon.className = 'fas fa-phone';
+        pwLabel.textContent = 'Password';
+        pwIcon.className = 'fas fa-lock';
         subtitle.textContent = "Login with your child's registered phone number";
         if (input) input.setAttribute('placeholder', 'e.g. 9876543210');
+        if (pwInput) pwInput.setAttribute('placeholder', '');
     } else {
-        tabOrg.className = 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ' + activeClass;
-        tabParent.className = 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ' + inactiveClass;
+        tabOrg.className = baseClass + activeClass;
         label.textContent = 'Username';
         icon.className = 'fas fa-user';
+        pwLabel.textContent = 'Password';
+        pwIcon.className = 'fas fa-lock';
         subtitle.textContent = 'Welcome back to your dashboard';
         if (input) input.setAttribute('placeholder', 'Enter your username');
+        if (pwInput) pwInput.setAttribute('placeholder', '');
     }
 }
 </script>

@@ -73,6 +73,19 @@ def internal_user_required(view_func):
     return wrapper
 
 
+def staff_role_required(view_func):
+    """Decorator to restrict view access to staff-role users who have a linked staff_profile."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if request.user.role != 'staff' or not hasattr(request.user, 'staff_profile') or not request.user.staff_profile:
+            messages.error(request, 'This page is for staff accounts only.')
+            return redirect('dashboard')
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
 def get_user_organization(user):
     """Helper to get user's organization."""
     return user.organization if user.is_authenticated and user.organization else None
