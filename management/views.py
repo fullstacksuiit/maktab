@@ -2627,6 +2627,129 @@ def parent_change_password(request):
     return render(request, 'management/parent_change_password.html', {'form': form})
 
 
+@login_required(login_url='login')
+@parent_required
+def parent_pay_upi(request):
+    """Parent UPI payment: select course/month, open UPI app or show QR code."""
+    from urllib.parse import quote
+    from .utils import normalize_phone
+
+    user = request.user
+    org = user.organization
+
+    if not org or not org.upi_id:
+        messages.error(request, 'UPI payments are not configured for this organization.')
+        return redirect('parent_dashboard')
+
+    # Find students linked to this parent (same logic as parent_dashboard)
+    all_students = Student.objects.filter(organization=org).only('id', 'phone')
+    matched_ids = [s.id for s in all_students if normalize_phone(s.phone) == user.username]
+    students = Student.objects.filter(id__in=matched_ids).prefetch_related('batches__course')
+
+    # Collect active batches for all linked students
+    student_batches = []
+    for student in students:
+        for batch in student.batches.filter(is_active=True).select_related('course'):
+            student_batches.append({
+                'student': student,
+                'batch': batch,
+                'course': batch.course,
+                'fees': batch.course.fees,
+                'fee_period': batch.course.get_fee_period_display(),
+            })
+
+    # Generate month options (current + next 5 months for advance payment)
+    today = date.today()
+    month_options = []
+    for i in range(6):
+        m = today.month + i
+        y = today.year
+        if m > 12:
+            m -= 12
+            y += 1
+        month_options.append({
+            'value': f"{y}-{m:02d}",
+            'label': date(y, m, 1).strftime('%B %Y'),
+        })
+
+    # Check if a specific batch/student/months were selected
+    batch_id = request.GET.get('batch_id')
+    student_uuid = request.GET.get('student')
+    months = request.GET.getlist('month')
+
+    upi_data = None
+
+    if batch_id and student_uuid and months:
+        # Validate all months are from our allowed options
+        valid_values = {opt['value'] for opt in month_options}
+        months = [m for m in months if m in valid_values]
+        if not months:
+            messages.error(request, 'Invalid month selection. Please try again.')
+            return redirect('parent_pay_upi')
+
+        try:
+            selected_student = get_object_or_404(Student, uuid=student_uuid, id__in=matched_ids)
+            selected_batch = get_object_or_404(
+                Batch.objects.select_related('course'),
+                pk=batch_id, organization=org, is_active=True
+            )
+            if not selected_student.batches.filter(pk=selected_batch.pk).exists():
+                messages.error(request, 'Student is not enrolled in this batch.')
+                return redirect('parent_pay_upi')
+
+            per_month_fee = selected_batch.course.fees
+            num_months = len(months)
+            total_amount = per_month_fee * num_months
+
+            # Build month labels for display
+            month_labels = []
+            for m in months:
+                for opt in month_options:
+                    if opt['value'] == m:
+                        month_labels.append(opt['label'])
+                        break
+
+            months_display = ', '.join(month_labels)
+            months_short = ', '.join(months)
+            tn = f"{selected_student.student_id} {selected_student.first_name} {selected_student.last_name} - {selected_batch.course.course_name} - {months_short}"
+
+            # UPI apps expect minimal encoding: preserve @, -, . in values
+            upi_link = (
+                f"upi://pay?"
+                f"pa={quote(org.upi_id, safe='@.-')}"
+                f"&pn={quote(org.org_name, safe=' ')}"
+                f"&am={total_amount}"
+                f"&cu=INR"
+                f"&tn={quote(tn, safe=' -')}"
+            )
+
+            upi_data = {
+                'upi_link': upi_link,
+                'upi_id': org.upi_id,
+                'org_name': org.org_name,
+                'per_month_fee': per_month_fee,
+                'num_months': num_months,
+                'total_amount': total_amount,
+                'fee_period': selected_batch.course.get_fee_period_display(),
+                'course_name': selected_batch.course.course_name,
+                'batch_name': selected_batch.batch_name,
+                'student_name': f"{selected_student.first_name} {selected_student.last_name}",
+                'student_id': selected_student.student_id,
+                'months': months_display,
+                'transaction_note': tn,
+            }
+        except Exception:
+            messages.error(request, 'Invalid selection. Please try again.')
+            return redirect('parent_pay_upi')
+
+    context = {
+        'student_batches': student_batches,
+        'upi_data': upi_data,
+        'month_options': month_options,
+    }
+    return render(request, 'management/parent_pay_upi.html', context)
+
+
 # ─── Calendar / Event Views ──────────────────────────────────────────────────
 
 @login_required(login_url='login')

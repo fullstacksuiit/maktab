@@ -1,0 +1,246 @@
+{% extends 'management/base_tailwind.html' %}
+
+{% block title %}Pay via UPI - Maktab{% endblock %}
+{% block header_title %}<i class="fas fa-mobile-alt mr-2"></i>Pay via UPI{% endblock %}
+
+{% block content %}
+<div class="animate-[slideUp_0.4s_ease-out]">
+
+    <!-- Back Button -->
+    <div class="mb-6">
+        <a href="{% url 'parent_dashboard' %}" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors inline-flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    {% if upi_data %}
+    <!-- ========== Payment Details + UPI Link/QR ========== -->
+
+    <!-- Payment Summary Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center shadow-md">
+                <i class="fas fa-file-invoice-dollar text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-gray-800">Payment Summary</h3>
+                <p class="text-sm text-gray-500">Review details before paying</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+                <p class="text-xs text-gray-400 uppercase font-bold">Student</p>
+                <p class="font-medium text-gray-800">{{ upi_data.student_name }}</p>
+                <p class="text-xs text-primary">{{ upi_data.student_id }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 uppercase font-bold">Course</p>
+                <p class="font-medium text-gray-800">{{ upi_data.course_name }}</p>
+                <p class="text-xs text-gray-500">{{ upi_data.batch_name }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 uppercase font-bold">Total Amount</p>
+                <p class="text-2xl font-bold text-primary">{{ currency_symbol }} {{ upi_data.total_amount }}</p>
+                {% if upi_data.num_months > 1 %}
+                <p class="text-xs text-gray-500">{{ currency_symbol }} {{ upi_data.per_month_fee }} &times; {{ upi_data.num_months }} months</p>
+                {% else %}
+                <p class="text-xs text-gray-500">{{ upi_data.fee_period }}</p>
+                {% endif %}
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 uppercase font-bold">Paying For</p>
+                <p class="font-medium text-gray-800">{{ upi_data.months }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- UPI Payment Actions -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+        <h4 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-mobile-alt text-primary"></i> Pay via UPI
+        </h4>
+
+        <!-- Mobile: Deep Link Button -->
+        <a href="{{ upi_data.upi_link }}"
+           class="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all font-bold text-lg mb-4">
+            <i class="fas fa-external-link-alt"></i>
+            Open UPI App & Pay {{ currency_symbol }} {{ upi_data.total_amount }}
+        </a>
+
+        <p class="text-center text-xs text-gray-400 mb-6">
+            Opens PhonePe, Google Pay, Paytm, or your default UPI app
+        </p>
+
+        <!-- Desktop: QR Code -->
+        <div class="border-t border-gray-100 pt-6">
+            <h5 class="text-sm font-bold text-gray-600 mb-3 text-center">
+                <i class="fas fa-qrcode mr-1"></i> Or scan this QR code
+            </h5>
+            <div class="flex justify-center mb-4">
+                <div id="upiQRCode" class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm inline-block"></div>
+            </div>
+        </div>
+
+        <!-- Manual UPI ID -->
+        <div class="border-t border-gray-100 pt-4">
+            <p class="text-xs text-gray-400 uppercase font-bold mb-1 text-center">UPI ID (for manual entry)</p>
+            <div class="flex items-center justify-center gap-2">
+                <code class="text-lg font-mono font-bold text-primary bg-primary/5 px-4 py-2 rounded-lg border border-primary/10">{{ upi_data.upi_id }}</code>
+                <button onclick="copyUPI()" class="px-3 py-2 bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors" title="Copy UPI ID">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+            <p id="copyMsg" class="text-xs text-green-600 text-center mt-1 hidden">Copied!</p>
+        </div>
+    </div>
+
+    <!-- Important Note -->
+    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start gap-3 mb-6">
+        <div class="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center shrink-0 mt-0.5">
+            <i class="fas fa-info-circle"></i>
+        </div>
+        <div>
+            <p class="text-sm font-semibold text-yellow-800">Important</p>
+            <p class="text-xs text-yellow-700 mt-1">
+                After completing the UPI payment, the admin will verify and record it.
+                Please keep your payment screenshot for reference.
+            </p>
+        </div>
+    </div>
+
+    <!-- Back to selection -->
+    <div class="text-center">
+        <a href="{% url 'parent_pay_upi' %}" class="text-sm text-primary hover:underline font-medium">
+            <i class="fas fa-arrow-left mr-1"></i> Select a different course
+        </a>
+    </div>
+
+    {% else %}
+    <!-- ========== Select Course/Batch & Month ========== -->
+
+    {% if student_batches %}
+    <div class="space-y-4">
+        {% for item in student_batches %}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:border-primary/20 hover:shadow-md transition-all">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center shadow-md">
+                    <i class="fas fa-book-quran"></i>
+                </div>
+                <div class="flex-1">
+                    <h4 class="font-bold text-gray-800">{{ item.course.course_name }}</h4>
+                    <p class="text-xs text-gray-500">{{ item.batch.batch_name }} &middot; {{ item.student.first_name }} {{ item.student.last_name }} ({{ item.student.student_id }})</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-lg font-bold text-primary">{{ currency_symbol }} {{ item.fees }}</p>
+                    <p class="text-xs text-gray-500">{{ item.fee_period }}</p>
+                </div>
+            </div>
+
+            <form method="get" action="{% url 'parent_pay_upi' %}" class="month-form" data-fee="{{ item.fees }}">
+                <input type="hidden" name="batch_id" value="{{ item.batch.pk }}">
+                <input type="hidden" name="student" value="{{ item.student.uuid }}">
+                <div class="mb-3">
+                    <label class="text-xs font-bold text-gray-500 uppercase mb-2 block">Select Months</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {% for opt in month_options %}
+                        <label class="month-checkbox flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-xl cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:checked]:font-semibold">
+                            <input type="checkbox" name="month" value="{{ opt.value }}" class="accent-primary w-4 h-4" {% if forloop.first %}checked{% endif %}>
+                            <span>{{ opt.label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <p class="text-sm text-gray-600 total-display">
+                        Total: <span class="font-bold text-primary total-amount">{{ currency_symbol }} {{ item.fees }}</span>
+                        <span class="month-count text-xs text-gray-400">(1 month)</span>
+                    </p>
+                    <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all font-medium text-sm flex items-center gap-2">
+                        <i class="fas fa-mobile-alt"></i> Pay via UPI
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-10 text-center">
+        <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gray-50 flex items-center justify-center">
+            <i class="fas fa-wallet text-gray-200 text-4xl"></i>
+        </div>
+        <h3 class="text-gray-500 font-bold text-lg mb-2">No Active Courses</h3>
+        <p class="text-gray-400 text-sm">No active course enrollments found for UPI payment.</p>
+    </div>
+    {% endif %}
+
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if not upi_data and student_batches %}
+<script>
+    // Dynamic total calculation for multi-month selection
+    document.querySelectorAll('.month-form').forEach(function(form) {
+        var fee = parseFloat(form.dataset.fee);
+        var checkboxes = form.querySelectorAll('input[name="month"]');
+        var totalEl = form.querySelector('.total-amount');
+        var countEl = form.querySelector('.month-count');
+        var submitBtn = form.querySelector('button[type="submit"]');
+
+        function updateTotal() {
+            var checked = form.querySelectorAll('input[name="month"]:checked').length;
+            var total = fee * checked;
+            totalEl.textContent = '{{ currency_symbol }} ' + total.toFixed(0);
+            countEl.textContent = '(' + checked + ' month' + (checked !== 1 ? 's' : '') + ')';
+            submitBtn.disabled = checked === 0;
+            if (checked === 0) {
+                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        checkboxes.forEach(function(cb) {
+            cb.addEventListener('change', updateTotal);
+        });
+
+        // Prevent submit with no months selected
+        form.addEventListener('submit', function(e) {
+            if (form.querySelectorAll('input[name="month"]:checked').length === 0) {
+                e.preventDefault();
+                alert('Please select at least one month.');
+            }
+        });
+    });
+</script>
+{% endif %}
+{% if upi_data %}
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+    // Generate QR Code for UPI link
+    var qrContainer = document.getElementById('upiQRCode');
+    if (qrContainer) {
+        new QRCode(qrContainer, {
+            text: "{{ upi_data.upi_link|escapejs }}",
+            width: 200,
+            height: 200,
+            colorDark: '#1e293b',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    }
+
+    // Copy UPI ID to clipboard
+    function copyUPI() {
+        navigator.clipboard.writeText("{{ upi_data.upi_id|escapejs }}").then(function() {
+            document.getElementById('copyMsg').classList.remove('hidden');
+            setTimeout(function() {
+                document.getElementById('copyMsg').classList.add('hidden');
+            }, 2000);
+        });
+    }
+</script>
+{% endif %}
+{% endblock %}

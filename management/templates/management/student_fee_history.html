@@ -91,6 +91,10 @@
                                 <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gold/10 text-gold border border-gold/20">
                                     <i class="fas fa-globe mr-1"></i>Online
                                 </span>
+                            {% elif payment.payment_method == 'UPI' %}
+                                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+                                    <i class="fas fa-mobile-alt mr-1"></i>UPI
+                                </span>
                             {% else %}
                                 <span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
                                     {{ payment.payment_method }}

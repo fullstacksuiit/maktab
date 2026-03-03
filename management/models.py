@@ -538,6 +538,7 @@ class FeePayment(models.Model):
         ('Cash', 'Cash'),
         ('Bank Transfer', 'Bank Transfer'),
         ('Online', 'Online'),
+        ('UPI', 'UPI'),
     ]
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='fee_payments')
@@ -892,6 +893,7 @@ class Payroll(models.Model):
         ('Cash', 'Cash'),
         ('Bank Transfer', 'Bank Transfer'),
         ('Online', 'Online'),
+        ('UPI', 'UPI'),
     ]
 
     payroll_number = models.CharField(max_length=50, blank=True, verbose_name="Payroll Number")

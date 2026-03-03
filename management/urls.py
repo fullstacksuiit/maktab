@@ -98,6 +98,7 @@ urlpatterns = [
     # Parent Portal URLs
     path('parent/', views.parent_dashboard, name='parent_dashboard'),
     path('parent/change-password/', views.parent_change_password, name='parent_change_password'),
+    path('parent/pay/', views.parent_pay_upi, name='parent_pay_upi'),
 
     # Calendar & Event URLs
     path('calendar/', views.calendar_view, name='calendar'),
