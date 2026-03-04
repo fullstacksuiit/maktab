@@ -811,8 +811,7 @@ def create_default_leave_types(organization):
     """Create default leave types for a new organization."""
     defaults = [
         ('Casual Leave', 'CL', 12, True),
-        ('Sick Leave', 'SL', 12, True),
-        ('Earned Leave', 'EL', 15, True),
+        ('Medical Leave', 'ML', 12, True),
         ('Unpaid Leave', 'UL', 0, False),
     ]
     for name, code, days, is_paid in defaults:
