@@ -144,7 +144,7 @@ class CourseForm(forms.ModelForm):
 class BatchForm(forms.ModelForm):
     class Meta:
         model = Batch
-        fields = ['batch_name', 'batch_code', 'course', 'start_time', 'end_time', 'days', 'max_capacity', 'is_active']
+        fields = ['batch_name', 'batch_code', 'course', 'teachers', 'start_time', 'end_time', 'days', 'max_capacity', 'is_active']
         widgets = {
             'batch_name': styled_text_input('e.g., Morning Batch, Weekend Batch'),
             'batch_code': styled_text_input('Auto-generated if left blank'),
@@ -153,6 +153,7 @@ class BatchForm(forms.ModelForm):
             'end_time': forms.TimeInput(attrs={'type': 'time', 'class': TAILWIND_INPUT}),
             'days': styled_select(),
             'max_capacity': styled_number_input('Optional max students', min_val=1),
+            'teachers': searchable_select_multiple('Search teachers...'),
             'is_active': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-primary focus:ring-primary border-gray-300 rounded'}),
         }
 

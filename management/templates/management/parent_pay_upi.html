@@ -61,12 +61,12 @@
             <i class="fas fa-mobile-alt text-primary"></i> Pay via UPI
         </h4>
 
-        <!-- Mobile: Deep Link Button -->
-        <a href="{{ upi_data.upi_link }}"
+        <!-- Mobile: Deep Link Button (uses JS for PWA standalone mode compatibility) -->
+        <button onclick="openUPIApp()" type="button"
            class="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all font-bold text-lg mb-4">
             <i class="fas fa-external-link-alt"></i>
             Open UPI App & Pay {{ currency_symbol }} {{ upi_data.total_amount }}
-        </a>
+        </button>
 
         <p class="text-center text-xs text-gray-400 mb-6">
             Opens PhonePe, Google Pay, Paytm, or your default UPI app
@@ -230,6 +230,19 @@
             colorLight: '#ffffff',
             correctLevel: QRCode.CorrectLevel.H
         });
+    }
+
+    // Open UPI app via deep link (works in PWA standalone mode)
+    function openUPIApp() {
+        var upiLink = "{{ upi_data.upi_link|escapejs }}";
+        // Use window.open for PWA standalone mode, fallback to location.href
+        var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                           window.navigator.standalone === true;
+        if (isStandalone) {
+            window.open(upiLink, '_blank');
+        } else {
+            window.location.href = upiLink;
+        }
     }
 
     // Copy UPI ID to clipboard

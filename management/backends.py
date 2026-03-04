@@ -42,6 +42,15 @@ class PhoneOrUsernameBackend(ModelBackend):
         if re.match(r'^[\d\s\-\+\(\)]+$', username.strip()):
             normalized = normalize_phone(username)
             if normalized:
+                # Parent usernames are org-scoped: phone_orgId
+                parent_users = User.objects.select_related('organization').filter(
+                    username__startswith=f'{normalized}_',
+                    role='parent',
+                )
+                for user in parent_users:
+                    if user.check_password(password) and self.user_can_authenticate(user):
+                        return user
+                # Fallback: legacy parent accounts with phone-only username
                 try:
                     user = User.objects.select_related('organization').get(username=normalized)
                     if user.check_password(password) and self.user_can_authenticate(user):

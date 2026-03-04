@@ -207,6 +207,7 @@ class Batch(models.Model):
     days = models.CharField(max_length=20, choices=DAYS_CHOICES, default='weekdays', verbose_name="Days")
     max_capacity = models.PositiveIntegerField(null=True, blank=True, verbose_name="Max Capacity")
     is_active = models.BooleanField(default=True, verbose_name="Is Active")
+    teachers = models.ManyToManyField('Staff', blank=True, related_name='teaching_batches', verbose_name="Teachers")
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='batches')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -79,6 +79,22 @@
                         {% endif %}
                     </div>
 
+                    <div>
+                        <label for="{{ form.teachers.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Teachers
+                        </label>
+                        {{ form.teachers }}
+                        {% if form.teachers.errors %}
+                            <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                <div>{% for error in form.teachers.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                            </div>
+                        {% endif %}
+                        <p class="text-gray-400 text-xs mt-1">
+                            Select teachers assigned to this batch
+                        </p>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label for="{{ form.days.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">

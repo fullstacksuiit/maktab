@@ -420,10 +420,12 @@ def batch_add(request):
     if request.method == 'POST':
         form = BatchForm(request.POST)
         form.fields['course'].queryset = Course.objects.filter(organization=org)
+        form.fields['teachers'].queryset = Staff.objects.filter(organization=org, staff_role='Teacher')
         if form.is_valid():
             batch = form.save(commit=False)
             batch.organization = org
             batch.save()
+            form.save_m2m()
             messages.success(request, 'Batch added successfully!')
             return redirect('batch_list')
         else:
@@ -431,6 +433,7 @@ def batch_add(request):
     else:
         form = BatchForm()
         form.fields['course'].queryset = Course.objects.filter(organization=org)
+        form.fields['teachers'].queryset = Staff.objects.filter(organization=org, staff_role='Teacher')
 
         # Pre-select course if provided
         course_id = request.GET.get('course')
@@ -448,6 +451,7 @@ def batch_edit(request, pk):
     if request.method == 'POST':
         form = BatchForm(request.POST, instance=batch)
         form.fields['course'].queryset = Course.objects.filter(organization=org)
+        form.fields['teachers'].queryset = Staff.objects.filter(organization=org, staff_role='Teacher')
         if form.is_valid():
             form.save()
             messages.success(request, 'Batch updated successfully!')
@@ -457,6 +461,7 @@ def batch_edit(request, pk):
     else:
         form = BatchForm(instance=batch)
         form.fields['course'].queryset = Course.objects.filter(organization=org)
+        form.fields['teachers'].queryset = Staff.objects.filter(organization=org, staff_role='Teacher')
     return render(request, 'management/batch_form.html', {'form': form, 'action': 'Edit'})
 
 
@@ -470,6 +475,39 @@ def batch_delete(request, pk):
     batch.delete()
     messages.success(request, f'Batch "{batch_name}" deleted successfully!')
     return redirect('batch_list')
+
+
+@login_required(login_url='login')
+@internal_user_required
+def batch_detail(request, pk):
+    org = get_org(request)
+    batch = get_object_or_404(
+        Batch.objects.select_related('course').prefetch_related('teachers', 'students'),
+        pk=pk, organization=org
+    )
+
+    students = batch.students.all()
+    teachers = batch.teachers.all()
+
+    attendance_stats = batch.attendances.aggregate(
+        total=Count('id'),
+        present=Count('id', filter=Q(status='Present')),
+        absent=Count('id', filter=Q(status='Absent')),
+        late=Count('id', filter=Q(status='Late')),
+        excused=Count('id', filter=Q(status='Excused')),
+    )
+    total = attendance_stats['total'] or 0
+    present = (attendance_stats['present'] or 0) + (attendance_stats['late'] or 0)
+    attendance_pct = round((present / total) * 100) if total > 0 else 0
+
+    context = {
+        'batch': batch,
+        'students': students,
+        'teachers': teachers,
+        'attendance_stats': attendance_stats,
+        'attendance_pct': attendance_pct,
+    }
+    return render(request, 'management/batch_detail.html', context)
 
 
 # ─── Student Views ───────────────────────────────────────────────────────────
@@ -2530,9 +2568,12 @@ def parent_dashboard(request):
     user = request.user
     org = user.organization
 
-    # First pass: find matching student IDs (phones stored raw, username is normalized)
+    # Extract phone from org-scoped username (format: phone_orgId)
+    parent_phone = user.username.rsplit('_', 1)[0] if '_' in user.username else user.username
+
+    # First pass: find matching student IDs (phones stored raw, username contains normalized phone)
     all_students = Student.objects.filter(organization=org).only('id', 'phone')
-    matched_ids = [s.id for s in all_students if normalize_phone(s.phone) == user.username]
+    matched_ids = [s.id for s in all_students if normalize_phone(s.phone) == parent_phone]
 
     # Second pass: load matched students with all related data in bulk
     matched_students = Student.objects.filter(
@@ -2594,7 +2635,7 @@ def parent_dashboard(request):
         })
 
     # Check if parent is still using the default password (phone number)
-    is_default_password = user.check_password(user.username)
+    is_default_password = user.check_password(parent_phone)
 
     context = {
         'students_data': students_data,
@@ -2642,8 +2683,9 @@ def parent_pay_upi(request):
         return redirect('parent_dashboard')
 
     # Find students linked to this parent (same logic as parent_dashboard)
+    parent_phone = user.username.rsplit('_', 1)[0] if '_' in user.username else user.username
     all_students = Student.objects.filter(organization=org).only('id', 'phone')
-    matched_ids = [s.id for s in all_students if normalize_phone(s.phone) == user.username]
+    matched_ids = [s.id for s in all_students if normalize_phone(s.phone) == parent_phone]
     students = Student.objects.filter(id__in=matched_ids).prefetch_related('batches__course')
 
     # Collect active batches for all linked students

@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from management.models import Student, User
+from management.signals import parent_username
 from management.utils import normalize_phone
 
 
@@ -48,35 +49,26 @@ class Command(BaseCommand):
                 continue
             seen.add(key)
 
-            # Check if parent user already exists
-            existing = User.objects.filter(
-                username=normalized, role='parent', organization=student.organization
-            ).exists()
-            if existing:
-                self.stdout.write(f'  EXISTS: {normalized} for org {student.organization}')
-                skipped_count += 1
-                continue
+            uname = parent_username(normalized, student.organization)
 
-            # Check if username is taken by a non-parent user
-            if User.objects.filter(username=normalized).exists():
-                self.stdout.write(
-                    f'  CONFLICT: username {normalized} already exists as non-parent user'
-                )
+            # Check if parent user already exists with org-scoped username
+            if User.objects.filter(username=uname).exists():
+                self.stdout.write(f'  EXISTS: {uname} for org {student.organization}')
                 skipped_count += 1
                 continue
 
             if dry_run:
-                self.stdout.write(f'  WOULD CREATE: {normalized} for org {student.organization}')
+                self.stdout.write(f'  WOULD CREATE: {uname} for org {student.organization}')
             else:
                 User.objects.create_user(
-                    username=normalized,
+                    username=uname,
                     password=normalized,
                     role='parent',
                     organization=student.organization,
                     first_name='Parent',
                     last_name=normalized,
                 )
-                self.stdout.write(f'  CREATED: {normalized} for org {student.organization}')
+                self.stdout.write(f'  CREATED: {uname} for org {student.organization}')
             created_count += 1
 
         action = 'Would create' if dry_run else 'Created'

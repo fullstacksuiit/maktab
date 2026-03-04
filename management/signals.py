@@ -9,6 +9,11 @@ from .utils import normalize_phone
 logger = logging.getLogger('management')
 
 
+def parent_username(normalized_phone, org):
+    """Generate org-scoped username for parent accounts: phone_orgId."""
+    return f'{normalized_phone}_{org.id}'
+
+
 @receiver(pre_save, sender=Student)
 def capture_old_phone(sender, instance, **kwargs):
     """Capture the student's old phone before save to detect changes."""
@@ -34,10 +39,11 @@ def create_or_update_parent_account(sender, instance, created, **kwargs):
         return
 
     org = instance.organization
+    uname = parent_username(normalized, org)
 
     # Create or get parent user for this phone+org combination
     parent_user, user_created = User.objects.get_or_create(
-        username=normalized,
+        username=uname,
         defaults={
             'role': 'parent',
             'organization': org,
@@ -56,17 +62,18 @@ def create_or_update_parent_account(sender, instance, created, **kwargs):
     if old_phone and old_phone != phone:
         old_normalized = normalize_phone(old_phone)
         if old_normalized and old_normalized != normalized:
+            old_uname = parent_username(old_normalized, org)
             remaining = Student.objects.filter(
                 organization=org,
                 phone=old_phone,
             ).exclude(pk=instance.pk).exists()
             if not remaining:
                 User.objects.filter(
-                    username=old_normalized,
+                    username=old_uname,
                     role='parent',
                     organization=org,
                 ).update(is_active=False)
-                logger.info(f'Deactivated parent account {old_normalized} (no students left)')
+                logger.info(f'Deactivated parent account {old_uname} (no students left)')
 
 
 @receiver(post_delete, sender=Student)
@@ -81,6 +88,7 @@ def cleanup_parent_on_student_delete(sender, instance, **kwargs):
         return
 
     org = instance.organization
+    uname = parent_username(normalized, org)
     remaining = Student.objects.filter(
         organization=org,
         phone=phone,
@@ -88,8 +96,8 @@ def cleanup_parent_on_student_delete(sender, instance, **kwargs):
 
     if not remaining:
         User.objects.filter(
-            username=normalized,
+            username=uname,
             role='parent',
             organization=org,
         ).update(is_active=False)
-        logger.info(f'Deactivated parent account {normalized} after student deletion')
+        logger.info(f'Deactivated parent account {uname} after student deletion')

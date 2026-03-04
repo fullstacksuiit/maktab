@@ -66,10 +66,10 @@
                 {% for batch in batches %}
                 <tr class="hover:bg-gray-50/80 transition-colors group">
                     <td class="px-6 py-4 font-medium text-primary first:pl-8">
-                        {{ batch.batch_code }}
+                        <a href="{% url 'batch_detail' batch.pk %}" class="hover:text-primary/80 transition-colors">{{ batch.batch_code }}</a>
                     </td>
                     <td class="px-6 py-4 font-semibold text-gray-800">
-                        {{ batch.batch_name }}
+                        <a href="{% url 'batch_detail' batch.pk %}" class="hover:text-primary transition-colors">{{ batch.batch_name }}</a>
                     </td>
                     <td class="px-6 py-4 text-gray-600">
                         <span class="px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 text-xs font-medium border border-purple-200">
