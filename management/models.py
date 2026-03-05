@@ -133,7 +133,7 @@ class Course(models.Model):
 
     course_name = models.CharField(max_length=255, verbose_name="Course Name")
     course_code = models.CharField(max_length=50, blank=True, verbose_name="Course Code")
-    description = models.TextField(verbose_name="Description")
+    description = models.TextField(blank=True, default='', verbose_name="Description")
     duration_value = models.PositiveIntegerField(default=1, verbose_name="Duration Value")
     duration_unit = models.CharField(max_length=10, choices=DURATION_UNIT_CHOICES, default='months', verbose_name="Duration Unit")
     fees = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Course Fees")

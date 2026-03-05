@@ -403,9 +403,17 @@ function submitCourseModal() {
 
         if (res.data.success) {
             var courseSelect = document.getElementById('id_course');
-            if (courseSelect.tomselect) {
-                courseSelect.tomselect.addOption({value: String(res.data.id), text: res.data.name});
-                courseSelect.tomselect.setValue(String(res.data.id));
+            var ts = courseSelect && courseSelect.tomselect;
+            if (ts) {
+                ts.addOption({value: String(res.data.id), text: res.data.name});
+                ts.refreshOptions(false);
+                ts.setValue(String(res.data.id), true);
+            } else {
+                var opt = document.createElement('option');
+                opt.value = res.data.id;
+                opt.text = res.data.name;
+                opt.selected = true;
+                courseSelect.appendChild(opt);
             }
             closeCourseModal();
         } else {

@@ -357,6 +357,11 @@ def course_create_ajax(request):
     except json.JSONDecodeError:
         return JsonResponse({'success': False, 'errors': {'__all__': ['Invalid request.']}}, status=400)
 
+    # Supply defaults for fields not provided by the quick-add modal
+    data.setdefault('duration_value', 1)
+    data.setdefault('duration_unit', 'months')
+    data.setdefault('description', '')
+
     form = CourseForm(data)
     if form.is_valid():
         course = form.save(commit=False)
