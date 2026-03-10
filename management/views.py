@@ -876,7 +876,7 @@ def student_detail(request, uuid):
         'behavior_notes': behavior_notes,
         'attendance_percentage': student.get_attendance_percentage(),
         'total_paid': total_paid,
-        'pending_fees': total_fees - total_paid,
+        'pending_fees': student.get_pending_fees(),
     }
     return render(request, 'management/student_detail.html', context)
 
@@ -896,7 +896,7 @@ def student_fee_history(request, uuid):
         'payments': payments,
         'total_paid': total_paid,
         'total_fees': total_fees,
-        'pending_fees': total_fees - total_paid,
+        'pending_fees': student.get_pending_fees(),
     }
     return render(request, 'management/student_fee_history.html', context)
 

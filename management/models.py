@@ -278,11 +278,12 @@ class Student(models.Model):
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name="Gender")
     address = models.TextField(verbose_name="Address")
     city = models.CharField(max_length=100, blank=True, default='Rourkela', verbose_name="City")
-    state = models.CharField(max_length=100, blank=True, default='', verbose_name="State")
-    pin_code = models.CharField(max_length=10, blank=True, default='', verbose_name="Pin Code")
+    state = models.CharField(max_length=100, blank=True, default='Odisha', verbose_name="State")
+    pin_code = models.CharField(max_length=10, blank=True, default='769001', verbose_name="Pin Code")
     is_orphan = models.BooleanField(default=False, verbose_name="Orphan")
     guardian_name = models.CharField(max_length=100, blank=True, default='', verbose_name="Guardian Name")
     guardian_phone = models.CharField(max_length=20, blank=True, default='', verbose_name="Guardian Phone")
+    guardian_discount = models.DecimalField(max_digits=5, decimal_places=2, default=0, verbose_name="Guardian Discount (%)")
     batches = models.ManyToManyField('Batch', related_name='students', verbose_name="Enrolled Batches", blank=True)
     enrollment_date = models.DateField(verbose_name="Enrollment Date")
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='students')
@@ -341,7 +342,13 @@ class Student(models.Model):
             super().save(*args, **kwargs)
 
     def get_total_fees(self):
-        return self.batches.aggregate(total=Sum('course__fees'))['total'] or 0
+        if self.is_orphan:
+            return 0
+        total = self.batches.aggregate(total=Sum('course__fees'))['total'] or 0
+        if self.guardian_name and self.guardian_discount > 0:
+            discount = total * self.guardian_discount / 100
+            total = total - discount
+        return total
 
     def get_enrolled_batches_list(self):
         if self.batches.exists():
@@ -353,8 +360,6 @@ class Student(models.Model):
         return total or 0
 
     def get_pending_fees(self):
-        if self.is_orphan:
-            return 0
         return self.get_total_fees() - self.get_total_paid()
 
     def get_attendance_percentage(self):

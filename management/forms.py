@@ -171,7 +171,7 @@ class StudentForm(forms.ModelForm):
         model = Student
         fields = ['student_id', 'full_name', 'email', 'phone',
                   'date_of_birth', 'gender', 'address', 'city', 'state', 'pin_code',
-                  'is_orphan', 'guardian_name', 'guardian_phone',
+                  'is_orphan', 'guardian_name', 'guardian_phone', 'guardian_discount',
                   'batches', 'enrollment_date']
         widgets = {
             'student_id': styled_text_input('Auto-generated if left blank'),
@@ -186,6 +186,7 @@ class StudentForm(forms.ModelForm):
             'is_orphan': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary/50 cursor-pointer'}),
             'guardian_name': styled_text_input('Guardian full name'),
             'guardian_phone': styled_text_input('Guardian phone number'),
+            'guardian_discount': styled_text_input('Discount % (e.g. 10)'),
             'batches': searchable_select_multiple('Search batches...'),
         }
 

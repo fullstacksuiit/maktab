@@ -128,7 +128,7 @@
                             </div>
                         </div>
 
-                        {% if student.is_orphan and student.guardian_name %}
+                        {% if student.guardian_name %}
                         <div class="flex items-center p-4 hover:bg-gray-50 transition-colors group">
                             <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center text-sm mr-3 shadow-sm group-hover:scale-110 transition-transform">
                                 <i class="fas fa-user-shield"></i>
@@ -138,6 +138,9 @@
                                 <p class="text-sm font-semibold text-gray-800">{{ student.guardian_name }}</p>
                                 {% if student.guardian_phone %}
                                     <p class="text-xs text-gray-500"><i class="fas fa-phone text-[10px] mr-1"></i>{{ student.guardian_phone }}</p>
+                                {% endif %}
+                                {% if student.guardian_discount > 0 %}
+                                    <p class="text-xs text-green-600"><i class="fas fa-percentage text-[10px] mr-1"></i>{{ student.guardian_discount }}% fee discount</p>
                                 {% endif %}
                             </div>
                         </div>
