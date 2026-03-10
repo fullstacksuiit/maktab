@@ -74,6 +74,8 @@
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js" defer></script>
+    <!-- HTMX for live search -->
+    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
     
     <style>
         body {
@@ -125,6 +127,13 @@
                 padding-bottom: env(safe-area-inset-bottom);
             }
         }
+        /* Urdu text styling */
+        .urdu {
+            font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif;
+            direction: rtl;
+            line-height: 2;
+            font-size: 1.35em;
+        }
         /* Glassmorphism */
         .glass {
             background: rgba(255, 255, 255, 0.9);
@@ -139,15 +148,33 @@
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        /* Sidebar Active Link Gradient */
+        /* Sidebar Active Link */
         .nav-link.active {
-            background: linear-gradient(90deg, rgba(13, 107, 78, 0.1) 0%, transparent 100%);
-            border-left: 4px solid #0d6b4e;
+            background: rgba(13, 107, 78, 0.08);
+            color: #0d6b4e;
+            font-weight: 600;
+        }
+        .nav-link.active i {
             color: #0d6b4e;
         }
-        .nav-link:hover {
-            background: linear-gradient(90deg, rgba(13, 107, 78, 0.05) 0%, transparent 100%);
-            color: #0d6b4e;
+        .nav-link:hover:not(.active) {
+            background: rgba(0, 0, 0, 0.03);
+            color: #374151;
+        }
+        /* Slim sidebar scrollbar */
+        nav::-webkit-scrollbar {
+            width: 3px;
+        }
+        nav::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        nav::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        nav {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
         }
         /* Loading States */
         .btn-loading {
@@ -197,6 +224,13 @@
                 opacity: 1;
                 transform: translateY(0);
             }
+        }
+        /* HTMX Indicator */
+        .htmx-indicator {
+            display: none;
+        }
+        .htmx-request .htmx-indicator, .htmx-request.htmx-indicator {
+            display: inline-block;
         }
         /* Tom Select Custom Styling */
         .ts-wrapper.single .ts-control, .ts-wrapper.multi .ts-control {
@@ -299,166 +333,175 @@
 
     <!-- Sidebar -->
     <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 glass border-r border-gray-200 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col pt-16 md:pt-0">
-        <div class="h-20 flex items-center px-6 border-b border-gray-100 hidden md:flex">
-            <div class="text-2xl font-bold text-primary flex items-center gap-2">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center shadow-lg shadow-primary/30">
-                    <i class="fas fa-mosque text-lg"></i>
+        <div class="h-16 flex items-center px-5 border-b border-gray-100 hidden md:flex">
+            <div class="text-xl font-bold text-primary flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center shadow-md shadow-primary/20">
+                    <i class="fas fa-mosque text-sm"></i>
                 </div>
                 Maktab
             </div>
         </div>
 
-        <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-1">
+        <nav class="flex-1 overflow-y-auto py-4 px-4 space-y-0.5">
             {% if request.user.is_parent %}
             <!-- Parent Portal Navigation -->
-            <a href="{% url 'parent_dashboard' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'parent' in request.path and 'change-password' not in request.path %}active{% endif %}">
-                <i class="fas fa-child w-6 text-center"></i>
-                <span>My Children</span>
+            <a href="{% url 'parent_dashboard' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'parent' in request.path and 'change-password' not in request.path %}active{% endif %}">
+                <i class="fas fa-child w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>My Children</span><span class="text-sm text-gray-600 urdu">میرے بچے</span></span>
             </a>
-            <a href="{% url 'calendar' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'calendar' in request.path %}active{% endif %}">
-                <i class="fas fa-calendar-alt w-6 text-center"></i>
-                <span>Calendar</span>
+            <a href="{% url 'calendar' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'calendar' in request.path %}active{% endif %}">
+                <i class="fas fa-calendar-alt w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Calendar</span><span class="text-sm text-gray-600 urdu">کیلنڈر</span></span>
             </a>
-            <a href="{% url 'parent_change_password' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'change-password' in request.path %}active{% endif %}">
-                <i class="fas fa-key w-6 text-center"></i>
-                <span>Change Password</span>
+            <a href="{% url 'parent_change_password' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'change-password' in request.path %}active{% endif %}">
+                <i class="fas fa-key w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Change Password</span><span class="text-sm text-gray-600 urdu">پاسورڈ تبدیل کریں</span></span>
             </a>
             {% elif request.user.is_staff_role %}
             <!-- Staff Self-Service Navigation -->
-            <a href="{% url 'staff_portal' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if request.path == '/my/' %}active{% endif %}">
-                <i class="fas fa-th-large w-6 text-center"></i>
-                <span>Dashboard</span>
+            <a href="{% url 'staff_portal' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if request.path == '/my/' %}active{% endif %}">
+                <i class="fas fa-th-large w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Dashboard</span><span class="text-sm text-gray-600 urdu">ڈیش بورڈ</span></span>
             </a>
-            <a href="{% url 'staff_my_profile' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'my/profile' in request.path %}active{% endif %}">
-                <i class="fas fa-user w-6 text-center"></i>
-                <span>My Profile</span>
+            <a href="{% url 'staff_my_profile' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'my/profile' in request.path %}active{% endif %}">
+                <i class="fas fa-user w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>My Profile</span><span class="text-sm text-gray-600 urdu">میری پروفائل</span></span>
             </a>
-            <a href="{% url 'staff_my_attendance' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'my/attendance' in request.path %}active{% endif %}">
-                <i class="fas fa-clipboard-check w-6 text-center"></i>
-                <span>My Attendance</span>
+            <a href="{% url 'staff_my_attendance' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'my/attendance' in request.path %}active{% endif %}">
+                <i class="fas fa-clipboard-check w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>My Attendance</span><span class="text-sm text-gray-600 urdu">میری حاضری</span></span>
             </a>
-            <a href="{% url 'staff_leave_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'staff-leave' in request.path %}active{% endif %}">
-                <i class="fas fa-calendar-minus w-6 text-center"></i>
-                <span>My Leaves</span>
+            <a href="{% url 'staff_leave_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'staff-leave' in request.path %}active{% endif %}">
+                <i class="fas fa-calendar-minus w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>My Leaves</span><span class="text-sm text-gray-600 urdu">میری چھٹیاں</span></span>
                 {% if pending_leave_count %}
                 <span class="ml-auto bg-yellow-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{{ pending_leave_count }}</span>
                 {% endif %}
             </a>
-            <a href="{% url 'staff_my_salary' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'my/salary' in request.path %}active{% endif %}">
-                <i class="fas fa-money-check-alt w-6 text-center"></i>
-                <span>My Salary</span>
+            <a href="{% url 'staff_my_salary' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'my/salary' in request.path %}active{% endif %}">
+                <i class="fas fa-money-check-alt w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>My Salary</span><span class="text-sm text-gray-600 urdu">میری تنخواہ</span></span>
             </a>
-            <a href="{% url 'calendar' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'calendar' in request.path %}active{% endif %}">
-                <i class="fas fa-calendar-alt w-6 text-center"></i>
-                <span>Calendar</span>
+            <a href="{% url 'calendar' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'calendar' in request.path %}active{% endif %}">
+                <i class="fas fa-calendar-alt w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Calendar</span><span class="text-sm text-gray-600 urdu">کیلنڈر</span></span>
             </a>
-            <a href="{% url 'staff_change_password' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'change-password' in request.path %}active{% endif %}">
-                <i class="fas fa-key w-6 text-center"></i>
-                <span>Change Password</span>
+            <a href="{% url 'staff_change_password' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'change-password' in request.path %}active{% endif %}">
+                <i class="fas fa-key w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Change Password</span><span class="text-sm text-gray-600 urdu">پاسورڈ تبدیل کریں</span></span>
             </a>
             {% else %}
             <!-- Admin/Manager Navigation -->
-            <a href="{% url 'dashboard' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if request.path == '/' or 'dashboard' in request.path and 'student' not in request.path and 'staff' not in request.path and 'course' not in request.path and 'payment' not in request.path and 'attendance' not in request.path and 'settings' not in request.path %}active{% endif %}">
-                <i class="fas fa-th-large w-6 text-center"></i>
-                <span>Dashboard</span>
+            <a href="{% url 'dashboard' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if request.path == '/' or 'dashboard' in request.path and 'student' not in request.path and 'staff' not in request.path and 'course' not in request.path and 'payment' not in request.path and 'attendance' not in request.path and 'settings' not in request.path %}active{% endif %}">
+                <i class="fas fa-th-large w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Dashboard</span><span class="text-sm text-gray-600 urdu">ڈیش بورڈ</span></span>
             </a>
 
             {% if request.user.can_create_edit %}
-            <a href="{% url 'student_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'student' in request.path %}active{% endif %}">
-                <i class="fas fa-user-graduate w-6 text-center"></i>
-                <span>Students</span>
-            </a>
-            <a href="{% url 'application_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'application' in request.path %}active{% endif %}">
-                <i class="fas fa-file-alt w-6 text-center"></i>
-                <span>Applications</span>
+            <!-- Academics -->
+            <p class="px-3 pt-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Academics <span class="urdu normal-case">تعلیمات</span></p>
+            <a href="{% url 'student_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'student' in request.path %}active{% endif %}">
+                <i class="fas fa-user-graduate w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Students</span><span class="text-sm text-gray-600 urdu">طلباء</span></span>
                 {% if pending_application_count %}
                 <span class="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{{ pending_application_count }}</span>
                 {% endif %}
             </a>
-            <a href="{% url 'staff_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'staff' in request.path and 'staff-attendance' not in request.path and 'staff-leave' not in request.path %}active{% endif %}">
-                <i class="fas fa-chalkboard-teacher w-6 text-center"></i>
-                <span>Staff</span>
+            <a href="{% url 'course_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'course' in request.path %}active{% endif %}">
+                <i class="fas fa-book-quran w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Courses</span><span class="text-sm text-gray-600 urdu">کورسز</span></span>
             </a>
-            <a href="{% url 'course_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'course' in request.path %}active{% endif %}">
-                <i class="fas fa-book-quran w-6 text-center"></i>
-                <span>Courses</span>
+            <a href="{% url 'batch_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'batch' in request.path and 'timetable' not in request.path %}active{% endif %}">
+                <i class="fas fa-layer-group w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Batches</span><span class="text-sm text-gray-600 urdu">بیچز</span></span>
             </a>
-            <a href="{% url 'batch_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'batch' in request.path %}active{% endif %}">
-                <i class="fas fa-layer-group w-6 text-center"></i>
-                <span>Batches</span>
+            <a href="{% url 'batch_timetable' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'timetable' in request.path %}active{% endif %}">
+                <i class="fas fa-calendar-week w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Timetable</span><span class="text-sm text-gray-600 urdu">ٹائم ٹیبل</span></span>
+            </a>
+            <a href="{% url 'staff_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'staff' in request.path and 'staff-attendance' not in request.path and 'staff-leave' not in request.path %}active{% endif %}">
+                <i class="fas fa-chalkboard-teacher w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Staff</span><span class="text-sm text-gray-600 urdu">عملہ</span></span>
             </a>
             {% endif %}
 
-            <a href="{% url 'attendance_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'attendance' in request.path and 'staff-attendance' not in request.path %}active{% endif %}">
-                <i class="fas fa-clipboard-check w-6 text-center"></i>
-                <span>Attendance</span>
+            <!-- Attendance -->
+            <p class="px-3 pt-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Attendance <span class="urdu normal-case">حاضری</span></p>
+            <a href="{% url 'attendance_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'attendance' in request.path and 'staff-attendance' not in request.path %}active{% endif %}">
+                <i class="fas fa-clipboard-check w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Student</span><span class="text-sm text-gray-600 urdu">طالب علم</span></span>
             </a>
-            <a href="{% url 'staff_attendance_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'staff-attendance' in request.path %}active{% endif %}">
-                <i class="fas fa-user-clock w-6 text-center"></i>
-                <span>Staff Attendance</span>
+            <a href="{% url 'staff_attendance_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'staff-attendance' in request.path %}active{% endif %}">
+                <i class="fas fa-user-clock w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Staff</span><span class="text-sm text-gray-600 urdu">عملہ</span></span>
             </a>
-            <a href="{% url 'staff_leave_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'staff-leave' in request.path %}active{% endif %}">
-                <i class="fas fa-calendar-minus w-6 text-center"></i>
-                <span>Staff Leave</span>
+            <a href="{% url 'staff_leave_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'staff-leave' in request.path %}active{% endif %}">
+                <i class="fas fa-calendar-minus w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Leaves</span><span class="text-sm text-gray-600 urdu">چھٹیاں</span></span>
                 {% if pending_leave_count %}
                 <span class="ml-auto bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{{ pending_leave_count }}</span>
                 {% endif %}
             </a>
 
             {% if request.user.can_create_edit %}
-            <a href="{% url 'fee_payment_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'payment' in request.path %}active{% endif %}">
-                <i class="fas fa-money-bill-wave w-6 text-center"></i>
-                <span>Fees</span>
+            <!-- Finance -->
+            <p class="px-3 pt-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Finance <span class="urdu normal-case">مالیات</span></p>
+            <a href="{% url 'fee_payment_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'payment' in request.path %}active{% endif %}">
+                <i class="fas fa-money-bill-wave w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Fees</span><span class="text-sm text-gray-600 urdu">فیس</span></span>
             </a>
-            <a href="{% url 'payroll_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'payroll' in request.path and 'salary-component' not in request.path %}active{% endif %}">
-                <i class="fas fa-file-invoice-dollar w-6 text-center"></i>
-                <span>Payroll</span>
+            <a href="{% url 'payroll_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'payroll' in request.path and 'salary-component' not in request.path %}active{% endif %}">
+                <i class="fas fa-file-invoice-dollar w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Payroll</span><span class="text-sm text-gray-600 urdu">تنخواہ</span></span>
             </a>
-            <a href="{% url 'salary_component_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'salary-component' in request.path %}active{% endif %}">
-                <i class="fas fa-sliders-h w-6 text-center"></i>
-                <span>Salary Components</span>
+            <a href="{% url 'salary_component_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'salary-component' in request.path %}active{% endif %}">
+                <i class="fas fa-sliders-h w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Salary Components</span><span class="text-sm text-gray-600 urdu">تنخواہ اجزاء</span></span>
+            </a>
+            <a href="{% url 'accounts_overview' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'accounts' in request.path %}active{% endif %}">
+                <i class="fas fa-chart-pie w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Accounts</span><span class="text-sm text-gray-600 urdu">حسابات</span></span>
+            </a>
+            <a href="{% url 'expense_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'expenses' in request.path %}active{% endif %}">
+                <i class="fas fa-receipt w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Expenses</span><span class="text-sm text-gray-600 urdu">اخراجات</span></span>
             </a>
             {% endif %}
 
-            <a href="{% url 'calendar' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'calendar' in request.path %}active{% endif %}">
-                <i class="fas fa-calendar-alt w-6 text-center"></i>
-                <span>Calendar</span>
+            <a href="{% url 'calendar' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'calendar' in request.path %}active{% endif %}">
+                <i class="fas fa-calendar-alt w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Calendar</span><span class="text-sm text-gray-600 urdu">کیلنڈر</span></span>
             </a>
 
             {% if request.user.is_admin %}
-            <a href="{% url 'user_list' %}" class="nav-link flex items-center gap-3 px-3 py-3 rounded-xl text-gray-600 transition-all font-medium {% if 'users' in request.path %}active{% endif %}">
-                <i class="fas fa-user-shield w-6 text-center"></i>
-                <span>Users</span>
+            <!-- Admin -->
+            <p class="px-3 pt-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Admin <span class="urdu normal-case">انتظامیہ</span></p>
+            <a href="{% url 'user_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'users' in request.path %}active{% endif %}">
+                <i class="fas fa-user-shield w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Users</span><span class="text-sm text-gray-600 urdu">صارفین</span></span>
+            </a>
+            <a href="{% url 'settings' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'settings' in request.path %}active{% endif %}">
+                <i class="fas fa-cog w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Settings</span><span class="text-sm text-gray-600 urdu">ترتیبات</span></span>
             </a>
             {% endif %}
             {% endif %}
         </nav>
         
-        <!-- Sidebar Footer with User Info & Logout -->
-        <div class="p-4 border-t border-gray-100 space-y-3">
-            <div class="bg-primary/5 rounded-xl p-3 flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-primary font-bold shadow-sm">
+        <!-- Sidebar Footer -->
+        <div class="p-3 border-t border-gray-100">
+            <div class="flex items-center gap-3 px-2 py-2">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center font-bold text-xs shrink-0">
                     {{ request.user.username|slice:":1"|upper }}
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-bold text-gray-800 truncate">{{ request.user.username }}</p>
-                    <p class="text-xs text-gray-500 truncate">{{ request.user.organization.org_name|default:"Admin" }}</p>
+                    <p class="text-sm font-semibold text-gray-800 truncate">{{ request.user.username }}</p>
+                    <p class="text-[11px] text-gray-400 truncate">{{ request.user.organization.org_name|default:"Admin" }}</p>
                 </div>
-            </div>
-
-            <!-- Settings & Logout -->
-            <div class="flex gap-2">
-                {% if request.user.is_admin %}
-                <a href="{% url 'settings' %}" class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-gray-600 hover:text-primary hover:border-primary/30 transition-all text-sm font-medium">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
-                </a>
-                {% endif %}
-                <form action="{% url 'logout' %}" method="post" class="flex-1">
+                <form action="{% url 'logout' %}" method="post">
                     {% csrf_token %}
-                    <button type="submit" class="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-xl text-red-600 hover:bg-red-100 hover:border-red-300 transition-all text-sm font-medium">
-                        <i class="fas fa-sign-out-alt"></i>
-                        <span>Logout</span>
+                    <button type="submit" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all" title="Logout">
+                        <i class="fas fa-sign-out-alt text-sm"></i>
                     </button>
                 </form>
             </div>
@@ -468,52 +511,21 @@
     <!-- Main Content -->
     <main class="flex-1 md:ml-64 flex flex-col h-screen overflow-hidden relative bg-gray-50/50">
         <!-- Top Navbar -->
-        <header class="h-20 shrink-0 flex items-center justify-between px-4 md:px-8 z-30 transition-all duration-300">
+        <header class="h-14 shrink-0 flex items-center justify-between px-4 md:px-8 z-30 bg-gradient-to-r from-primary to-secondary text-white shadow-md shadow-primary/20">
              <!-- Page Title -->
-            <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <h2 class="text-lg font-semibold text-white flex items-center gap-2">
                 {% block header_title %}Dashboard{% endblock %}
             </h2>
-            
+
             <!-- Right Actions -->
             <div class="flex items-center gap-4">
-                <!-- Profile Dropdown (Hidden on mobile - use sidebar instead) -->
-                <div class="relative hidden md:block" id="profile-dropdown-container">
-                    <button onclick="toggleProfileDropdown()" class="flex items-center gap-3 bg-white border border-gray-200 rounded-xl p-1.5 pr-4 hover:border-primary/30 hover:shadow-md transition-all shadow-sm group">
-                        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-primary to-secondary text-white flex items-center justify-center font-bold text-sm shadow-sm group-hover:scale-105 transition-transform">
-                            {{ request.user.username|slice:":1"|upper }}
-                        </div>
-                        <span class="text-sm font-semibold text-gray-700 group-hover:text-primary transition-colors">{{ request.user.username }}</span>
-                        <i class="fas fa-chevron-down text-gray-400 text-xs ml-1 group-hover:text-primary transition-colors"></i>
-                    </button>
-
-                    <!-- Dropdown Menu -->
-                    <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50 animate-[fadeIn_0.2s_ease-out] origin-top-right">
-                        <div class="px-4 py-3 border-b border-gray-50">
-                            <p class="text-xs text-gray-500 uppercase font-bold">Signed in as</p>
-                            <p class="text-sm font-semibold text-gray-800 truncate">{{ request.user.username }}</p>
-                        </div>
-                        
-                        {% if request.user.is_admin %}
-                        <a href="{% url 'settings' %}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors">
-                            <i class="fas fa-cog w-5 text-gray-400"></i> Settings
-                        </a>
-                        {% endif %}
-
-                        <div class="border-t border-gray-50 my-1"></div>
-                        
-                        <form action="{% url 'logout' %}" method="post" class="block">
-                            {% csrf_token %}
-                            <button type="submit" class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors flex items-center">
-                                <i class="fas fa-sign-out-alt w-5"></i> Logout
-                            </button>
-                        </form>
-                    </div>
-                </div>
+                <!-- Organization name (desktop only) -->
+                <span class="hidden md:block text-xs text-white/70 font-medium">{{ request.user.organization.org_name|default:"" }}</span>
             </div>
         </header>
 
         <!-- Content Scroll Area -->
-        <div class="flex-1 overflow-auto px-4 md:px-8 pb-8 relative">
+        <div class="flex-1 overflow-auto px-4 md:px-8 pt-6 pb-8 relative">
             <!-- Breadcrumb -->
             {% block breadcrumb %}{% endblock %}
 
@@ -540,17 +552,15 @@
             </div>
 
             <!-- Spacer so content doesn't hide behind fixed footer -->
-            <div class="h-14"></div>
+            <div class="h-10"></div>
 
         </div>
     </main>
 
     <!-- Fixed Footer -->
-    <footer class="fixed bottom-0 left-0 right-0 z-20 md:left-64 bg-white/80 backdrop-blur-md border-t border-gray-200/60">
-        <div class="flex items-center justify-center h-11">
-            <span class="text-sm font-bold text-gray-700">Maktab Management System</span>
-            <span class="text-gray-300 mx-2">|</span>
-            <span class="text-sm text-gray-600">A <a href="http://strix.co.in/" target="_blank" rel="noopener noreferrer" class="font-bold text-primary hover:text-secondary hover:underline transition-colors">Strix</a> Venture</span>
+    <footer class="fixed bottom-0 left-0 right-0 z-20 md:left-64 bg-gray-50/90 backdrop-blur-sm border-t border-gray-100">
+        <div class="flex items-center justify-center h-8">
+            <span class="text-xs text-gray-400">A <a href="http://strix.co.in/" target="_blank" rel="noopener noreferrer" class="font-medium text-gray-500 hover:text-primary transition-colors">Strix</a> Venture</span>
         </div>
     </footer>
 
@@ -577,21 +587,6 @@
 
         mobileBtn.addEventListener('click', toggleSidebar);
         overlay.addEventListener('click', toggleSidebar);
-
-        // Profile Dropdown Logic
-        function toggleProfileDropdown() {
-            const dropdown = document.getElementById('profile-dropdown');
-            dropdown.classList.toggle('hidden');
-        }
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            const container = document.getElementById('profile-dropdown-container');
-            const dropdown = document.getElementById('profile-dropdown');
-            if (container && !container.contains(event.target)) {
-                dropdown.classList.add('hidden');
-            }
-        });
 
         // Auto-Dismiss Notifications
         document.addEventListener('DOMContentLoaded', function() {

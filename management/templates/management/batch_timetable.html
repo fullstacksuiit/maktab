@@ -1,0 +1,492 @@
+{% extends 'management/base_tailwind.html' %}
+
+{% block title %}Timetable - Maktab{% endblock %}
+
+{% block content %}
+<div class="animate-[slideUp_0.4s_ease-out]">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-800">Timetable</h1>
+            <p class="text-sm text-gray-500 mt-1">Drag and drop batches to reschedule</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="{% url 'batch_list' %}" class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-all">
+                <i class="fas fa-list text-xs"></i> List View
+            </a>
+            <a href="{% url 'batch_add' %}" class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-all shadow-lg shadow-primary/30">
+                <i class="fas fa-plus text-xs"></i> Add Batch
+            </a>
+        </div>
+    </div>
+
+    <!-- Course Legend -->
+    <div id="course-legend" class="flex flex-wrap gap-2 mb-4">
+        <!-- Populated by JS -->
+    </div>
+
+    <!-- Timetable Grid -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <!-- Day Headers -->
+        <div class="grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[80px_repeat(7,1fr)] border-b border-gray-200">
+            <div class="p-2 sm:p-3 bg-gray-50"></div>
+            <div class="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm text-gray-700 bg-gray-50 border-l border-gray-200" data-day="0">Mon</div>
+            <div class="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm text-gray-700 bg-gray-50 border-l border-gray-200" data-day="1">Tue</div>
+            <div class="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm text-gray-700 bg-gray-50 border-l border-gray-200" data-day="2">Wed</div>
+            <div class="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm text-gray-700 bg-gray-50 border-l border-gray-200" data-day="3">Thu</div>
+            <div class="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm text-gray-700 bg-gray-50 border-l border-gray-200" data-day="4">Fri</div>
+            <div class="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm text-gray-700 bg-gray-50 border-l border-gray-200" data-day="5">Sat</div>
+            <div class="p-2 sm:p-3 text-center font-semibold text-xs sm:text-sm text-gray-700 bg-gray-50 border-l border-gray-200" data-day="6">Sun</div>
+        </div>
+
+        <!-- Time Grid -->
+        <div id="timetable-grid" class="relative grid grid-cols-[60px_repeat(7,1fr)] sm:grid-cols-[80px_repeat(7,1fr)]" style="min-height: 720px;">
+            <!-- Time labels and grid lines rendered by JS -->
+        </div>
+    </div>
+
+    <!-- Info for empty state -->
+    <div id="empty-state" class="hidden mt-8 text-center py-12">
+        <i class="fas fa-calendar-xmark text-4xl text-gray-300 mb-4"></i>
+        <h3 class="text-lg font-semibold text-gray-500">No scheduled batches</h3>
+        <p class="text-sm text-gray-400 mt-1">Add batches with start/end times to see them here</p>
+        <a href="{% url 'batch_add' %}" class="inline-flex items-center gap-2 mt-4 px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-all">
+            <i class="fas fa-plus"></i> Add Batch
+        </a>
+    </div>
+</div>
+
+<!-- Batch Detail Tooltip / Modal -->
+<div id="batch-tooltip" class="hidden fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 w-72 animate-[fadeIn_0.15s_ease-out]">
+    <div class="flex items-start justify-between mb-3">
+        <div>
+            <h4 id="tt-name" class="font-semibold text-gray-800 text-sm"></h4>
+            <p id="tt-code" class="text-xs text-gray-400 mt-0.5"></p>
+        </div>
+        <button onclick="hideTooltip()" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <i class="fas fa-times text-xs"></i>
+        </button>
+    </div>
+    <div class="space-y-2 text-xs text-gray-600">
+        <div class="flex items-center gap-2"><i class="fas fa-book-quran w-4 text-center text-primary"></i><span id="tt-course"></span></div>
+        <div class="flex items-center gap-2"><i class="fas fa-chalkboard-teacher w-4 text-center text-primary"></i><span id="tt-teachers"></span></div>
+        <div class="flex items-center gap-2"><i class="fas fa-clock w-4 text-center text-primary"></i><span id="tt-time"></span></div>
+        <div class="flex items-center gap-2"><i class="fas fa-user-graduate w-4 text-center text-primary"></i><span id="tt-students"></span></div>
+    </div>
+    <div class="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+        <a id="tt-view" href="#" class="flex-1 text-center text-xs font-medium text-primary bg-primary/5 hover:bg-primary/10 rounded-lg py-2 transition-colors">View</a>
+        <a id="tt-edit" href="#" class="flex-1 text-center text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg py-2 transition-colors">Edit</a>
+    </div>
+</div>
+
+<!-- Toast notification -->
+<div id="toast" class="hidden fixed bottom-6 right-6 z-50 bg-gray-800 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg animate-[slideUp_0.3s_ease-out]">
+    <span id="toast-msg"></span>
+</div>
+
+{% csrf_token %}
+
+<script>
+(function() {
+    const batches = {{ batch_data_json|safe }};
+    const courseColors = {{ course_colors_json|safe }};
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const canEdit = {{ request.user.can_create_edit|yesno:"true,false" }};
+
+    const START_HOUR = 5;   // 5 AM
+    const END_HOUR = 22;    // 10 PM
+    const HOUR_HEIGHT = 60; // pixels per hour
+    const TOTAL_HOURS = END_HOUR - START_HOUR;
+    const GRID_HEIGHT = TOTAL_HOURS * HOUR_HEIGHT;
+    const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    const grid = document.getElementById('timetable-grid');
+    const tooltip = document.getElementById('batch-tooltip');
+    const emptyState = document.getElementById('empty-state');
+    const legend = document.getElementById('course-legend');
+
+    grid.style.height = GRID_HEIGHT + 'px';
+
+    // Build time labels and grid lines
+    function buildGrid() {
+        let html = '';
+        for (let h = START_HOUR; h < END_HOUR; h++) {
+            const top = (h - START_HOUR) * HOUR_HEIGHT;
+            const label = formatHour(h);
+            // Time label
+            html += `<div class="absolute left-0 w-[60px] sm:w-[80px] text-[10px] sm:text-xs text-gray-400 text-right pr-2 sm:pr-3 select-none" style="top:${top}px; line-height:1;">${label}</div>`;
+            // Horizontal line
+            html += `<div class="absolute left-[60px] sm:left-[80px] right-0 border-t border-gray-100" style="top:${top}px;"></div>`;
+            // Half-hour line
+            const halfTop = top + HOUR_HEIGHT / 2;
+            html += `<div class="absolute left-[60px] sm:left-[80px] right-0 border-t border-dashed border-gray-50" style="top:${halfTop}px;"></div>`;
+        }
+        // Vertical day separators
+        for (let d = 0; d < 7; d++) {
+            const left = `calc(60px + (100% - 60px) * ${d} / 7)`;
+            html += `<div class="absolute top-0 bottom-0 border-l border-gray-100 hidden sm:block" style="left:${left};"></div>`;
+            // Use sm variant
+            const leftSm = `calc(80px + (100% - 80px) * ${d} / 7)`;
+            html += `<div class="absolute top-0 bottom-0 border-l border-gray-100 sm:block" style="left:${leftSm};"></div>`;
+        }
+
+        // Drop zones for each day column
+        for (let d = 0; d < 7; d++) {
+            html += `<div class="day-column absolute top-0 bottom-0" data-day="${d}" style="left:calc(60px + (100% - 60px) * ${d} / 7); width:calc((100% - 60px) / 7);"></div>`;
+        }
+
+        grid.innerHTML = html;
+    }
+
+    function formatHour(h) {
+        if (h === 0 || h === 24) return '12 AM';
+        if (h === 12) return '12 PM';
+        return h > 12 ? (h - 12) + ' PM' : h + ' AM';
+    }
+
+    function timeToMinutes(timeStr) {
+        const [h, m] = timeStr.split(':').map(Number);
+        return h * 60 + m;
+    }
+
+    function minutesToTime(mins) {
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    }
+
+    function formatTime12(timeStr) {
+        const [h, m] = timeStr.split(':').map(Number);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+    }
+
+    // Render batch blocks
+    function renderBatches() {
+        // Remove existing blocks
+        grid.querySelectorAll('.batch-block').forEach(el => el.remove());
+
+        if (batches.length === 0) {
+            emptyState.classList.remove('hidden');
+            return;
+        }
+        emptyState.classList.add('hidden');
+
+        batches.forEach(batch => {
+            batch.days.forEach(day => {
+                createBatchBlock(batch, day);
+            });
+        });
+    }
+
+    function createBatchBlock(batch, day) {
+        const startMins = timeToMinutes(batch.start_time);
+        const endMins = timeToMinutes(batch.end_time);
+        const startOffset = startMins - START_HOUR * 60;
+        const duration = endMins - startMins;
+
+        const top = (startOffset / 60) * HOUR_HEIGHT;
+        const height = (duration / 60) * HOUR_HEIGHT;
+        const leftPercent = (day / 7) * 100;
+
+        const block = document.createElement('div');
+        block.className = 'batch-block absolute rounded-lg sm:rounded-xl cursor-pointer transition-shadow hover:shadow-lg group overflow-hidden';
+        block.dataset.batchId = batch.id;
+        block.dataset.day = day;
+
+        // Position — use calc to account for time gutter
+        block.style.cssText = `
+            top: ${top}px;
+            height: ${Math.max(height, 24)}px;
+            left: calc(60px + (100% - 60px) * ${day} / 7 + 2px);
+            width: calc((100% - 60px) / 7 - 4px);
+            z-index: 10;
+        `;
+
+        // Responsive left for sm+
+        // We'll use the same calc but JS doesn't support media queries in inline styles
+        // The 60px gutter works fine for mobile since headers match
+
+        const color = batch.color;
+        block.style.backgroundColor = color + '15';
+        block.style.borderLeft = `3px solid ${color}`;
+
+        const isShort = height < 48;
+
+        block.innerHTML = `
+            <div class="px-1.5 sm:px-2 py-1 h-full flex flex-col justify-center" style="color: ${color};">
+                <p class="font-semibold text-[10px] sm:text-xs leading-tight truncate">${batch.name}</p>
+                ${!isShort ? `
+                <p class="text-[9px] sm:text-[10px] opacity-70 truncate mt-0.5">${batch.course_code}</p>
+                <p class="text-[9px] sm:text-[10px] opacity-60 truncate">${formatTime12(batch.start_time)} - ${formatTime12(batch.end_time)}</p>
+                ` : ''}
+            </div>
+        `;
+
+        // Click to show tooltip
+        block.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showTooltip(batch, block);
+        });
+
+        // Drag support (only for editors)
+        if (canEdit) {
+            block.draggable = true;
+            block.addEventListener('dragstart', onDragStart);
+            block.addEventListener('dragend', onDragEnd);
+            block.style.cursor = 'grab';
+
+            // Resize handle at bottom
+            const handle = document.createElement('div');
+            handle.className = 'absolute bottom-0 left-0 right-0 h-2 cursor-s-resize opacity-0 group-hover:opacity-100 transition-opacity';
+            handle.style.backgroundColor = color + '40';
+            handle.addEventListener('mousedown', (e) => onResizeStart(e, batch, day, block));
+            block.appendChild(handle);
+        }
+
+        grid.appendChild(block);
+    }
+
+    // Tooltip
+    function showTooltip(batch, anchor) {
+        const rect = anchor.getBoundingClientRect();
+        tooltip.classList.remove('hidden');
+
+        document.getElementById('tt-name').textContent = batch.name;
+        document.getElementById('tt-code').textContent = batch.code;
+        document.getElementById('tt-course').textContent = batch.course;
+        document.getElementById('tt-teachers').textContent = batch.teachers || 'No teacher assigned';
+        document.getElementById('tt-time').textContent = `${formatTime12(batch.start_time)} - ${formatTime12(batch.end_time)}`;
+        document.getElementById('tt-students').textContent = `${batch.student_count} student${batch.student_count !== 1 ? 's' : ''}`;
+        document.getElementById('tt-view').href = `/batches/${batch.id}/`;
+        document.getElementById('tt-edit').href = `/batches/edit/${batch.id}/`;
+
+        // Position tooltip
+        const ttRect = tooltip.getBoundingClientRect();
+        let top = rect.top;
+        let left = rect.right + 8;
+
+        if (left + 288 > window.innerWidth) {
+            left = rect.left - 288 - 8;
+        }
+        if (left < 8) left = 8;
+        if (top + ttRect.height > window.innerHeight - 20) {
+            top = window.innerHeight - ttRect.height - 20;
+        }
+        if (top < 8) top = 8;
+
+        tooltip.style.top = top + 'px';
+        tooltip.style.left = left + 'px';
+    }
+
+    function hideTooltip() {
+        tooltip.classList.add('hidden');
+    }
+    window.hideTooltip = hideTooltip;
+
+    document.addEventListener('click', (e) => {
+        if (!tooltip.contains(e.target) && !e.target.closest('.batch-block')) {
+            hideTooltip();
+        }
+    });
+
+    // Drag and Drop
+    let dragBatch = null;
+    let dragDay = null;
+
+    function onDragStart(e) {
+        const block = e.currentTarget;
+        dragBatch = batches.find(b => b.id === parseInt(block.dataset.batchId));
+        dragDay = parseInt(block.dataset.day);
+        block.style.opacity = '0.5';
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+        hideTooltip();
+    }
+
+    function onDragEnd(e) {
+        e.currentTarget.style.opacity = '1';
+        dragBatch = null;
+        dragDay = null;
+        document.querySelectorAll('.day-column').forEach(col => {
+            col.style.backgroundColor = '';
+        });
+    }
+
+    // Make day columns accept drops
+    grid.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropMode = 'move';
+
+        // Highlight target column
+        const col = e.target.closest('.day-column');
+        document.querySelectorAll('.day-column').forEach(c => c.style.backgroundColor = '');
+        if (col) {
+            col.style.backgroundColor = 'rgba(13, 107, 78, 0.04)';
+        }
+    });
+
+    grid.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (!dragBatch) return;
+
+        const col = e.target.closest('.day-column');
+        if (!col) return;
+
+        const newDay = parseInt(col.dataset.day);
+        const gridRect = grid.getBoundingClientRect();
+        const relativeY = e.clientY - gridRect.top;
+
+        // Snap to 15-minute intervals
+        const totalMins = (relativeY / GRID_HEIGHT) * TOTAL_HOURS * 60;
+        const snappedMins = Math.round(totalMins / 15) * 15 + START_HOUR * 60;
+
+        const duration = timeToMinutes(dragBatch.end_time) - timeToMinutes(dragBatch.start_time);
+        const newStart = minutesToTime(Math.max(START_HOUR * 60, Math.min(snappedMins, END_HOUR * 60 - duration)));
+        const newEnd = minutesToTime(timeToMinutes(newStart) + duration);
+
+        updateBatchSchedule(dragBatch, newDay, newStart, newEnd);
+    });
+
+    // Resize
+    let resizeState = null;
+
+    function onResizeStart(e, batch, day, block) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        resizeState = { batch, day, block, startY: e.clientY };
+        block.style.transition = 'none';
+
+        document.addEventListener('mousemove', onResizeMove);
+        document.addEventListener('mouseup', onResizeEnd);
+    }
+
+    function onResizeMove(e) {
+        if (!resizeState) return;
+        const deltaY = e.clientY - resizeState.startY;
+        const deltaMinutes = Math.round((deltaY / HOUR_HEIGHT) * 60 / 15) * 15;
+
+        const origEnd = timeToMinutes(resizeState.batch.end_time);
+        const newEnd = Math.max(timeToMinutes(resizeState.batch.start_time) + 15, Math.min(origEnd + deltaMinutes, END_HOUR * 60));
+
+        const startMins = timeToMinutes(resizeState.batch.start_time);
+        const newHeight = ((newEnd - startMins) / 60) * HOUR_HEIGHT;
+        resizeState.block.style.height = Math.max(newHeight, 24) + 'px';
+        resizeState.newEnd = minutesToTime(newEnd);
+    }
+
+    function onResizeEnd() {
+        if (!resizeState || !resizeState.newEnd) {
+            resizeState = null;
+            document.removeEventListener('mousemove', onResizeMove);
+            document.removeEventListener('mouseup', onResizeEnd);
+            return;
+        }
+
+        const { batch, day, newEnd } = resizeState;
+        resizeState.block.style.transition = '';
+        resizeState = null;
+
+        document.removeEventListener('mousemove', onResizeMove);
+        document.removeEventListener('mouseup', onResizeEnd);
+
+        updateBatchSchedule(batch, day, batch.start_time, newEnd);
+    }
+
+    // API call to update schedule
+    function updateBatchSchedule(batch, newDay, newStart, newEnd) {
+        fetch('{% url "batch_schedule_update" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({
+                batch_id: batch.id,
+                day: newDay,
+                start_time: newStart,
+                end_time: newEnd,
+            }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // Update local state
+                batch.start_time = data.start_time;
+                batch.end_time = data.end_time;
+
+                // Update days based on new days value
+                const daysMap = {
+                    weekdays: [0,1,2,3,4],
+                    weekend: [5,6],
+                    mwf: [0,2,4],
+                    tts: [1,3,5],
+                    daily: [0,1,2,3,4,5,6],
+                    custom: [newDay],
+                };
+                batch.days = daysMap[data.days] || [newDay];
+
+                renderBatches();
+                showToast('Schedule updated');
+            } else {
+                showToast(data.error || 'Update failed', true);
+                renderBatches();
+            }
+        })
+        .catch(() => {
+            showToast('Network error', true);
+            renderBatches();
+        });
+    }
+
+    // Toast
+    function showToast(msg, isError) {
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toast-msg');
+        toastMsg.textContent = msg;
+        toast.className = `fixed bottom-6 right-6 z-50 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg animate-[slideUp_0.3s_ease-out] ${isError ? 'bg-red-600' : 'bg-gray-800'}`;
+        setTimeout(() => { toast.className = 'hidden'; }, 2500);
+    }
+
+    // Course Legend
+    function buildLegend() {
+        let html = '';
+        const seen = new Set();
+        batches.forEach(b => {
+            if (!seen.has(b.course)) {
+                seen.add(b.course);
+                html += `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium" style="background:${b.color}15; color:${b.color};">
+                    <span class="w-2 h-2 rounded-full" style="background:${b.color};"></span>${b.course}
+                </span>`;
+            }
+        });
+        legend.innerHTML = html;
+    }
+
+    // Responsive: update gutter width for batch block positioning
+    function updateResponsive() {
+        const gutter = window.innerWidth >= 640 ? 80 : 60;
+        grid.querySelectorAll('.batch-block').forEach(block => {
+            const day = parseInt(block.dataset.day);
+            block.style.left = `calc(${gutter}px + (100% - ${gutter}px) * ${day} / 7 + 2px)`;
+            block.style.width = `calc((100% - ${gutter}px) / 7 - 4px)`;
+        });
+        grid.querySelectorAll('.day-column').forEach(col => {
+            const day = parseInt(col.dataset.day);
+            col.style.left = `calc(${gutter}px + (100% - ${gutter}px) * ${day} / 7)`;
+            col.style.width = `calc((100% - ${gutter}px) / 7)`;
+        });
+    }
+
+    window.addEventListener('resize', updateResponsive);
+
+    // Init
+    buildGrid();
+    buildLegend();
+    renderBatches();
+    updateResponsive();
+})();
+</script>
+{% endblock %}

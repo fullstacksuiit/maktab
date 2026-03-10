@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Organization, Course, Batch, Student, Staff, Attendance, StaffAttendance, FeePayment, BehaviorNote, AdmissionApplication, Event, LeaveType, LeaveBalance, LeaveRequest
+from .models import User, Organization, Course, Batch, Student, Staff, Attendance, StaffAttendance, FeePayment, BehaviorNote, AdmissionApplication, Event, LeaveType, LeaveBalance, LeaveRequest, Expense
 
 
 @admin.register(Organization)
@@ -39,9 +39,9 @@ class BatchAdmin(admin.ModelAdmin):
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ['student_id', 'first_name', 'last_name', 'email', 'enrollment_date']
+    list_display = ['student_id', 'full_name', 'email', 'enrollment_date']
     list_filter = ['gender', 'enrollment_date']
-    search_fields = ['student_id', 'first_name', 'last_name', 'email']
+    search_fields = ['student_id', 'full_name', 'email']
     readonly_fields = ['student_id']
     filter_horizontal = ['batches']
 
@@ -57,7 +57,7 @@ class StaffAdmin(admin.ModelAdmin):
 class AttendanceAdmin(admin.ModelAdmin):
     list_display = ['date', 'student', 'batch', 'status', 'marked_by', 'created_at']
     list_filter = ['status', 'date', 'batch']
-    search_fields = ['student__first_name', 'student__last_name', 'student__student_id']
+    search_fields = ['student__full_name', 'student__student_id']
 
 
 @admin.register(StaffAttendance)
@@ -71,7 +71,7 @@ class StaffAttendanceAdmin(admin.ModelAdmin):
 class FeePaymentAdmin(admin.ModelAdmin):
     list_display = ['receipt_number', 'student', 'batch', 'amount', 'payment_date', 'payment_method']
     list_filter = ['payment_method', 'payment_date']
-    search_fields = ['receipt_number', 'student__first_name', 'student__last_name']
+    search_fields = ['receipt_number', 'student__full_name']
     readonly_fields = ['receipt_number']
 
 
@@ -79,7 +79,7 @@ class FeePaymentAdmin(admin.ModelAdmin):
 class BehaviorNoteAdmin(admin.ModelAdmin):
     list_display = ['date', 'student', 'category', 'title', 'noted_by', 'created_at']
     list_filter = ['category', 'date', 'organization']
-    search_fields = ['title', 'description', 'student__first_name', 'student__last_name']
+    search_fields = ['title', 'description', 'student__full_name']
 
 
 @admin.register(AdmissionApplication)
@@ -118,6 +118,14 @@ class LeaveRequestAdmin(admin.ModelAdmin):
     list_filter = ['status', 'leave_type', 'organization']
     search_fields = ['staff__first_name', 'staff__last_name', 'staff__staff_id']
     readonly_fields = ['created_at', 'updated_at', 'reviewed_at']
+
+
+@admin.register(Expense)
+class ExpenseAdmin(admin.ModelAdmin):
+    list_display = ['title', 'category', 'amount', 'expense_date', 'payment_method', 'organization', 'created_by']
+    list_filter = ['category', 'payment_method', 'expense_date', 'organization']
+    search_fields = ['title', 'description', 'reference_number']
+    readonly_fields = ['created_at', 'updated_at']
 
 
 admin.site.register(User, CustomUserAdmin)

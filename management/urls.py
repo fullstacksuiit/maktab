@@ -9,6 +9,7 @@ urlpatterns = [
 
     # Course URLs
     path('courses/', views.course_list, name='course_list'),
+    path('courses/<int:pk>/', views.course_detail, name='course_detail'),
     path('courses/add/', views.course_add, name='course_add'),
     path('courses/edit/<int:pk>/', views.course_edit, name='course_edit'),
     path('courses/delete/<int:pk>/', views.course_delete, name='course_delete'),
@@ -20,6 +21,8 @@ urlpatterns = [
     path('batches/add/', views.batch_add, name='batch_add'),
     path('batches/edit/<int:pk>/', views.batch_edit, name='batch_edit'),
     path('batches/delete/<int:pk>/', views.batch_delete, name='batch_delete'),
+    path('batches/timetable/', views.batch_timetable, name='batch_timetable'),
+    path('batches/schedule-update/', views.batch_schedule_update, name='batch_schedule_update'),
 
     # Student URLs
     path('students/', views.student_list, name='student_list'),
@@ -130,6 +133,13 @@ urlpatterns = [
     path('salary-components/add/', views.salary_component_add, name='salary_component_add'),
     path('salary-components/edit/<int:pk>/', views.salary_component_edit, name='salary_component_edit'),
     path('salary-components/delete/<int:pk>/', views.salary_component_delete, name='salary_component_delete'),
+
+    # Accounts & Expenses URLs
+    path('accounts/', views.accounts_overview, name='accounts_overview'),
+    path('expenses/', views.expense_list, name='expense_list'),
+    path('expenses/add/', views.expense_add, name='expense_add'),
+    path('expenses/edit/<int:pk>/', views.expense_edit, name='expense_edit'),
+    path('expenses/delete/<int:pk>/', views.expense_delete, name='expense_delete'),
 
     # Export URLs
     path('export/students/', views.export_students_excel, name='export_students'),

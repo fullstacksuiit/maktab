@@ -1,0 +1,174 @@
+{% extends 'management/base_tailwind.html' %}
+{% load pagination_tags %}
+
+{% block title %}Expenses - Maktab{% endblock %}
+{% block header_title %}Expenses{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-col md:flex-row md:items-center justify-end gap-4 animate-[slideUp_0.4s_ease-out]">
+    <div class="flex flex-col sm:flex-row gap-3">
+        <form method="get" class="flex flex-col sm:flex-row gap-2">
+            <div class="relative">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search expenses..."
+                       class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary w-full sm:w-48 transition-shadow">
+                <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
+            </div>
+            <div class="relative">
+                <select name="category" onchange="this.form.submit()" class="appearance-none pl-4 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white text-gray-700 w-full sm:w-40">
+                    <option value="">All Categories</option>
+                    {% for value, label in category_choices %}
+                    <option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </div>
+            </div>
+            <div class="relative">
+                <select name="method" onchange="this.form.submit()" class="appearance-none pl-4 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white text-gray-700 w-full sm:w-40">
+                    <option value="">All Methods</option>
+                    <option value="Cash" {% if selected_method == 'Cash' %}selected{% endif %}>Cash</option>
+                    <option value="Bank Transfer" {% if selected_method == 'Bank Transfer' %}selected{% endif %}>Bank Transfer</option>
+                    <option value="Online" {% if selected_method == 'Online' %}selected{% endif %}>Online</option>
+                    <option value="UPI" {% if selected_method == 'UPI' %}selected{% endif %}>UPI</option>
+                </select>
+                <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </div>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium transition-colors sm:hidden">
+                <i class="fas fa-filter"></i> Filter
+            </button>
+        </form>
+        <div class="flex gap-2">
+            <a href="{% url 'accounts_overview' %}" class="px-4 py-2 bg-white border border-blue-600 text-blue-700 rounded-xl hover:bg-blue-50 font-medium transition-colors flex items-center gap-2">
+                <i class="fas fa-chart-pie"></i> Accounts
+            </a>
+            <a href="{% url 'expense_add' %}" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 font-medium shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 flex items-center gap-2">
+                <i class="fas fa-plus"></i> Add Expense
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if search_query or selected_category or selected_method %}
+<div class="mb-4 px-4 py-2 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-sm flex items-center justify-between">
+    <span>
+        <i class="fas fa-filter mr-2"></i>Filtering by:
+        {% if search_query %}"<strong>{{ search_query }}</strong>"{% endif %}
+        {% if selected_category %}<strong>{{ selected_category }}</strong>{% endif %}
+        {% if selected_method %}<strong>{{ selected_method }}</strong>{% endif %}
+    </span>
+    <a href="{% url 'expense_list' %}" class="text-blue-600 hover:text-blue-800 font-medium">Clear filter</a>
+</div>
+{% endif %}
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-[slideUp_0.5s_ease-out]">
+    {% if expenses %}
+    <!-- Desktop Table View -->
+    <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-left text-sm">
+            <thead>
+                <tr class="bg-gradient-to-r from-primary to-secondary text-white">
+                    <th class="px-6 py-4 font-semibold first:pl-8 rounded-tl-lg">Date</th>
+                    <th class="px-6 py-4 font-semibold">Title</th>
+                    <th class="px-6 py-4 font-semibold">Category</th>
+                    <th class="px-6 py-4 font-semibold">Amount</th>
+                    <th class="px-6 py-4 font-semibold">Method</th>
+                    <th class="px-6 py-4 font-semibold text-center last:pr-8 rounded-tr-lg">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for expense in expenses %}
+                <tr class="hover:bg-gray-50/80 transition-colors group">
+                    <td class="px-6 py-4 text-gray-600 first:pl-8">
+                        {{ expense.expense_date|date:"d M Y" }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div>
+                            <span class="font-medium text-gray-800">{{ expense.title }}</span>
+                            {% if expense.reference_number %}
+                            <span class="text-xs text-gray-400 block">Ref: {{ expense.reference_number }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">{{ expense.get_category_display }}</span>
+                    </td>
+                    <td class="px-6 py-4 font-bold text-red-500">
+                        {{ currency_symbol }} {{ expense.amount }}
+                    </td>
+                    <td class="px-6 py-4 text-gray-600">{{ expense.get_payment_method_display }}</td>
+                    <td class="px-6 py-4 max-w-[120px] text-center last:pr-8">
+                        <div class="flex items-center justify-center gap-2">
+                            <a href="{% url 'expense_edit' expense.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
+                            <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                                onclick="openDeleteModal('{% url 'expense_delete' expense.pk %}', '{{ expense.title|escapejs }}')"
+                                title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="md:hidden divide-y divide-gray-100">
+        {% for expense in expenses %}
+        <div class="p-4">
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <div class="min-w-0">
+                    <h4 class="font-semibold text-gray-800 text-sm">{{ expense.title }}</h4>
+                    <p class="text-xs text-gray-500">
+                        {% if expense.reference_number %}Ref: {{ expense.reference_number }} &middot; {% endif %}
+                        <span class="px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded text-[11px] font-medium">{{ expense.get_category_display }}</span>
+                    </p>
+                </div>
+                <span class="font-bold text-red-500 text-sm shrink-0">{{ currency_symbol }} {{ expense.amount }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3 text-xs text-gray-400">
+                    <span><i class="fas fa-calendar mr-1"></i>{{ expense.expense_date|date:"d M Y" }}</span>
+                    <span><i class="fas fa-credit-card mr-1"></i>{{ expense.get_payment_method_display }}</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <a href="{% url 'expense_edit' expense.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
+                    <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                        onclick="openDeleteModal('{% url 'expense_delete' expense.pk %}', '{{ expense.title|escapejs }}')" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% include 'management/components/pagination.html' with page_obj=expenses %}
+
+    {% else %}
+    <div class="text-center py-12">
+        <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-400">
+            <i class="fas fa-receipt text-4xl"></i>
+        </div>
+        {% if search_query %}
+        <h3 class="text-xl font-bold text-gray-800 mb-1">No Expenses Found</h3>
+        <p class="text-gray-500 mb-6">No expenses match your search "{{ search_query }}"</p>
+        <a href="{% url 'expense_list' %}" class="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium inline-flex items-center gap-2">
+            <i class="fas fa-times"></i> Clear Search
+        </a>
+        {% else %}
+        <h3 class="text-xl font-bold text-gray-800 mb-1">No Expenses Recorded</h3>
+        <p class="text-gray-500 mb-6">Start tracking your organization's expenses here.</p>
+        <a href="{% url 'expense_add' %}" class="px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium inline-flex items-center gap-2">
+            <i class="fas fa-plus"></i> Record First Expense
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+{% include 'management/components/delete_modal.html' %}
+{% endblock %}

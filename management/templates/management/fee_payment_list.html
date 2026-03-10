@@ -54,7 +54,8 @@
 
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-[slideUp_0.5s_ease-out]">
     {% if payments %}
-    <div class="overflow-x-auto">
+    <!-- Desktop Table View -->
+    <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-left text-sm">
             <thead>
                 <tr class="bg-gradient-to-r from-primary to-secondary text-white">
@@ -79,9 +80,9 @@
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-600 font-bold text-xs">
-                                {{ payment.student.first_name|first }}
+                                {{ payment.student.full_name|first }}
                             </div>
-                            <span class="font-medium text-gray-800">{{ payment.student.first_name }} {{ payment.student.last_name }}</span>
+                            <span class="font-medium text-gray-800">{{ payment.student.full_name }}</span>
                         </div>
                     </td>
                     <td class="px-6 py-4 text-gray-600">
@@ -108,6 +109,41 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="md:hidden divide-y divide-gray-100">
+        {% for payment in payments %}
+        <div class="p-4">
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600 font-bold text-sm shrink-0">
+                        {{ payment.student.full_name|first }}
+                    </div>
+                    <div class="min-w-0">
+                        <h4 class="font-semibold text-gray-800 text-sm">{{ payment.student.full_name }}</h4>
+                        <p class="text-xs text-gray-500">
+                            <span class="text-primary font-medium">#{{ payment.receipt_number|default:"-" }}</span>
+                            {% if payment.batch %}&middot; {{ payment.batch.course.course_code }} - {{ payment.batch.batch_name }}{% endif %}
+                        </p>
+                    </div>
+                </div>
+                <span class="font-bold text-gray-800 text-sm shrink-0">{{ currency_symbol }} {{ payment.amount }}</span>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-gray-400 pl-[52px] mb-2">
+                <span><i class="fas fa-calendar mr-1"></i>{{ payment.payment_date|date:"d M Y" }}</span>
+                <span><i class="fas fa-credit-card mr-1"></i>{{ payment.get_payment_method_display }}</span>
+            </div>
+            <div class="flex items-center gap-2 pl-[52px]">
+                <a href="{% url 'print_receipt' payment.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors" target="_blank" title="Print Receipt"><i class="fas fa-print"></i></a>
+                <a href="{% url 'fee_payment_edit' payment.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
+                <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                    onclick="openDeleteModal('{% url 'fee_payment_delete' payment.pk %}', 'Payment #{{ payment.receipt_number|escapejs }}')" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
     </div>
 
     {% include 'management/components/pagination.html' with page_obj=payments %}

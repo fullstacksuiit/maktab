@@ -6,35 +6,35 @@
 {% block content %}
 <div class="animate-[slideUp_0.4s_ease-out]">
     <!-- Welcome Section - Mobile Optimized -->
-    <div class="bg-gradient-to-br from-primary via-secondary to-primary rounded-2xl sm:rounded-3xl mb-6 sm:mb-8 text-white relative overflow-hidden shadow-xl shadow-primary/30">
-        <div class="absolute top-0 right-0 -mr-16 -mt-16 w-48 sm:w-64 h-48 sm:h-64 bg-white/10 rounded-full blur-3xl"></div>
-        <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-32 sm:w-48 h-32 sm:h-48 bg-gold/20 rounded-full blur-3xl"></div>
-        <div class="absolute top-1/2 right-1/4 w-20 h-20 bg-white/5 rounded-full blur-2xl"></div>
+    <div class="bg-gradient-to-br from-primary via-secondary to-primary rounded-xl sm:rounded-2xl mb-5 sm:mb-6 text-white relative overflow-hidden shadow-lg shadow-primary/20">
+        <div class="absolute top-0 right-0 -mr-12 -mt-12 w-32 sm:w-40 h-32 sm:h-40 bg-white/10 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-0 left-0 -ml-12 -mb-12 w-24 sm:w-32 h-24 sm:h-32 bg-gold/20 rounded-full blur-3xl"></div>
 
-        <div class="relative z-10 p-5 sm:p-8">
-            <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2 flex items-center gap-2 sm:gap-3">
-                <i class="fas fa-mosque text-gold"></i>
+        <div class="relative z-10 px-4 pt-3.5 pb-3 sm:px-6 sm:pt-5 sm:pb-4">
+            <h1 class="text-lg sm:text-xl lg:text-2xl font-bold mb-0.5 flex items-center gap-2">
+                <i class="fas fa-mosque text-gold text-base sm:text-lg"></i>
                 <span>Assalamu Alaikum, {{ user.username }}!</span>
             </h1>
-            <p class="text-white/80 text-sm sm:text-base lg:text-lg">
+            <p class="text-white/80 text-xs sm:text-sm">
                 Here's what's happening at <strong class="text-gold">{{ user.organization.org_name }}</strong> today.
+                <span class="urdu text-white/90 text-sm sm:text-base ml-1">آج کی سرگرمیاں</span>
             </p>
         </div>
 
         <!-- Hadith of the Hour - Marquee -->
         <div class="relative z-10 border-t border-white/15">
-            <div class="flex items-center h-9 sm:h-10 overflow-hidden">
-                <div class="flex-shrink-0 flex items-center gap-1.5 pl-4 sm:pl-6 pr-3 h-full bg-white/10 border-r border-white/10">
-                    <i class="fas fa-quran text-gold text-[10px] sm:text-xs"></i>
-                    <span class="text-[9px] sm:text-[10px] font-bold text-gold/90 uppercase tracking-wider whitespace-nowrap">Hadith</span>
+            <div class="flex items-center h-7 sm:h-8 overflow-hidden">
+                <div class="flex-shrink-0 flex items-center gap-1 pl-3 sm:pl-4 pr-2.5 h-full bg-white/10 border-r border-white/10">
+                    <i class="fas fa-quran text-gold text-[9px] sm:text-[10px]"></i>
+                    <span class="text-[8px] sm:text-[9px] font-bold text-gold/90 uppercase tracking-wider whitespace-nowrap">Hadith</span>
                 </div>
                 <div class="flex-1 overflow-hidden relative">
-                    <div id="hadith-marquee" class="flex items-center gap-6 whitespace-nowrap animate-[marquee_30s_linear_infinite] pl-4">
-                        <span id="hadith-text-eng" class="text-xs sm:text-sm text-white/90 italic"></span>
+                    <div id="hadith-marquee" class="flex items-center gap-6 whitespace-nowrap animate-[marquee_30s_linear_infinite] pl-3">
+                        <span id="hadith-text-eng" class="text-[11px] sm:text-xs text-white/90 italic"></span>
                         <span class="text-gold/50">|</span>
-                        <span id="hadith-text-urd" class="text-xs sm:text-sm text-white/75" style="font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif;"></span>
+                        <span id="hadith-text-urd" class="text-[11px] sm:text-xs text-white/75" style="font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif;"></span>
                         <span class="text-gold/50">|</span>
-                        <span id="hadith-reference" class="text-[10px] sm:text-xs text-gold/70 font-semibold"></span>
+                        <span id="hadith-reference" class="text-[9px] sm:text-[10px] text-gold/70 font-semibold"></span>
                     </div>
                 </div>
             </div>
@@ -47,116 +47,96 @@
         </style>
     </div>
 
-    <!-- Quick Stats Grid - Beautiful Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
-        <!-- Courses Card -->
-        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-xl hover:shadow-blue-500/10 border border-gray-100 hover:border-blue-200 transition-all duration-300 group relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-50 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div class="relative z-10">
-                <div class="flex items-center justify-between mb-3 sm:mb-4">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-base sm:text-xl shadow-lg shadow-blue-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                        <i class="fas fa-book-quran"></i>
-                    </div>
-                    <span class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:block">Courses</span>
+    <!-- Quick Stats Grid - Compact Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-3 sm:mb-4">
+        <!-- Students -->
+        <a href="{% url 'student_list' %}" class="bg-white p-3 sm:p-4 rounded-xl shadow-sm hover:shadow-md border border-gray-100 hover:border-purple-200 transition-all group">
+            <div class="flex items-center gap-2.5 sm:gap-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center text-sm sm:text-base shadow-md group-hover:scale-105 transition-transform">
+                    <i class="fas fa-user-graduate"></i>
                 </div>
-                <div class="flex items-end justify-between">
-                    <div>
-                        <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 group-hover:text-blue-600 transition-colors">{{ total_courses|default:0 }}</h3>
-                        <p class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Active Courses</p>
-                    </div>
-                    <a href="{% url 'course_list' %}" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:scale-110 transition-all duration-300 shadow-sm">
-                        <i class="fas fa-arrow-right text-[10px] sm:text-xs"></i>
-                    </a>
+                <div class="min-w-0">
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 leading-tight group-hover:text-purple-600 transition-colors">{{ total_students|default:0 }}</h3>
+                    <p class="text-[10px] sm:text-xs text-gray-500 truncate">Students <span class="urdu text-gray-600">طلباء</span>{% if orphan_count %} <span class="text-purple-400">({{ orphan_count }} orphan{{ orphan_count|pluralize }})</span>{% endif %}</p>
                 </div>
             </div>
-        </div>
-
-        <!-- Batches Card -->
-        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-xl hover:shadow-teal-500/10 border border-gray-100 hover:border-teal-200 transition-all duration-300 group relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-teal-50 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div class="relative z-10">
-                <div class="flex items-center justify-between mb-3 sm:mb-4">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 text-white flex items-center justify-center text-base sm:text-xl shadow-lg shadow-teal-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                        <i class="fas fa-layer-group"></i>
-                    </div>
-                    <span class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:block">Batches</span>
+        </a>
+        <!-- Staff -->
+        <a href="{% url 'staff_list' %}" class="bg-white p-3 sm:p-4 rounded-xl shadow-sm hover:shadow-md border border-gray-100 hover:border-orange-200 transition-all group">
+            <div class="flex items-center gap-2.5 sm:gap-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white flex items-center justify-center text-sm sm:text-base shadow-md group-hover:scale-105 transition-transform">
+                    <i class="fas fa-users-cog"></i>
                 </div>
-                <div class="flex items-end justify-between">
-                    <div>
-                        <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 group-hover:text-teal-600 transition-colors">{{ total_batches|default:0 }}</h3>
-                        <p class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Active Batches</p>
-                    </div>
-                    <a href="{% url 'batch_list' %}" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-teal-600 hover:text-white hover:border-teal-600 hover:scale-110 transition-all duration-300 shadow-sm">
-                        <i class="fas fa-arrow-right text-[10px] sm:text-xs"></i>
-                    </a>
+                <div>
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 leading-tight group-hover:text-orange-600 transition-colors">{{ total_staff|default:0 }}</h3>
+                    <p class="text-[10px] sm:text-xs text-gray-500">Staff <span class="urdu text-gray-600">عملہ</span></p>
                 </div>
             </div>
-        </div>
-
-        <!-- Students Card -->
-        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-xl hover:shadow-purple-500/10 border border-gray-100 hover:border-purple-200 transition-all duration-300 group relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-purple-50 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div class="relative z-10">
-                <div class="flex items-center justify-between mb-3 sm:mb-4">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center text-base sm:text-xl shadow-lg shadow-purple-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                        <i class="fas fa-user-graduate"></i>
-                    </div>
-                    <span class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:block">Students</span>
+        </a>
+        <!-- Courses -->
+        <a href="{% url 'course_list' %}" class="bg-white p-3 sm:p-4 rounded-xl shadow-sm hover:shadow-md border border-gray-100 hover:border-blue-200 transition-all group">
+            <div class="flex items-center gap-2.5 sm:gap-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-sm sm:text-base shadow-md group-hover:scale-105 transition-transform">
+                    <i class="fas fa-book-quran"></i>
                 </div>
-                <div class="flex items-end justify-between">
-                    <div>
-                        <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 group-hover:text-purple-600 transition-colors">{{ total_students|default:0 }}</h3>
-                        <p class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Enrolled</p>
-                    </div>
-                    <a href="{% url 'student_list' %}" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-purple-600 hover:text-white hover:border-purple-600 hover:scale-110 transition-all duration-300 shadow-sm">
-                        <i class="fas fa-arrow-right text-[10px] sm:text-xs"></i>
-                    </a>
+                <div>
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 leading-tight group-hover:text-blue-600 transition-colors">{{ total_courses|default:0 }}</h3>
+                    <p class="text-[10px] sm:text-xs text-gray-500">Courses <span class="urdu text-gray-600">کورسز</span> <span class="text-gray-400">({{ total_batches|default:0 }} batch{{ total_batches|pluralize:"es" }})</span></p>
                 </div>
             </div>
-        </div>
-
-        <!-- Staff Card -->
-        <div class="bg-white p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-xl hover:shadow-orange-500/10 border border-gray-100 hover:border-orange-200 transition-all duration-300 group relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-orange-50 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div class="relative z-10">
-                <div class="flex items-center justify-between mb-3 sm:mb-4">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white flex items-center justify-center text-base sm:text-xl shadow-lg shadow-orange-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                        <i class="fas fa-users-cog"></i>
-                    </div>
-                    <span class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:block">Staff</span>
+        </a>
+        <!-- Pending Fees -->
+        <a href="{% url 'fee_payment_list' %}" class="bg-gradient-to-br from-red-50 to-orange-50 p-3 sm:p-4 rounded-xl shadow-sm hover:shadow-md border border-red-100 hover:border-red-200 transition-all group">
+            <div class="flex items-center gap-2.5 sm:gap-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white flex items-center justify-center text-sm sm:text-base shadow-md group-hover:scale-105 transition-transform">
+                    <i class="fas fa-exclamation-triangle"></i>
                 </div>
-                <div class="flex items-end justify-between">
-                    <div>
-                        <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 group-hover:text-orange-600 transition-colors">{{ total_staff|default:0 }}</h3>
-                        <p class="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1">Total Staff</p>
-                    </div>
-                    <a href="{% url 'staff_list' %}" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-orange-600 hover:text-white hover:border-orange-600 hover:scale-110 transition-all duration-300 shadow-sm">
-                        <i class="fas fa-arrow-right text-[10px] sm:text-xs"></i>
-                    </a>
+                <div class="min-w-0">
+                    <h3 class="text-lg sm:text-xl font-bold text-red-600 leading-tight truncate">{{ currency_symbol }} {{ total_pending|default:0 }}</h3>
+                    <p class="text-[10px] sm:text-xs text-red-400">Fees Due <span class="urdu text-red-500">واجب الادا فیس</span></p>
                 </div>
             </div>
-        </div>
+        </a>
+    </div>
 
-        <!-- Revenue Card - Premium Look -->
-        <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl hover:shadow-gold/20 transition-all duration-300 group text-white relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-gold/10 rounded-full blur-2xl -mr-8 -mt-8"></div>
-            <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-xl -ml-8 -mb-8"></div>
-            <div class="absolute inset-0 bg-gradient-to-r from-gold/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div class="relative z-10">
-                <div class="flex items-center justify-between mb-3 sm:mb-4">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-gold to-yellow-500 text-gray-900 flex items-center justify-center text-base sm:text-xl shadow-lg shadow-gold/40 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+    <!-- Revenue Row - Compact -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
+        <!-- Total Revenue -->
+        <div class="bg-gradient-to-r from-gray-900 to-gray-800 p-3 sm:p-4 rounded-xl shadow-md text-white relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-gold/10 rounded-full blur-2xl -mr-6 -mt-6"></div>
+            <div class="relative z-10 flex items-center justify-between">
+                <div class="flex items-center gap-2.5 sm:gap-3">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-gold to-yellow-500 text-gray-900 flex items-center justify-center text-sm sm:text-base shadow-md">
                         <i class="fas fa-coins"></i>
                     </div>
-                    <span class="text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider hidden sm:block">Revenue</span>
-                </div>
-                <div class="flex items-end justify-between">
                     <div>
-                        <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gold group-hover:text-yellow-400 transition-colors">{{ currency_symbol }} {{ total_revenue|default:0 }}</h3>
-                        <p class="text-[10px] sm:text-xs text-gray-400 mt-0.5 sm:mt-1">Total Revenue</p>
+                        <p class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider">Total Revenue</p>
+                        <h3 class="text-lg sm:text-xl font-bold text-gold leading-tight">{{ currency_symbol }} {{ total_revenue|default:0 }}</h3>
                     </div>
-                    <a href="{% url 'fee_payment_list' %}" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-gray-400 hover:bg-gold hover:text-gray-900 hover:border-gold hover:scale-110 transition-all duration-300">
-                        <i class="fas fa-arrow-right text-[10px] sm:text-xs"></i>
-                    </a>
+                </div>
+                <a href="{% url 'fee_payment_list' %}" class="w-7 h-7 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-gray-400 hover:bg-gold hover:text-gray-900 hover:border-gold transition-all">
+                    <i class="fas fa-arrow-right text-[10px]"></i>
+                </a>
+            </div>
+        </div>
+        <!-- This Month -->
+        <div class="bg-gradient-to-r from-emerald-600 to-teal-700 p-3 sm:p-4 rounded-xl shadow-md text-white relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full blur-2xl -mr-6 -mt-6"></div>
+            <div class="relative z-10">
+                <div class="flex items-center gap-2.5 sm:gap-3">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white/20 text-white flex items-center justify-center text-sm sm:text-base shadow-md">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] sm:text-xs font-bold text-emerald-200 uppercase tracking-wider">This Month</p>
+                        <h3 class="text-lg sm:text-xl font-bold text-white leading-tight">{{ currency_symbol }} {{ month_revenue|default:0 }}</h3>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 mt-1.5 pt-1.5 border-t border-white/15 text-[10px] sm:text-xs text-emerald-200">
+                    {% if month_revenue > last_month_revenue %}<i class="fas fa-arrow-up text-emerald-300"></i>{% elif month_revenue < last_month_revenue %}<i class="fas fa-arrow-down text-red-300"></i>{% endif %}
+                    <span>vs {{ currency_symbol }} {{ last_month_revenue|default:0 }} last month</span>
+                    <span class="text-white/30">|</span>
+                    <span><i class="fas fa-user-plus text-emerald-300"></i> {{ month_enrollments|default:0 }} new{% if last_month_enrollments %} ({{ last_month_enrollments }} prev){% endif %}</span>
                 </div>
             </div>
         </div>
@@ -170,7 +150,7 @@
                 <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-white text-xs sm:text-sm shadow-md">
                     <i class="fas fa-chart-pie"></i>
                 </span>
-                Payment Breakdown
+                Payment Breakdown <span class="urdu text-gray-600 text-base font-normal">ادائیگی کی تفصیل</span>
             </h2>
             <a href="{% url 'fee_payment_list' %}" class="text-xs text-primary font-medium hover:underline">View All</a>
         </div>
@@ -219,7 +199,7 @@
                     <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-gold to-yellow-500 flex items-center justify-center text-white text-sm shadow-md">
                         <i class="fas fa-bolt"></i>
                     </span>
-                    Quick Actions
+                    Quick Actions <span class="urdu text-gray-600 text-base font-normal">فوری اقدامات</span>
                 </h2>
                 <div class="grid grid-cols-4 gap-2 sm:gap-4">
                     <a href="{% url 'student_add' %}" class="flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border border-gray-100 hover:border-green-300 hover:bg-gradient-to-br hover:from-green-50 hover:to-white hover:shadow-md hover:shadow-green-500/10 transition-all duration-300 group">
@@ -258,7 +238,7 @@
                             <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-xs shadow-sm">
                                 <i class="fas fa-user-graduate"></i>
                             </span>
-                            New Enrollments
+                            New Enrollments <span class="urdu text-gray-600 text-base font-normal">نئے داخلے</span>
                         </h3>
                         <span class="text-[10px] sm:text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Recent</span>
                     </div>
@@ -267,10 +247,10 @@
                             {% for student in recent_students %}
                             <div class="p-3 sm:p-4 flex items-center gap-3 hover:bg-gradient-to-r hover:from-gray-50 hover:to-white transition-colors group">
                                 <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center font-bold text-[10px] sm:text-xs shadow-md group-hover:scale-105 transition-transform">
-                                    {{ student.first_name|first }}{{ student.last_name|first }}
+                                    {{ student.full_name|first }}
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-xs sm:text-sm font-semibold text-gray-800 truncate">{{ student.first_name }} {{ student.last_name }}</p>
+                                    <p class="text-xs sm:text-sm font-semibold text-gray-800 truncate">{{ student.full_name }}</p>
                                     <p class="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1">
                                         <i class="fas fa-id-card text-gray-400"></i> {{ student.student_id }}
                                     </p>
@@ -298,7 +278,7 @@
                             <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-gold to-yellow-500 text-white flex items-center justify-center text-xs shadow-sm">
                                 <i class="fas fa-file-invoice-dollar"></i>
                             </span>
-                            Recent Payments
+                            Recent Payments <span class="urdu text-gray-600 text-base font-normal">حالیہ ادائیگیاں</span>
                         </h3>
                         <span class="text-[10px] sm:text-xs font-bold bg-gold/20 text-gold px-2 py-0.5 rounded-full">Recent</span>
                     </div>
@@ -310,7 +290,7 @@
                                     <i class="fas fa-receipt"></i>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-xs sm:text-sm font-semibold text-gray-800 truncate">{{ payment.student.first_name }} {{ payment.student.last_name }}</p>
+                                    <p class="text-xs sm:text-sm font-semibold text-gray-800 truncate">{{ payment.student.full_name }}</p>
                                     <p class="text-[10px] sm:text-xs text-gray-500">
                                         {{ payment.payment_date|date:"M d, Y" }}
                                     </p>
@@ -331,6 +311,84 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Batch-wise Attendance Today -->
+            {% if batch_attendance_today %}
+            <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md border border-gray-100 overflow-hidden transition-shadow">
+                <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-r from-blue-500/10 to-transparent flex items-center justify-between">
+                    <h3 class="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+                        <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-xs shadow-sm">
+                            <i class="fas fa-clipboard-list"></i>
+                        </span>
+                        Today's Batch Attendance <span class="urdu text-gray-600 text-base font-normal">آج کی حاضری</span>
+                    </h3>
+                    <a href="{% url 'attendance_mark' %}" class="text-xs text-primary font-medium hover:underline">Mark Attendance</a>
+                </div>
+                <div class="p-3 sm:p-4">
+                    <div class="space-y-2">
+                        {% for batch in batch_attendance_today %}
+                        <div class="flex items-center gap-3 p-2.5 sm:p-3 rounded-xl border {% if batch.today_marked == 0 %}border-orange-200 bg-orange-50/50{% elif batch.today_present == batch.today_marked %}border-green-200 bg-green-50/50{% else %}border-gray-100 bg-gray-50/50{% endif %} transition-all">
+                            <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold text-[10px] sm:text-xs shadow-sm">
+                                {{ batch.course.course_code|slice:":2"|upper }}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs sm:text-sm font-semibold text-gray-800 truncate">{{ batch.batch_name }}</p>
+                                <p class="text-[10px] sm:text-xs text-gray-500">{{ batch.course.course_name }} - {{ batch.student_count }} students</p>
+                                {% if batch.teachers.all %}<p class="text-[10px] sm:text-xs text-primary/70 truncate"><i class="fas fa-chalkboard-teacher text-[8px]"></i> {% for t in batch.teachers.all %}{{ t.first_name }} {{ t.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+                            </div>
+                            <div class="text-right">
+                                {% if batch.today_marked == 0 %}
+                                <a href="{% url 'quick_attendance' batch.pk %}" class="inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded-lg hover:bg-orange-200 transition-colors">
+                                    <i class="fas fa-clock text-[8px]"></i> Not Marked
+                                </a>
+                                {% else %}
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs sm:text-sm font-bold {% if batch.today_present == batch.today_marked %}text-green-600{% else %}text-gray-700{% endif %}">{{ batch.today_present }}/{{ batch.today_marked }}</span>
+                                    <span class="text-[10px] sm:text-xs font-bold {% if batch.today_present == batch.today_marked %}text-green-500 bg-green-100{% else %}text-blue-500 bg-blue-100{% endif %} px-1.5 py-0.5 rounded">
+                                        {% widthratio batch.today_present batch.today_marked 100 %}%
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Students with Highest Pending Fees -->
+            {% if students_with_pending %}
+            <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md border border-gray-100 overflow-hidden transition-shadow">
+                <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-r from-red-500/10 to-transparent flex items-center justify-between">
+                    <h3 class="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+                        <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white flex items-center justify-center text-xs shadow-sm">
+                            <i class="fas fa-hand-holding-usd"></i>
+                        </span>
+                        Top Pending Fees <span class="urdu text-gray-600 text-base font-normal">زیادہ واجب الادا فیس</span>
+                    </h3>
+                    <a href="{% url 'fee_payment_add' %}" class="text-xs text-primary font-medium hover:underline">Collect Payment</a>
+                </div>
+                <div class="divide-y divide-gray-50">
+                    {% for student in students_with_pending %}
+                    <div class="p-3 sm:p-4 flex items-center gap-3 hover:bg-gradient-to-r hover:from-red-50/50 hover:to-white transition-colors group">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-red-100 to-red-200 text-red-600 flex items-center justify-center font-bold text-[10px] sm:text-xs shadow-sm border border-red-200 group-hover:scale-105 transition-transform">
+                            {{ student.full_name|first }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs sm:text-sm font-semibold text-gray-800 truncate">{{ student.full_name }}</p>
+                            <p class="text-[10px] sm:text-xs text-gray-500 flex items-center gap-1">
+                                <i class="fas fa-id-card text-gray-400"></i> {{ student.student_id }}
+                            </p>
+                        </div>
+                        <span class="text-xs sm:text-sm font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-lg border border-red-100">
+                            {{ currency_symbol }} {{ student.pending_amount }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Sidebar / Profile Column - Mobile Optimized -->
@@ -342,7 +400,7 @@
                         <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-gold to-yellow-500 text-white flex items-center justify-center text-xs shadow-sm">
                             <i class="fas fa-bolt"></i>
                         </span>
-                        Quick Attendance
+                        Quick Attendance <span class="urdu text-gray-600 text-base font-normal">فوری حاضری</span>
                     </h3>
                     <span class="text-[10px] sm:text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 sm:py-1 rounded-lg flex items-center gap-1">
                         <i class="fas fa-calendar-day text-[8px]"></i> Today
@@ -423,6 +481,7 @@
                             <div class="flex-1 min-w-0">
                                 <p class="text-xs sm:text-sm font-semibold text-gray-800 truncate group-hover:text-primary transition-colors">{{ batch.course.course_name }}</p>
                                 <p class="text-[10px] sm:text-xs text-gray-500">{{ batch.batch_name }} - {{ batch.student_count }} students</p>
+                                {% if batch.teachers.all %}<p class="text-[10px] sm:text-xs text-primary/60 truncate"><i class="fas fa-chalkboard-teacher text-[8px]"></i> {% for t in batch.teachers.all %}{{ t.first_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
                             </div>
                             <div class="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-primary group-hover:text-white transition-all">
                                 <i class="fas fa-chevron-right text-[10px]"></i>
@@ -460,7 +519,7 @@
                     <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-xs shadow-sm">
                         <i class="fas fa-mosque"></i>
                     </span>
-                    Salah Times
+                    Salah Times <span class="urdu text-gray-600 text-base font-normal">نماز کے اوقات</span>
                 </h3>
                 <span id="salah-date-badge" class="text-[10px] sm:text-xs font-bold bg-primary/10 text-primary px-2 py-0.5 sm:py-1 rounded-lg flex items-center gap-1">
                     <i class="fas fa-clock text-[8px]"></i> Today
@@ -498,7 +557,7 @@
                     <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-700 text-white flex items-center justify-center text-xs shadow-sm">
                         <i class="fas fa-moon"></i>
                     </span>
-                    Islamic Calendar
+                    Islamic Calendar <span class="urdu text-gray-600 text-base font-normal">اسلامی کیلنڈر</span>
                 </h3>
                 <span class="text-[10px] sm:text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 sm:py-1 rounded-lg flex items-center gap-1">
                     <i class="fas fa-star-and-crescent text-[8px]"></i> Upcoming

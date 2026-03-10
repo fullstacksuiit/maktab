@@ -1,0 +1,140 @@
+{% extends 'management/base_tailwind.html' %}
+
+{% block title %}{{ action }} Expense - Maktab{% endblock %}
+{% block header_title %}{{ action }} Expense{% endblock %}
+
+{% block breadcrumb %}
+<nav class="mb-2 text-sm" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5 text-gray-500">
+        <li><a href="{% url 'expense_list' %}" class="hover:text-primary transition-colors">Expenses</a></li>
+        <li><i class="fas fa-chevron-right text-[10px] text-gray-300"></i></li>
+        <li class="text-gray-800 font-medium">{{ action }} Expense</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="animate-[slideUp_0.4s_ease-out]">
+
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-primary to-secondary px-6 py-4">
+                <h5 class="text-white font-semibold flex items-center gap-2">
+                    <i class="fas fa-receipt"></i> Expense Details
+                </h5>
+            </div>
+            <div class="p-6 md:p-8">
+                <form method="post" novalidate class="space-y-6">
+                    {% csrf_token %}
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.title.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Title *
+                            </label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.title.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="{{ form.category.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Category *
+                            </label>
+                            {{ form.category }}
+                            {% if form.category.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.category.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.amount.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Amount *
+                            </label>
+                            {{ form.amount }}
+                            {% if form.amount.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.amount.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="{{ form.expense_date.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Date *
+                            </label>
+                            {{ form.expense_date }}
+                            {% if form.expense_date.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.expense_date.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.payment_method.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Payment Method *
+                            </label>
+                            {{ form.payment_method }}
+                            {% if form.payment_method.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.payment_method.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="{{ form.reference_number.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Reference Number <span class="text-gray-500 font-normal ml-1">(Optional)</span>
+                            </label>
+                            {{ form.reference_number }}
+                            {% if form.reference_number.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.reference_number.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="{{ form.description.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Description <span class="text-gray-500 font-normal ml-1">(Optional)</span>
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                <div>{% for error in form.description.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="pt-6 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                        <a href="{% url 'expense_list' %}" class="px-6 py-2.5 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors text-center">
+                            Cancel
+                        </a>
+                        <button type="submit" class="px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium text-center">
+                            <i class="fas fa-save mr-2"></i> {{ action }} Expense
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

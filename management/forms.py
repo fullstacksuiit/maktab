@@ -4,7 +4,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from .models import (User, Organization, Course, Batch, Student, Staff, Attendance, FeePayment,
                      BehaviorNote, AdmissionApplication, Event, LeaveType, LeaveRequest,
-                     SalaryComponent, PayrollComponent)
+                     SalaryComponent, PayrollComponent, Expense)
 from .widgets import (
     styled_text_input, styled_email_input, styled_password_input,
     styled_textarea, styled_date_input, styled_number_input,
@@ -169,14 +169,13 @@ class StudentForm(forms.ModelForm):
 
     class Meta:
         model = Student
-        fields = ['student_id', 'first_name', 'last_name', 'email', 'phone',
+        fields = ['student_id', 'full_name', 'email', 'phone',
                   'date_of_birth', 'gender', 'address', 'city', 'state', 'pin_code',
                   'is_orphan', 'guardian_name', 'guardian_phone',
                   'batches', 'enrollment_date']
         widgets = {
             'student_id': styled_text_input('Auto-generated if left blank'),
-            'first_name': styled_text_input('Enter first name'),
-            'last_name': styled_text_input('Enter last name'),
+            'full_name': styled_text_input('Enter full name'),
             'email': styled_email_input('Enter email address (optional)'),
             'phone': styled_text_input('Enter phone number'),
             'gender': styled_select(),
@@ -749,3 +748,34 @@ class PayrollComponentForm(forms.ModelForm):
                 organization=organization, is_active=True
             )
         self.fields['salary_component'].required = False
+
+
+class ExpenseForm(forms.ModelForm):
+    expense_date = forms.DateField(
+        widget=styled_date_input(max_date=date.today()),
+        initial=date.today
+    )
+
+    class Meta:
+        model = Expense
+        fields = ['title', 'category', 'amount', 'expense_date', 'payment_method', 'reference_number', 'description']
+        widgets = {
+            'title': styled_text_input('e.g. Monthly Rent, Electricity Bill'),
+            'category': styled_select(),
+            'amount': styled_number_input('Enter amount', step='0.01', min_val=0.01),
+            'payment_method': styled_select(),
+            'reference_number': styled_text_input('Transaction / Reference ID (optional)'),
+            'description': styled_textarea('Optional notes', rows=3),
+        }
+
+    def clean_expense_date(self):
+        expense_date = self.cleaned_data.get('expense_date')
+        if expense_date and expense_date > date.today():
+            raise forms.ValidationError('Expense date cannot be in the future.')
+        return expense_date
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount is not None and amount <= 0:
+            raise forms.ValidationError('Amount must be greater than zero.')
+        return amount

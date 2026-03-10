@@ -114,9 +114,9 @@
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-xs">
-                                {{ record.student.first_name|first }}
+                                {{ record.student.full_name|first }}
                             </div>
-                            <span class="font-medium text-gray-800">{{ record.student.first_name }} {{ record.student.last_name }}</span>
+                            <span class="font-medium text-gray-800">{{ record.student.full_name }}</span>
                         </div>
                     </td>
                     <td class="px-6 py-4">
@@ -158,10 +158,10 @@
             <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-2.5">
                     <div class="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-xs shrink-0">
-                        {{ record.student.first_name|first }}{{ record.student.last_name|first }}
+                        {{ record.student.full_name|first }}
                     </div>
                     <div class="min-w-0">
-                        <h4 class="font-semibold text-gray-800 text-sm">{{ record.student.first_name }} {{ record.student.last_name }}</h4>
+                        <h4 class="font-semibold text-gray-800 text-sm">{{ record.student.full_name }}</h4>
                         {% if record.batch %}
                         <p class="text-xs text-gray-500">{{ record.batch.course.course_code }} &middot; {{ record.batch.batch_name }}</p>
                         {% endif %}

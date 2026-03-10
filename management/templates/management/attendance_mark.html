@@ -110,10 +110,10 @@
                         <div class="flex items-center gap-3 flex-1 min-w-0">
                             <span class="text-gray-400 text-xs font-medium w-5 text-right shrink-0">{{ forloop.counter }}</span>
                             <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-xs font-bold shadow-sm shrink-0">
-                                {{ item.student.first_name|first }}{{ item.student.last_name|first }}
+                                {{ item.student.full_name|first }}
                             </div>
                             <div class="min-w-0">
-                                <h4 class="font-semibold text-gray-800 text-sm truncate">{{ item.student.first_name }} {{ item.student.last_name }}</h4>
+                                <h4 class="font-semibold text-gray-800 text-sm truncate">{{ item.student.full_name }}</h4>
                                 <p class="text-[11px] text-gray-400 font-medium">{{ item.student.student_id }}</p>
                             </div>
                         </div>

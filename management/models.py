@@ -271,14 +271,13 @@ class Student(models.Model):
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
     student_id = models.CharField(max_length=50, blank=True, verbose_name="Student ID")
-    first_name = models.CharField(max_length=100, verbose_name="First Name")
-    last_name = models.CharField(max_length=100, verbose_name="Last Name")
+    full_name = models.CharField(max_length=200, default='', verbose_name="Full Name")
     email = models.EmailField(blank=True, default='', verbose_name="Email Address")
     phone = models.CharField(max_length=20, verbose_name="Phone Number")
     date_of_birth = models.DateField(blank=True, null=True, verbose_name="Date of Birth")
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name="Gender")
     address = models.TextField(verbose_name="Address")
-    city = models.CharField(max_length=100, blank=True, default='', verbose_name="City")
+    city = models.CharField(max_length=100, blank=True, default='Rourkela', verbose_name="City")
     state = models.CharField(max_length=100, blank=True, default='', verbose_name="State")
     pin_code = models.CharField(max_length=10, blank=True, default='', verbose_name="Pin Code")
     is_orphan = models.BooleanField(default=False, verbose_name="Orphan")
@@ -294,7 +293,7 @@ class Student(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['organization', 'student_id']),
-            models.Index(fields=['organization', 'first_name', 'last_name']),
+            models.Index(fields=['organization', 'full_name']),
             models.Index(fields=['organization', 'email']),
             models.Index(fields=['enrollment_date']),
         ]
@@ -314,7 +313,7 @@ class Student(models.Model):
         return ', '.join(parts)
 
     def __str__(self):
-        return f"{self.student_id} - {self.first_name} {self.last_name}"
+        return f"{self.student_id} - {self.full_name}"
 
     def save(self, *args, **kwargs):
         if not self.student_id:
@@ -1007,3 +1006,48 @@ def create_default_salary_components(organization):
                 'default_amount': amount,
             }
         )
+
+
+class Expense(models.Model):
+    CATEGORY_CHOICES = [
+        ('rent', 'Rent'),
+        ('utilities', 'Utilities'),
+        ('supplies', 'Supplies / Stationery'),
+        ('maintenance', 'Maintenance / Repairs'),
+        ('transport', 'Transport'),
+        ('food', 'Food / Refreshments'),
+        ('salary_advance', 'Salary Advance'),
+        ('equipment', 'Equipment'),
+        ('marketing', 'Marketing / Advertising'),
+        ('other', 'Other'),
+    ]
+
+    PAYMENT_METHOD_CHOICES = [
+        ('Cash', 'Cash'),
+        ('Bank Transfer', 'Bank Transfer'),
+        ('Online', 'Online'),
+        ('UPI', 'UPI'),
+    ]
+
+    title = models.CharField(max_length=255, verbose_name="Title")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other', verbose_name="Category")
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Amount")
+    expense_date = models.DateField(verbose_name="Date")
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='Cash', verbose_name="Payment Method")
+    description = models.TextField(blank=True, default='', verbose_name="Description / Notes")
+    reference_number = models.CharField(max_length=50, blank=True, default='', verbose_name="Reference Number")
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='expenses')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_expenses')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-expense_date', '-created_at']
+        indexes = [
+            models.Index(fields=['organization', 'expense_date']),
+            models.Index(fields=['organization', 'category']),
+            models.Index(fields=['payment_method']),
+        ]
+
+    def __str__(self):
+        return f"{self.title} - {self.amount} ({self.get_category_display()})"

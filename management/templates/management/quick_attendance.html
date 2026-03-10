@@ -79,7 +79,7 @@
                                 {% else %}
                                     bg-gradient-to-br from-primary to-secondary text-white
                                 {% endif %}">
-                        {{ item.student.first_name|first }}{{ item.student.last_name|first }}
+                        {{ item.student.full_name|first }}
                     </div>
                     <!-- Status Icon Overlay -->
                     <div class="status-icon absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-md transition-all
@@ -102,7 +102,7 @@
 
                 <!-- Name -->
                 <div class="flex-1 min-w-0">
-                    <h3 class="font-bold text-gray-800 text-base">{{ item.student.first_name }} {{ item.student.last_name }}</h3>
+                    <h3 class="font-bold text-gray-800 text-base">{{ item.student.full_name }}</h3>
                     <p class="text-gray-500 text-sm">{{ item.student.student_id }}</p>
                 </div>
 

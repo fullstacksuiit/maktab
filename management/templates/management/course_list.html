@@ -34,7 +34,8 @@
 
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-[slideUp_0.5s_ease-out]">
     {% if courses %}
-    <div class="overflow-x-auto">
+    <!-- Desktop Table View -->
+    <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-left text-sm">
             <thead>
                 <tr class="bg-gradient-to-r from-primary to-secondary text-white">
@@ -86,6 +87,37 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="md:hidden divide-y divide-gray-100">
+        {% for course in courses %}
+        <div class="p-4">
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <div class="min-w-0">
+                    <h4 class="font-semibold text-gray-800 text-sm">{{ course.course_name }}</h4>
+                    <p class="text-xs text-gray-500">
+                        <span class="text-primary font-medium">{{ course.course_code }}</span> &middot;
+                        {{ course.duration_value }} {{ course.get_duration_unit_display }}
+                    </p>
+                </div>
+                <span class="font-bold text-gray-700 text-sm shrink-0">{{ currency_symbol }} {{ course.fees }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 text-xs">
+                    <span class="px-2 py-0.5 rounded-md bg-yellow-100 text-yellow-700 font-medium border border-yellow-200">{{ course.get_fee_period_display }}</span>
+                    <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 font-medium border border-blue-200">{{ course.student_count }} Enrolled</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <a href="{% url 'course_edit' course.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
+                    <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                        onclick="openDeleteModal('{% url 'course_delete' course.pk %}', '{{ course.course_name|escapejs }}')" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
 
     {% include 'management/components/pagination.html' with page_obj=courses %}

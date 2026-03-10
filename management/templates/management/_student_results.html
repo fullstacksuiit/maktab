@@ -1,0 +1,151 @@
+{% load pagination_tags %}
+
+{% if search_query %}
+<div class="mb-4 px-4 py-2 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-sm flex items-center justify-between">
+    <span><i class="fas fa-filter mr-2"></i>Showing results for "<strong>{{ search_query }}</strong>"</span>
+    <a href="{% url 'student_list' %}" class="text-blue-600 hover:text-blue-800 font-medium">Clear filter</a>
+</div>
+{% endif %}
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    {% if students %}
+    <!-- Desktop Table View -->
+    <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-left text-sm">
+            <thead>
+                <tr class="bg-gradient-to-r from-primary to-secondary text-white">
+                    <th class="px-6 py-4 font-semibold first:pl-8 rounded-tl-lg">Student ID</th>
+                    <th class="px-6 py-4 font-semibold">Name</th>
+                    <th class="px-6 py-4 font-semibold">Email</th>
+                    <th class="px-6 py-4 font-semibold">Phone</th>
+                    <th class="px-6 py-4 font-semibold">Batches</th>
+                    <th class="px-6 py-4 font-semibold">Total Fees</th>
+                    <th class="px-6 py-4 font-semibold text-center last:pr-8 rounded-tr-lg">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for student in students %}
+                <tr class="hover:bg-gray-50/80 transition-colors group">
+                    <td class="px-6 py-4 font-medium text-primary first:pl-8">
+                        {{ student.student_id }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                                {{ student.full_name|first }}
+                            </div>
+                            <div>
+                                <div class="font-semibold text-gray-800">{{ student.full_name }}{% if student.is_orphan %} <span class="inline-block ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-full align-middle">Orphan</span>{% endif %}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-gray-600">
+                        {{ student.email }}
+                    </td>
+                    <td class="px-6 py-4 text-gray-600">
+                        {{ student.phone }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-wrap gap-1">
+                            {% if student.batches.all %}
+                                {% for batch in student.batches.all %}
+                                    <span class="px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-xs font-medium border border-green-200" title="{{ batch.course.course_name }}">
+                                        {{ batch.course.course_code }} - {{ batch.batch_name }}
+                                    </span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 text-xs border border-gray-200">Not Enrolled</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 font-bold text-gray-700">
+                        {{ currency_symbol }} {{ student.total_fees|default:"0" }}
+                    </td>
+                    <td class="px-6 py-4 max-w-[120px] text-center last:pr-8">
+                         <div class="flex items-center justify-center gap-2">
+                            <a href="{% url 'student_detail' student.uuid %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="View" aria-label="View {{ student.full_name }}"><i class="fas fa-eye"></i></a>
+                            <a href="{% url 'student_edit' student.uuid %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit" aria-label="Edit {{ student.full_name }}"><i class="fas fa-edit"></i></a>
+                             <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                                onclick="openDeleteModal('{% url 'student_delete' student.uuid %}', '{{ student.full_name|escapejs }}')"
+                                title="Delete" aria-label="Delete {{ student.full_name }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="md:hidden divide-y divide-gray-100">
+        {% for student in students %}
+        <div class="p-4">
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                        {{ student.full_name|first }}
+                    </div>
+                    <div class="min-w-0">
+                        <h4 class="font-semibold text-gray-800 text-sm">
+                            {{ student.full_name }}
+                            {% if student.is_orphan %}<span class="inline-block ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-full align-middle">Orphan</span>{% endif %}
+                        </h4>
+                        <p class="text-xs text-gray-500"><span class="text-primary font-medium">{{ student.student_id }}</span></p>
+                    </div>
+                </div>
+                <span class="font-bold text-gray-700 text-sm shrink-0">{{ currency_symbol }} {{ student.total_fees|default:"0" }}</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 pl-[52px] mb-2">
+                {% if student.phone %}<span><i class="fas fa-phone mr-1 text-gray-400"></i>{{ student.phone }}</span>{% endif %}
+                {% if student.email %}<span class="truncate"><i class="fas fa-envelope mr-1 text-gray-400"></i>{{ student.email }}</span>{% endif %}
+            </div>
+            {% if student.batches.all %}
+            <div class="flex flex-wrap gap-1 pl-[52px] mb-2">
+                {% for batch in student.batches.all %}
+                <span class="px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-[11px] font-medium border border-green-200">
+                    {{ batch.course.course_code }} - {{ batch.batch_name }}
+                </span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="pl-[52px] mb-2">
+                <span class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[11px] border border-gray-200">Not Enrolled</span>
+            </div>
+            {% endif %}
+            <div class="flex items-center gap-2 pl-[52px]">
+                <a href="{% url 'student_detail' student.uuid %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="View"><i class="fas fa-eye"></i></a>
+                <a href="{% url 'student_edit' student.uuid %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
+                <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                    onclick="openDeleteModal('{% url 'student_delete' student.uuid %}', '{{ student.full_name|escapejs }}')" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% include 'management/components/pagination.html' with page_obj=students %}
+
+    {% else %}
+    <div class="text-center py-12">
+        <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 text-green-300">
+             <i class="fas fa-user-graduate text-4xl"></i>
+        </div>
+        {% if search_query %}
+        <h3 class="text-xl font-bold text-gray-800 mb-1">No Students Found</h3>
+        <p class="text-gray-500 mb-6">No students match your search "{{ search_query }}"</p>
+        <a href="{% url 'student_list' %}" class="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium inline-flex items-center gap-2">
+            <i class="fas fa-times"></i> Clear Search
+        </a>
+        {% else %}
+        <h3 class="text-xl font-bold text-gray-800 mb-1">No Students Yet</h3>
+        <p class="text-gray-500 mb-6">Get started by adding your first student.</p>
+        <a href="{% url 'student_add' %}" class="px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium inline-flex items-center gap-2">
+            <i class="fas fa-plus"></i> Add Student
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>

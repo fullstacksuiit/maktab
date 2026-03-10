@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_POST
-from django.db import transaction
+from django.db import models, transaction
 from django.db.models import Sum, Count, Q, Subquery, OuterRef, DecimalField
 from django.db.models.functions import Coalesce
 from django.core.paginator import Paginator
@@ -27,10 +27,10 @@ from .forms import (SignUpForm, LoginForm, CourseForm, BatchForm, StudentForm, S
                     AttendanceFilterForm, StaffAttendanceFilterForm, FeePaymentForm, BehaviorNoteForm, SettingsForm, InviteUserForm, UserEditForm,
                     AdmissionApplicationForm, ApplicationRejectForm, EventForm,
                     LeaveRequestForm, LeaveRejectForm,
-                    SalaryComponentForm, PayrollComponentForm)
+                    SalaryComponentForm, PayrollComponentForm, ExpenseForm)
 from .models import (User, Organization, Course, Batch, Student, Staff, Attendance, StaffAttendance, FeePayment, BehaviorNote, AdmissionApplication, Event,
                      LeaveType, LeaveBalance, LeaveRequest, ensure_leave_balances,
-                     PunchRecord, SalaryComponent, Payroll, PayrollComponent, create_default_salary_components)
+                     PunchRecord, SalaryComponent, Payroll, PayrollComponent, create_default_salary_components, Expense)
 from .decorators import role_required, admin_required, manager_or_admin_required, parent_required, internal_user_required, staff_role_required
 from .indian_cities import CITY_DATA
 from .hijri_dates import get_upcoming_islamic_dates
@@ -227,7 +227,7 @@ def dashboard_view(request):
     recent_payments = FeePayment.objects.filter(organization=org).select_related('student', 'batch__course').order_by('-created_at')[:5]
 
     # Get batches with student count for quick attendance
-    batches_for_attendance = Batch.objects.filter(organization=org, is_active=True).select_related('course').annotate(
+    batches_for_attendance = Batch.objects.filter(organization=org, is_active=True).select_related('course').prefetch_related('teachers').annotate(
         student_count=Count('students')
     ).order_by('course__course_name', 'batch_name')[:6]
 
@@ -247,6 +247,52 @@ def dashboard_view(request):
         elif stat['payment_method'] == 'Online':
             online_total = stat['total'] or 0
 
+    # --- NEW: Monthly revenue comparison ---
+    this_month_start = today.replace(day=1)
+    last_month_end = this_month_start - timedelta(days=1)
+    last_month_start = last_month_end.replace(day=1)
+
+    month_revenue = FeePayment.objects.filter(
+        organization=org, payment_date__gte=this_month_start
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    last_month_revenue = FeePayment.objects.filter(
+        organization=org, payment_date__gte=last_month_start, payment_date__lte=last_month_end
+    ).aggregate(total=Sum('amount'))['total'] or 0
+
+    # --- NEW: This month's enrollments ---
+    month_enrollments = Student.objects.filter(
+        organization=org, enrollment_date__gte=this_month_start
+    ).count()
+
+    last_month_enrollments = Student.objects.filter(
+        organization=org, enrollment_date__gte=last_month_start, enrollment_date__lte=last_month_end
+    ).count()
+
+    # --- NEW: Students with highest pending fees (top 5) ---
+    students_with_pending = Student.objects.filter(
+        organization=org, is_orphan=False
+    ).annotate(
+        total_fees=Coalesce(Sum('batches__course__fees'), 0, output_field=DecimalField()),
+        total_paid=Coalesce(Sum('fee_payments__amount'), 0, output_field=DecimalField()),
+    ).annotate(
+        pending_amount=models.F('total_fees') - models.F('total_paid')
+    ).filter(
+        pending_amount__gt=0
+    ).order_by('-pending_amount')[:5]
+
+    # --- NEW: Batch-wise attendance today ---
+    batch_attendance_today = Batch.objects.filter(
+        organization=org, is_active=True
+    ).select_related('course').prefetch_related('teachers').annotate(
+        student_count=Count('students', distinct=True),
+        today_marked=Count('attendances', filter=Q(attendances__date=today), distinct=True),
+        today_present=Count('attendances', filter=Q(attendances__date=today, attendances__status__in=['Present', 'Late']), distinct=True),
+    ).order_by('course__course_name', 'batch_name')
+
+    # --- NEW: Orphan students count ---
+    orphan_count = Student.objects.filter(organization=org, is_orphan=True).count()
+
     context = {
         'total_courses': total_courses,
         'total_batches': total_batches,
@@ -265,6 +311,14 @@ def dashboard_view(request):
         'islamic_dates': get_upcoming_islamic_dates(),
         'staff_today_total': staff_today_total,
         'staff_today_present': staff_today_present,
+        # New context
+        'month_revenue': month_revenue,
+        'last_month_revenue': last_month_revenue,
+        'month_enrollments': month_enrollments,
+        'last_month_enrollments': last_month_enrollments,
+        'students_with_pending': students_with_pending,
+        'batch_attendance_today': batch_attendance_today,
+        'orphan_count': orphan_count,
     }
     return render(request, 'management/dashboard_main.html', context)
 
@@ -295,6 +349,42 @@ def course_list(request):
         'courses': courses,
         'search_query': search_query,
     })
+
+
+@login_required(login_url='login')
+@internal_user_required
+def course_detail(request, pk):
+    org = get_org(request)
+    course = get_object_or_404(Course, pk=pk, organization=org)
+
+    batches = Batch.objects.filter(course=course, organization=org).prefetch_related(
+        'teachers', 'students'
+    ).annotate(
+        student_count=Count('students', distinct=True),
+    )
+
+    total_students = Student.objects.filter(batches__course=course, organization=org).distinct().count()
+    active_batches = batches.filter(is_active=True).count()
+    total_batches = batches.count()
+
+    recent_payments = FeePayment.objects.filter(
+        batch__course=course, organization=org
+    ).select_related('student', 'batch').order_by('-payment_date')[:10]
+
+    total_revenue = FeePayment.objects.filter(
+        batch__course=course, organization=org
+    ).aggregate(total=Coalesce(Sum('amount'), 0, output_field=DecimalField()))['total']
+
+    context = {
+        'course': course,
+        'batches': batches,
+        'total_students': total_students,
+        'active_batches': active_batches,
+        'total_batches': total_batches,
+        'recent_payments': recent_payments,
+        'total_revenue': total_revenue,
+    }
+    return render(request, 'management/course_detail.html', context)
 
 
 @login_required(login_url='login')
@@ -378,7 +468,7 @@ def course_create_ajax(request):
 @internal_user_required
 def batch_list(request):
     org = get_org(request)
-    batches_qs = Batch.objects.filter(organization=org).select_related('course').annotate(
+    batches_qs = Batch.objects.filter(organization=org).select_related('course').prefetch_related('teachers').annotate(
         student_count=Count('students')
     )
 
@@ -409,13 +499,16 @@ def batch_list(request):
     paginator = Paginator(batches_qs, 20)
     page_number = request.GET.get('page')
     batches = paginator.get_page(page_number)
-    return render(request, 'management/batch_list.html', {
+    context = {
         'batches': batches,
         'courses': courses,
         'search_query': search_query,
         'selected_course': course_id,
         'selected_status': status,
-    })
+    }
+    if request.headers.get('HX-Request'):
+        return render(request, 'management/_batch_results.html', context)
+    return render(request, 'management/batch_list.html', context)
 
 
 @login_required(login_url='login')
@@ -515,34 +608,190 @@ def batch_detail(request, pk):
     return render(request, 'management/batch_detail.html', context)
 
 
+# ─── Timetable Views ─────────────────────────────────────────────────────────
+
+DAYS_MAP = {
+    'weekdays': [0, 1, 2, 3, 4],
+    'weekend': [5, 6],
+    'mwf': [0, 2, 4],
+    'tts': [1, 3, 5],
+    'daily': [0, 1, 2, 3, 4, 5, 6],
+    'custom': [0, 1, 2, 3, 4, 5, 6],
+}
+
+REVERSE_DAYS_MAP = {
+    (0, 1, 2, 3, 4): 'weekdays',
+    (5, 6): 'weekend',
+    (0, 2, 4): 'mwf',
+    (1, 3, 5): 'tts',
+    (0, 1, 2, 3, 4, 5, 6): 'daily',
+}
+
+
+@login_required(login_url='login')
+@internal_user_required
+def batch_timetable(request):
+    org = get_org(request)
+    batches = Batch.objects.filter(
+        organization=org, is_active=True, start_time__isnull=False, end_time__isnull=False
+    ).select_related('course').prefetch_related('teachers').annotate(student_count=Count('students'))
+
+    course_colors = {}
+    palette = [
+        '#0d6b4e', '#2563eb', '#9333ea', '#dc2626', '#ea580c',
+        '#0891b2', '#4f46e5', '#c026d3', '#059669', '#d97706',
+    ]
+    color_idx = 0
+    for b in batches:
+        cid = b.course_id
+        if cid not in course_colors:
+            course_colors[cid] = palette[color_idx % len(palette)]
+            color_idx += 1
+
+    batch_data = []
+    for b in batches:
+        days = DAYS_MAP.get(b.days, [])
+        teachers = ', '.join([t.user.get_full_name() or t.user.username for t in b.teachers.all()])
+        batch_data.append({
+            'id': b.pk,
+            'name': b.batch_name,
+            'code': b.batch_code,
+            'course': b.course.course_name,
+            'course_code': b.course.course_code,
+            'teachers': teachers,
+            'student_count': b.student_count,
+            'days': days,
+            'start_time': b.start_time.strftime('%H:%M'),
+            'end_time': b.end_time.strftime('%H:%M'),
+            'color': course_colors[b.course_id],
+        })
+
+    courses = Course.objects.filter(organization=org)
+    context = {
+        'batch_data_json': json.dumps(batch_data),
+        'courses': courses,
+        'course_colors_json': json.dumps({
+            c.course_name: course_colors.get(c.pk, '#6b7280') for c in courses
+        }),
+    }
+    return render(request, 'management/batch_timetable.html', context)
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def batch_schedule_update(request):
+    org = get_org(request)
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    batch_id = data.get('batch_id')
+    new_day = data.get('day')  # 0-6 (Mon-Sun)
+    new_start = data.get('start_time')  # "HH:MM"
+    new_end = data.get('end_time')  # "HH:MM"
+
+    if batch_id is None or new_day is None or new_start is None or new_end is None:
+        return JsonResponse({'error': 'Missing fields'}, status=400)
+
+    batch = get_object_or_404(Batch, pk=batch_id, organization=org)
+
+    # Parse times
+    try:
+        start_time = datetime.strptime(new_start, '%H:%M').time()
+        end_time = datetime.strptime(new_end, '%H:%M').time()
+    except ValueError:
+        return JsonResponse({'error': 'Invalid time format'}, status=400)
+
+    if start_time >= end_time:
+        return JsonResponse({'error': 'Start time must be before end time'}, status=400)
+
+    # Determine the new days value
+    old_days_list = DAYS_MAP.get(batch.days, [])
+    if new_day in old_days_list:
+        # Day hasn't changed, just update times
+        new_days_list = old_days_list
+    else:
+        # Moved to a different day — update days to include only the new day
+        new_days_list = [new_day]
+
+    # Find matching days choice
+    new_days_tuple = tuple(sorted(new_days_list))
+    new_days_value = REVERSE_DAYS_MAP.get(new_days_tuple, 'custom')
+
+    batch.start_time = start_time
+    batch.end_time = end_time
+    batch.days = new_days_value
+    batch.save()
+
+    return JsonResponse({
+        'success': True,
+        'batch_id': batch.pk,
+        'days': new_days_value,
+        'start_time': start_time.strftime('%H:%M'),
+        'end_time': end_time.strftime('%H:%M'),
+    })
+
+
 # ─── Student Views ───────────────────────────────────────────────────────────
 
 @login_required(login_url='login')
 @internal_user_required
 def student_list(request):
     org = get_org(request)
+    active_tab = request.GET.get('tab', 'students')
+
+    # --- Students tab data ---
     students_qs = Student.objects.filter(organization=org).prefetch_related('batches__course', 'fee_payments').annotate(
         total_fees=Sum('batches__course__fees'),
     )
-
-    # Server-side search
-    search_query = request.GET.get('q', '').strip()
-    if search_query:
+    student_search = request.GET.get('q', '').strip() if active_tab == 'students' else ''
+    if student_search:
         students_qs = students_qs.filter(
-            Q(first_name__icontains=search_query) |
-            Q(last_name__icontains=search_query) |
-            Q(student_id__icontains=search_query) |
-            Q(email__icontains=search_query) |
-            Q(phone__icontains=search_query)
+            Q(full_name__icontains=student_search) |
+            Q(student_id__icontains=student_search) |
+            Q(email__icontains=student_search) |
+            Q(phone__icontains=student_search)
         )
-
     paginator = Paginator(students_qs, 20)
-    page_number = request.GET.get('page')
-    students = paginator.get_page(page_number)
-    return render(request, 'management/student_list.html', {
+    students = paginator.get_page(request.GET.get('page') if active_tab == 'students' else 1)
+
+    # --- Applications tab data ---
+    applications_qs = AdmissionApplication.objects.filter(organization=org)
+    app_status_filter = request.GET.get('status', '').strip() if active_tab == 'applications' else ''
+    if app_status_filter in ('pending', 'accepted', 'rejected'):
+        applications_qs = applications_qs.filter(status=app_status_filter)
+    app_search = request.GET.get('q', '').strip() if active_tab == 'applications' else ''
+    if app_search:
+        applications_qs = applications_qs.filter(
+            Q(first_name__icontains=app_search) |
+            Q(last_name__icontains=app_search) |
+            Q(phone__icontains=app_search) |
+            Q(email__icontains=app_search)
+        )
+    app_status_counts = AdmissionApplication.objects.filter(organization=org).values('status').annotate(count=Count('id'))
+    app_counts = {item['status']: item['count'] for item in app_status_counts}
+    app_paginator = Paginator(applications_qs, 20)
+    applications = app_paginator.get_page(request.GET.get('page') if active_tab == 'applications' else 1)
+
+    context = {
+        'active_tab': active_tab,
         'students': students,
-        'search_query': search_query,
-    })
+        'search_query': student_search if active_tab == 'students' else app_search,
+        # Application context
+        'applications': applications,
+        'app_status_filter': app_status_filter,
+        'app_pending_count': app_counts.get('pending', 0),
+        'app_accepted_count': app_counts.get('accepted', 0),
+        'app_rejected_count': app_counts.get('rejected', 0),
+        'app_total_count': sum(app_counts.values()),
+    }
+    if request.headers.get('HX-Request'):
+        if active_tab == 'applications':
+            return render(request, 'management/_application_results.html', context)
+        return render(request, 'management/_student_results.html', context)
+    return render(request, 'management/student_list.html', context)
 
 
 @login_required(login_url='login')
@@ -593,7 +842,7 @@ def student_edit(request, uuid):
 def student_delete(request, uuid):
     org = get_org(request)
     student = get_object_or_404(Student, uuid=uuid, organization=org)
-    student_name = f"{student.first_name} {student.last_name}"
+    student_name = student.full_name
     student.delete()
     messages.success(request, f'Student "{student_name}" deleted successfully!')
     return redirect('student_list')
@@ -967,7 +1216,7 @@ def quick_attendance(request, batch_id):
     today = date.today()
     attendance_date = request.GET.get('date', str(today))
 
-    students = batch.students.filter(organization=org).order_by('first_name', 'last_name')
+    students = batch.students.filter(organization=org).order_by('full_name')
 
     # Get existing attendance for this date
     existing = Attendance.objects.filter(
@@ -1025,7 +1274,7 @@ def toggle_attendance(request):
             return JsonResponse({
                 'success': True,
                 'status': new_status,
-                'message': f'{student.first_name} marked as {new_status}'
+                'message': f'{student.full_name} marked as {new_status}'
             })
         else:
             # Delete the attendance record if status is None/empty
@@ -1038,7 +1287,7 @@ def toggle_attendance(request):
             return JsonResponse({
                 'success': True,
                 'status': None,
-                'message': f'{student.first_name} attendance cleared'
+                'message': f'{student.full_name} attendance cleared'
             })
 
     except Exception as e:
@@ -1455,8 +1704,7 @@ def fee_payment_list(request):
     if search_query:
         payments_qs = payments_qs.filter(
             Q(receipt_number__icontains=search_query) |
-            Q(student__first_name__icontains=search_query) |
-            Q(student__last_name__icontains=search_query) |
+            Q(student__full_name__icontains=search_query) |
             Q(student__student_id__icontains=search_query) |
             Q(batch__course__course_name__icontains=search_query) |
             Q(batch__batch_name__icontains=search_query)
@@ -1566,7 +1814,7 @@ def behavior_note_add(request, student_uuid):
             note.organization = org
             note.noted_by = request.user
             note.save()
-            messages.success(request, f'Behavior note added for {note.student.first_name}.')
+            messages.success(request, f'Behavior note added for {note.student.full_name}.')
             return redirect('student_detail', uuid=note.student.uuid)
         else:
             messages.error(request, 'Please correct the errors below.')
@@ -1736,8 +1984,8 @@ def export_students_excel(request):
     students = Student.objects.filter(organization=org).prefetch_related('batches__course')
     for row, student in enumerate(students, 2):
         ws.cell(row=row, column=1, value=student.student_id)
-        ws.cell(row=row, column=2, value=student.first_name)
-        ws.cell(row=row, column=3, value=student.last_name)
+        ws.cell(row=row, column=2, value=student.full_name)
+        ws.cell(row=row, column=3, value='')
         ws.cell(row=row, column=4, value=student.email)
         ws.cell(row=row, column=5, value=student.phone)
         ws.cell(row=row, column=6, value=student.get_gender_display())
@@ -1825,7 +2073,7 @@ def export_attendance_excel(request):
     for row, att in enumerate(attendances, 2):
         ws.cell(row=row, column=1, value=str(att.date))
         ws.cell(row=row, column=2, value=att.student.student_id)
-        ws.cell(row=row, column=3, value=f"{att.student.first_name} {att.student.last_name}")
+        ws.cell(row=row, column=3, value=att.student.full_name)
         ws.cell(row=row, column=4, value=att.batch.course.course_name if att.batch else "N/A")
         ws.cell(row=row, column=5, value=att.batch.batch_name if att.batch else "N/A")
         ws.cell(row=row, column=6, value=att.status)
@@ -1866,7 +2114,7 @@ def export_fee_payments_excel(request):
     for row, payment in enumerate(payments, 2):
         ws.cell(row=row, column=1, value=payment.receipt_number)
         ws.cell(row=row, column=2, value=payment.student.student_id)
-        ws.cell(row=row, column=3, value=f"{payment.student.first_name} {payment.student.last_name}")
+        ws.cell(row=row, column=3, value=payment.student.full_name)
         ws.cell(row=row, column=4, value=payment.batch.course.course_name if payment.batch else "N/A")
         ws.cell(row=row, column=5, value=payment.batch.batch_name if payment.batch else "N/A")
         ws.cell(row=row, column=6, value=float(payment.amount))
@@ -1900,9 +2148,9 @@ def download_student_template(request):
     header_fill = PatternFill(start_color="0D6B4E", end_color="0D6B4E", fill_type="solid")
 
     headers = [
-        'Student ID', 'First Name', 'Last Name', 'Email', 'Phone',
-        'Gender', 'Date of Birth', 'Address', 'City', 'State',
-        'Pin Code', 'Enrollment Date', 'Batches'
+        'Student ID', 'Full Name', 'Guardian Name', 'Contact 1',
+        'Contact 2', 'Address', 'City', 'Enrollment Date',
+        'Date of Birth', 'Gender', 'Email'
     ]
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col, value=header)
@@ -1912,9 +2160,9 @@ def download_student_template(request):
 
     # Sample data row
     sample = [
-        '', 'Ahmed', 'Khan', 'ahmed@example.com', '9876543210',
-        'M', '2005-03-15', '123 Main Street', 'Mumbai', 'Maharashtra',
-        '400001', '2024-01-15', 'BTH0001, BTH0002'
+        '', 'Ahmed Khan', 'Mohammad Khan', '9876543210',
+        '9123456789', '123 Main Street', 'Rourkela', '2024-01-15',
+        '2005-03-15', 'M', 'ahmed@example.com'
     ]
     hint_font = Font(italic=True, color="808080")
     for col, value in enumerate(sample, 1):
@@ -1926,18 +2174,16 @@ def download_student_template(request):
     instructions = [
         ['Column', 'Required', 'Format / Notes'],
         ['Student ID', 'No', 'Leave blank for auto-generation. If provided, must be unique.'],
-        ['First Name', 'Yes', 'Text, max 100 characters'],
-        ['Last Name', 'Yes', 'Text, max 100 characters'],
-        ['Email', 'No', 'Valid email format (e.g. name@example.com)'],
-        ['Phone', 'Yes', '7-20 characters. Digits, spaces, +, -, ( ) allowed'],
-        ['Gender', 'Yes', 'M or Male, F or Female, O or Other'],
-        ['Date of Birth', 'No', 'YYYY-MM-DD format. Cannot be in the future.'],
+        ['Full Name', 'Yes', 'Student full name. First word = First Name, rest = Last Name.'],
+        ['Guardian Name', 'No', 'Parent / guardian name'],
+        ['Contact 1', 'Yes', '7-20 characters. Digits, spaces, +, -, ( ) allowed'],
+        ['Contact 2', 'No', 'Secondary phone number (same format as Contact 1)'],
         ['Address', 'Yes', 'Street / area text'],
-        ['City', 'No', 'Text'],
-        ['State', 'No', 'Text'],
-        ['Pin Code', 'No', 'Text, max 10 characters'],
-        ['Enrollment Date', 'Yes', 'YYYY-MM-DD format. Cannot be in the future.'],
-        ['Batches', 'No', 'Comma-separated batch codes (e.g. BTH0001, BTH0002)'],
+        ['City', 'No', 'Defaults to "Rourkela" if left blank'],
+        ['Enrollment Date', 'Yes', 'Date in any format: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY, MM/DD/YYYY'],
+        ['Date of Birth', 'No', 'Date in any format (same as above). Cannot be in the future.'],
+        ['Gender', 'Yes', 'M or Male, F or Female, O or Other'],
+        ['Email', 'No', 'Valid email format (e.g. name@example.com)'],
     ]
     for row_idx, row_data in enumerate(instructions, 1):
         for col_idx, value in enumerate(row_data, 1):
@@ -1996,10 +2242,6 @@ def import_students(request):
                 return render(request, 'management/student_import.html', context)
 
             # Pre-fetch lookups
-            org_batches = {
-                b.batch_code.strip().upper(): b
-                for b in Batch.objects.filter(organization=org, is_active=True)
-            }
             existing_ids = set(
                 Student.objects.filter(organization=org).values_list('student_id', flat=True)
             )
@@ -2017,14 +2259,15 @@ def import_students(request):
                 if isinstance(val, (date, datetime)):
                     return val if isinstance(val, date) and not isinstance(val, datetime) else val.date() if isinstance(val, datetime) else val, None
                 val_str = str(val).strip()
-                for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%d-%m-%Y'):
+                for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%d-%m-%Y', '%d.%m.%Y', '%Y/%m/%d'):
                     try:
                         return datetime.strptime(val_str, fmt).date(), None
                     except ValueError:
                         continue
-                return None, f'{field_name}: could not parse date "{val_str}". Use YYYY-MM-DD format.'
+                return None, f'{field_name}: could not parse date "{val_str}". Use YYYY-MM-DD or DD/MM/YYYY format.'
 
             gender_map = {'m': 'M', 'male': 'M', 'f': 'F', 'female': 'F', 'o': 'O', 'other': 'O'}
+            phone_pattern = re.compile(r'^[\d\s\-\+\(\)]{7,20}$')
 
             for idx, row in enumerate(rows):
                 row_num = idx + 2
@@ -2033,29 +2276,25 @@ def import_students(request):
                 if not row or all(cell is None or str(cell).strip() == '' for cell in row):
                     continue
 
-                row = list(row) + [None] * max(0, 13 - len(row))
+                row = list(row) + [None] * max(0, 11 - len(row))
 
                 student_id = clean(row[0])
-                first_name = clean(row[1])
-                last_name = clean(row[2])
-                email = clean(row[3])
-                phone = clean(row[4])
-                gender_raw = clean(row[5])
-                dob_raw = row[6]
-                address = clean(row[7])
-                city = clean(row[8])
-                state = clean(row[9])
-                pin_code = clean(row[10])
-                enrollment_raw = row[11]
-                batches_raw = clean(row[12])
+                full_name = clean(row[1])
+                guardian_name = clean(row[2])
+                contact1 = clean(row[3])
+                contact2 = clean(row[4])
+                address = clean(row[5])
+                city = clean(row[6]) or 'Rourkela'
+                enrollment_raw = row[7]
+                dob_raw = row[8]
+                gender_raw = clean(row[9])
+                email = clean(row[10])
 
                 # Required fields
-                if not first_name:
-                    row_errors.append('First Name is required.')
-                if not last_name:
-                    row_errors.append('Last Name is required.')
-                if not phone:
-                    row_errors.append('Phone is required.')
+                if not full_name:
+                    row_errors.append('Full Name is required.')
+                if not contact1:
+                    row_errors.append('Contact 1 is required.')
                 if not gender_raw:
                     row_errors.append('Gender is required.')
                 if not address:
@@ -2072,9 +2311,13 @@ def import_students(request):
                     else:
                         import_ids.add(student_id)
 
-                # Phone validation
-                if phone and not re.match(r'^[\d\s\-\+\(\)]{7,20}$', phone):
-                    row_errors.append('Phone: invalid format (7-20 chars, digits/spaces/+-() allowed).')
+                # Contact 1 validation
+                if contact1 and not phone_pattern.match(contact1):
+                    row_errors.append('Contact 1: invalid format (7-20 chars, digits/spaces/+-() allowed).')
+
+                # Contact 2 validation (optional)
+                if contact2 and not phone_pattern.match(contact2):
+                    row_errors.append('Contact 2: invalid format (7-20 chars, digits/spaces/+-() allowed).')
 
                 # Gender
                 gender = gender_map.get(gender_raw.lower()) if gender_raw else None
@@ -2108,33 +2351,21 @@ def import_students(request):
                     except DjangoValidationError:
                         row_errors.append(f'Email "{email}" is not valid.')
 
-                # Batches
-                batch_objects = []
-                if batches_raw:
-                    for bc in [b.strip().upper() for b in batches_raw.split(',') if b.strip()]:
-                        batch_obj = org_batches.get(bc)
-                        if not batch_obj:
-                            row_errors.append(f'Batch "{bc}" not found or not active.')
-                        else:
-                            batch_objects.append(batch_obj)
-
                 if row_errors:
                     errors.append({'row': row_num, 'errors': row_errors})
                 else:
                     students_data.append({
                         'student_id': student_id or '',
-                        'first_name': first_name,
-                        'last_name': last_name,
+                        'full_name': full_name,
                         'email': email,
-                        'phone': phone,
+                        'phone': contact1,
                         'gender': gender,
                         'date_of_birth': dob,
                         'address': address,
                         'city': city,
-                        'state': state,
-                        'pin_code': pin_code,
+                        'guardian_name': guardian_name,
+                        'guardian_phone': contact2,
                         'enrollment_date': enrollment_date,
-                        'batch_objects': batch_objects,
                     })
 
             if errors:
@@ -2147,11 +2378,8 @@ def import_students(request):
                 try:
                     with transaction.atomic():
                         for data in students_data:
-                            batch_objs = data.pop('batch_objects')
                             student = Student(organization=org, **data)
                             student.save()
-                            if batch_objs:
-                                student.batches.set(batch_objs)
                     context['success_count'] = len(students_data)
                     context['has_results'] = True
                     messages.success(request, f'Successfully imported {len(students_data)} student(s)!')
@@ -2438,7 +2666,19 @@ def admission_apply_success(request, org_slug):
 @login_required(login_url='login')
 @manager_or_admin_required
 def application_list(request):
-    """List admission applications with status filter."""
+    """Redirect to student list with applications tab."""
+    url = reverse('student_list') + '?tab=applications'
+    status = request.GET.get('status', '')
+    if status:
+        url += f'&status={status}'
+    q = request.GET.get('q', '')
+    if q:
+        url += f'&q={q}'
+    return redirect(url)
+
+
+def _application_list_legacy(request):
+    """Legacy: kept for reference. No longer used directly."""
     org = get_org(request)
     applications = AdmissionApplication.objects.filter(organization=org)
 
@@ -2503,8 +2743,7 @@ def application_accept(request, pk):
 
     with transaction.atomic():
         student = Student(
-            first_name=application.first_name,
-            last_name=application.last_name,
+            full_name=f"{application.first_name} {application.last_name}".strip(),
             phone=application.phone,
             email=application.email,
             date_of_birth=application.date_of_birth,
@@ -2526,7 +2765,7 @@ def application_accept(request, pk):
 
     messages.success(
         request,
-        f'Application accepted! Student "{student.first_name} {student.last_name}" '
+        f'Application accepted! Student "{student.full_name}" '
         f'created with ID {student.student_id}. You can now assign batches.'
     )
     return redirect('student_edit', uuid=student.uuid)
@@ -2758,7 +2997,7 @@ def parent_pay_upi(request):
 
             months_display = ', '.join(month_labels)
             months_short = ', '.join(months)
-            tn = f"{selected_student.student_id} {selected_student.first_name} {selected_student.last_name} - {selected_batch.course.course_name} - {months_short}"
+            tn = f"{selected_student.student_id} {selected_student.full_name} - {selected_batch.course.course_name} - {months_short}"
 
             # UPI apps expect minimal encoding: preserve @, -, . in values
             upi_link = (
@@ -2780,7 +3019,7 @@ def parent_pay_upi(request):
                 'fee_period': selected_batch.course.get_fee_period_display(),
                 'course_name': selected_batch.course.course_name,
                 'batch_name': selected_batch.batch_name,
-                'student_name': f"{selected_student.first_name} {selected_student.last_name}",
+                'student_name': selected_student.full_name,
                 'student_id': selected_student.student_id,
                 'months': months_display,
                 'transaction_note': tn,
@@ -3515,3 +3754,203 @@ def payroll_payslip_print(request, pk):
         'org': org,
     }
     return render(request, 'management/staff_my_payslip.html', context)
+
+
+# ─── Accounts & Expenses ─────────────────────────────────────────────────────
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def accounts_overview(request):
+    """Balance sheet / financial report with date filters."""
+    org = get_org(request)
+    today = date.today()
+
+    # Date range filter
+    date_from = request.GET.get('from', '')
+    date_to = request.GET.get('to', '')
+
+    try:
+        start_date = datetime.strptime(date_from, '%Y-%m-%d').date() if date_from else None
+    except ValueError:
+        start_date = None
+    try:
+        end_date = datetime.strptime(date_to, '%Y-%m-%d').date() if date_to else None
+    except ValueError:
+        end_date = None
+
+    # --- INCOME: Fee Payments ---
+    fee_qs = FeePayment.objects.filter(organization=org)
+    if start_date:
+        fee_qs = fee_qs.filter(payment_date__gte=start_date)
+    if end_date:
+        fee_qs = fee_qs.filter(payment_date__lte=end_date)
+
+    fee_total = fee_qs.aggregate(total=Sum('amount'))['total'] or 0
+    fee_by_method = fee_qs.values('payment_method').annotate(
+        total=Sum('amount'), count=Count('id')
+    ).order_by('payment_method')
+
+    # --- EXPENSES: General Expenses ---
+    expense_qs = Expense.objects.filter(organization=org)
+    if start_date:
+        expense_qs = expense_qs.filter(expense_date__gte=start_date)
+    if end_date:
+        expense_qs = expense_qs.filter(expense_date__lte=end_date)
+
+    expense_total = expense_qs.aggregate(total=Sum('amount'))['total'] or 0
+    expense_by_method = expense_qs.values('payment_method').annotate(
+        total=Sum('amount'), count=Count('id')
+    ).order_by('payment_method')
+    expense_by_category = expense_qs.values('category').annotate(
+        total=Sum('amount'), count=Count('id')
+    ).order_by('-total')
+
+    # Map category keys to display names
+    category_display = dict(Expense.CATEGORY_CHOICES)
+    for item in expense_by_category:
+        item['category_display'] = category_display.get(item['category'], item['category'])
+
+    # --- EXPENSES: Payroll (paid only) ---
+    payroll_qs = Payroll.objects.filter(organization=org, status='paid')
+    if start_date:
+        payroll_qs = payroll_qs.filter(payment_date__gte=start_date)
+    if end_date:
+        payroll_qs = payroll_qs.filter(payment_date__lte=end_date)
+
+    payroll_total = payroll_qs.aggregate(total=Sum('net_salary'))['total'] or 0
+    payroll_by_method = payroll_qs.values('payment_method').annotate(
+        total=Sum('net_salary'), count=Count('id')
+    ).order_by('payment_method')
+
+    # --- TOTALS ---
+    total_expense = expense_total + payroll_total
+    net_balance = fee_total - total_expense
+
+    # --- Method-wise summary (all money in and out) ---
+    methods = ['Cash', 'Bank Transfer', 'Online', 'UPI']
+    method_summary = []
+    fee_method_map = {item['payment_method']: item for item in fee_by_method}
+    expense_method_map = {item['payment_method']: item for item in expense_by_method}
+    payroll_method_map = {item['payment_method']: item for item in payroll_by_method}
+
+    for method in methods:
+        income = (fee_method_map.get(method, {}).get('total') or 0)
+        exp = (expense_method_map.get(method, {}).get('total') or 0)
+        pay = (payroll_method_map.get(method, {}).get('total') or 0)
+        method_summary.append({
+            'method': method,
+            'income': income,
+            'expense': exp + pay,
+            'net': income - exp - pay,
+        })
+
+    # Recent transactions
+    recent_fees = fee_qs.select_related('student', 'batch__course').order_by('-payment_date', '-created_at')[:5]
+    recent_expenses = expense_qs.order_by('-expense_date', '-created_at')[:5]
+    recent_payrolls = payroll_qs.select_related('staff').order_by('-payment_date', '-created_at')[:5]
+
+    context = {
+        'fee_total': fee_total,
+        'expense_total': expense_total,
+        'payroll_total': payroll_total,
+        'total_expense': total_expense,
+        'net_balance': net_balance,
+        'fee_by_method': fee_by_method,
+        'expense_by_method': expense_by_method,
+        'expense_by_category': expense_by_category,
+        'payroll_by_method': payroll_by_method,
+        'method_summary': method_summary,
+        'recent_fees': recent_fees,
+        'recent_expenses': recent_expenses,
+        'recent_payrolls': recent_payrolls,
+        'date_from': date_from,
+        'date_to': date_to,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+    return render(request, 'management/accounts_overview.html', context)
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def expense_list(request):
+    """List all expenses with search and filters."""
+    org = get_org(request)
+    expenses_qs = Expense.objects.filter(organization=org)
+
+    search_query = request.GET.get('q', '').strip()
+    if search_query:
+        expenses_qs = expenses_qs.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(reference_number__icontains=search_query)
+        )
+
+    selected_category = request.GET.get('category', '').strip()
+    if selected_category:
+        expenses_qs = expenses_qs.filter(category=selected_category)
+
+    selected_method = request.GET.get('method', '').strip()
+    if selected_method:
+        expenses_qs = expenses_qs.filter(payment_method=selected_method)
+
+    paginator = Paginator(expenses_qs, 20)
+    page_number = request.GET.get('page')
+    expenses = paginator.get_page(page_number)
+    return render(request, 'management/expense_list.html', {
+        'expenses': expenses,
+        'search_query': search_query,
+        'selected_category': selected_category,
+        'selected_method': selected_method,
+        'category_choices': Expense.CATEGORY_CHOICES,
+    })
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def expense_add(request):
+    org = get_org(request)
+    if request.method == 'POST':
+        form = ExpenseForm(request.POST)
+        if form.is_valid():
+            expense = form.save(commit=False)
+            expense.organization = org
+            expense.created_by = request.user
+            expense.save()
+            messages.success(request, f'Expense "{expense.title}" recorded!')
+            return redirect('expense_list')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ExpenseForm()
+    return render(request, 'management/expense_form.html', {'form': form, 'action': 'Add'})
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def expense_edit(request, pk):
+    org = get_org(request)
+    expense = get_object_or_404(Expense, pk=pk, organization=org)
+    if request.method == 'POST':
+        form = ExpenseForm(request.POST, instance=expense)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Expense "{expense.title}" updated!')
+            return redirect('expense_list')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ExpenseForm(instance=expense)
+    return render(request, 'management/expense_form.html', {'form': form, 'action': 'Edit'})
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def expense_delete(request, pk):
+    org = get_org(request)
+    expense = get_object_or_404(Expense, pk=pk, organization=org)
+    title = expense.title
+    expense.delete()
+    messages.success(request, f'Expense "{title}" deleted.')
+    return redirect('expense_list')

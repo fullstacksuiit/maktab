@@ -61,15 +61,29 @@
             <i class="fas fa-mobile-alt text-primary"></i> Pay via UPI
         </h4>
 
-        <!-- Mobile: Deep Link Button (uses JS for PWA standalone mode compatibility) -->
-        <button onclick="openUPIApp()" type="button"
-           class="w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg hover:shadow-primary/30 transition-all font-bold text-lg mb-4">
-            <i class="fas fa-external-link-alt"></i>
-            Open UPI App & Pay {{ currency_symbol }} {{ upi_data.total_amount }}
-        </button>
+        <!-- UPI App Chooser Buttons -->
+        <p class="text-sm text-gray-500 mb-3 text-center">Choose your UPI app to pay <span class="font-bold text-primary">{{ currency_symbol }} {{ upi_data.total_amount }}</span></p>
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <button onclick="openUPIApp('phonepe')" type="button"
+               class="flex items-center justify-center gap-2 px-4 py-3.5 bg-[#5f259f] text-white rounded-xl hover:shadow-lg transition-all font-semibold text-sm">
+                <img src="https://cdn.worldvectorlogo.com/logos/phonepe-1.svg" alt="PhonePe" class="w-5 h-5 brightness-0 invert"> PhonePe
+            </button>
+            <button onclick="openUPIApp('gpay')" type="button"
+               class="flex items-center justify-center gap-2 px-4 py-3.5 bg-[#1a73e8] text-white rounded-xl hover:shadow-lg transition-all font-semibold text-sm">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" alt="GPay" class="w-5 h-5 brightness-0 invert"> Google Pay
+            </button>
+            <button onclick="openUPIApp('paytm')" type="button"
+               class="flex items-center justify-center gap-2 px-4 py-3.5 bg-[#00BAF2] text-white rounded-xl hover:shadow-lg transition-all font-semibold text-sm">
+                <img src="https://cdn.worldvectorlogo.com/logos/paytm-1.svg" alt="Paytm" class="w-5 h-5 brightness-0 invert"> Paytm
+            </button>
+            <button onclick="openUPIApp('default')" type="button"
+               class="flex items-center justify-center gap-2 px-4 py-3.5 bg-gradient-to-r from-primary to-secondary text-white rounded-xl hover:shadow-lg transition-all font-semibold text-sm">
+                <i class="fas fa-ellipsis-h"></i> Other UPI
+            </button>
+        </div>
 
         <p class="text-center text-xs text-gray-400 mb-6">
-            Opens PhonePe, Google Pay, Paytm, or your default UPI app
+            Tap your preferred app to open it with payment details filled in
         </p>
 
         <!-- Desktop: QR Code -->
@@ -129,7 +143,7 @@
                 </div>
                 <div class="flex-1">
                     <h4 class="font-bold text-gray-800">{{ item.course.course_name }}</h4>
-                    <p class="text-xs text-gray-500">{{ item.batch.batch_name }} &middot; {{ item.student.first_name }} {{ item.student.last_name }} ({{ item.student.student_id }})</p>
+                    <p class="text-xs text-gray-500">{{ item.batch.batch_name }} &middot; {{ item.student.full_name }} ({{ item.student.student_id }})</p>
                 </div>
                 <div class="text-right">
                     <p class="text-lg font-bold text-primary">{{ currency_symbol }} {{ item.fees }}</p>
@@ -232,16 +246,52 @@
         });
     }
 
-    // Open UPI app via deep link (works in PWA standalone mode)
-    function openUPIApp() {
+    // Open specific UPI app via intent or deep link
+    function openUPIApp(app) {
         var upiLink = "{{ upi_data.upi_link|escapejs }}";
-        // Use window.open for PWA standalone mode, fallback to location.href
+        var targetLink = upiLink;
+
+        // App-specific deep link schemes
+        var appSchemes = {
+            'phonepe': 'phonepe://pay?' + upiLink.split('?')[1],
+            'gpay': 'tez://upi/' + upiLink.split('//')[1],
+            'paytm': 'paytmmp://pay?' + upiLink.split('?')[1],
+            'default': upiLink
+        };
+
+        // Android intent URLs (more reliable for opening specific apps)
+        var androidIntents = {
+            'phonepe': 'intent://pay?' + upiLink.split('?')[1] + '#Intent;scheme=upi;package=com.phonepe.app;end',
+            'gpay': 'intent://pay?' + upiLink.split('?')[1] + '#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end',
+            'paytm': 'intent://pay?' + upiLink.split('?')[1] + '#Intent;scheme=upi;package=net.one97.paytm;end',
+            'default': upiLink
+        };
+
+        var isAndroid = /android/i.test(navigator.userAgent);
         var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                            window.navigator.standalone === true;
+
+        if (isAndroid && app !== 'default') {
+            targetLink = androidIntents[app] || upiLink;
+        } else if (app !== 'default') {
+            targetLink = appSchemes[app] || upiLink;
+        }
+
         if (isStandalone) {
-            window.open(upiLink, '_blank');
+            window.open(targetLink, '_blank');
         } else {
-            window.location.href = upiLink;
+            window.location.href = targetLink;
+        }
+
+        // Fallback: if app-specific link fails, fall back to generic UPI after 2s
+        if (app !== 'default') {
+            setTimeout(function() {
+                if (!document.hidden) {
+                    if (confirm('Could not open the app. Open with any available UPI app instead?')) {
+                        window.location.href = upiLink;
+                    }
+                }
+            }, 2000);
         }
     }
 

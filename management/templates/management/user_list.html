@@ -14,7 +14,8 @@
 
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-[slideUp_0.5s_ease-out]">
     {% if users %}
-    <div class="overflow-x-auto">
+    <!-- Desktop Table View -->
+    <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-left text-sm">
             <thead>
                 <tr class="bg-gradient-to-r from-primary to-secondary text-white">
@@ -88,6 +89,58 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="md:hidden divide-y divide-gray-100">
+        {% for u in users %}
+        <div class="p-4">
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm shrink-0">
+                        {{ u.username|first|upper }}
+                    </div>
+                    <div class="min-w-0">
+                        <h4 class="font-semibold text-gray-800 text-sm">{{ u.username }}</h4>
+                        <p class="text-xs text-gray-500 truncate">
+                            {% if u.first_name or u.last_name %}{{ u.first_name }} {{ u.last_name }} &middot; {% endif %}
+                            {{ u.email|default:"-" }}
+                        </p>
+                    </div>
+                </div>
+                {% if u.role == 'admin' %}
+                    <span class="px-2 py-0.5 rounded-md bg-red-100 text-red-700 text-xs font-medium border border-red-200 shrink-0">Admin</span>
+                {% elif u.role == 'manager' %}
+                    <span class="px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 text-xs font-medium border border-purple-200 shrink-0">Manager</span>
+                {% else %}
+                    <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 text-xs font-medium border border-blue-200 shrink-0">Staff</span>
+                {% endif %}
+            </div>
+            <div class="flex items-center justify-between pl-[52px]">
+                <div class="flex items-center gap-2 text-xs">
+                    {% if u.is_active %}
+                        <span class="px-2 py-0.5 rounded-md bg-green-100 text-green-700 font-medium border border-green-200">Active</span>
+                    {% else %}
+                        <span class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 font-medium border border-gray-200">Inactive</span>
+                    {% endif %}
+                    {% if u.staff_profile %}
+                        <span class="text-green-600 font-medium"><i class="fas fa-link mr-0.5"></i>{{ u.staff_profile.first_name }}</span>
+                    {% endif %}
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                    {% if u != request.user %}
+                    <a href="{% url 'user_edit' u.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
+                    <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                        onclick="openDeleteModal('{% url 'user_delete' u.pk %}', '{{ u.username|escapejs }}')" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    {% else %}
+                    <span class="text-xs text-gray-400 italic">You</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
 
     {% else %}

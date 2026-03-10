@@ -1,24 +1,46 @@
 {% extends 'management/base_tailwind.html' %}
 {% load pagination_tags %}
 
-{% block title %}Students - Maktab{% endblock %}
-{% block header_title %}Students{% endblock %}
+{% block title %}{% if active_tab == 'applications' %}Applications{% else %}Students{% endif %} - Maktab{% endblock %}
+{% block header_title %}Students & Applications{% endblock %}
 
 {% block content %}
-<div class="mb-6 flex flex-col md:flex-row md:items-center justify-end gap-4 animate-[slideUp_0.4s_ease-out]">
+<div class="animate-[slideUp_0.4s_ease-out]">
+
+<!-- Tabs -->
+<div class="flex gap-1 mb-6 bg-gray-100 rounded-xl p-1 w-fit">
+    <a href="{% url 'student_list' %}"
+       class="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 {% if active_tab == 'students' %}bg-white text-primary shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
+        <i class="fas fa-user-graduate"></i> Students
+    </a>
+    <a href="{% url 'student_list' %}?tab=applications"
+       class="px-5 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 {% if active_tab == 'applications' %}bg-white text-primary shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
+        <i class="fas fa-file-alt"></i> Applications
+        {% if app_pending_count %}
+        <span class="bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">{{ app_pending_count }}</span>
+        {% endif %}
+    </a>
+</div>
+
+{% if active_tab == 'students' %}
+<!-- ==================== STUDENTS TAB ==================== -->
+<div class="mb-6 flex flex-col md:flex-row md:items-center justify-end gap-4">
     <div class="flex flex-col sm:flex-row gap-3">
-        <form method="get" class="relative">
+        <div class="relative">
             <input type="text" name="q" value="{{ search_query }}" placeholder="Search students..."
-                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary w-full sm:w-64 transition-shadow">
-            <button type="submit" class="absolute left-3 top-2.5 text-gray-400 hover:text-primary">
+                   class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary w-full sm:w-64 transition-shadow"
+                   hx-get="{% url 'student_list' %}?tab=students"
+                   hx-trigger="keyup changed delay:300ms, search"
+                   hx-target="#student-results"
+                   hx-push-url="true"
+                   hx-indicator="#search-spinner-students">
+            <span class="absolute left-3 top-2.5 text-gray-400">
                 <i class="fas fa-search"></i>
-            </button>
-            {% if search_query %}
-            <a href="{% url 'student_list' %}" class="absolute right-3 top-2.5 text-gray-400 hover:text-red-500" title="Clear search">
-                <i class="fas fa-times"></i>
-            </a>
-            {% endif %}
-        </form>
+            </span>
+            <span id="search-spinner-students" class="htmx-indicator absolute right-3 top-2.5 text-primary">
+                <i class="fas fa-spinner fa-spin"></i>
+            </span>
+        </div>
         <div class="flex gap-2">
             <a href="{% url 'import_students' %}" class="px-4 py-2 bg-white border border-blue-600 text-blue-700 rounded-xl hover:bg-blue-50 font-medium transition-colors flex items-center gap-2">
                 <i class="fas fa-file-import"></i> Import
@@ -33,105 +55,56 @@
     </div>
 </div>
 
-{% if search_query %}
-<div class="mb-4 px-4 py-2 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-sm flex items-center justify-between">
-    <span><i class="fas fa-filter mr-2"></i>Showing results for "<strong>{{ search_query }}</strong>"</span>
-    <a href="{% url 'student_list' %}" class="text-blue-600 hover:text-blue-800 font-medium">Clear filter</a>
+<div id="student-results">
+    {% include 'management/_student_results.html' %}
+</div>
+
+{% else %}
+<!-- ==================== APPLICATIONS TAB ==================== -->
+<div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <!-- Status Filter Tabs -->
+    <div class="flex flex-wrap gap-2">
+        <a href="{% url 'student_list' %}?tab=applications"
+           class="px-4 py-2 rounded-xl text-sm font-medium transition-all {% if not app_status_filter %}bg-primary text-white shadow-lg shadow-primary/20{% else %}bg-white border border-gray-200 text-gray-600 hover:bg-gray-50{% endif %}">
+            All <span class="ml-1 px-1.5 py-0.5 rounded-full text-xs {% if not app_status_filter %}bg-white/20{% else %}bg-gray-100{% endif %}">{{ app_total_count }}</span>
+        </a>
+        <a href="{% url 'student_list' %}?tab=applications&status=pending"
+           class="px-4 py-2 rounded-xl text-sm font-medium transition-all {% if app_status_filter == 'pending' %}bg-yellow-500 text-white shadow-lg shadow-yellow-500/20{% else %}bg-white border border-gray-200 text-gray-600 hover:bg-gray-50{% endif %}">
+            Pending <span class="ml-1 px-1.5 py-0.5 rounded-full text-xs {% if app_status_filter == 'pending' %}bg-white/20{% else %}bg-yellow-100 text-yellow-700{% endif %}">{{ app_pending_count }}</span>
+        </a>
+        <a href="{% url 'student_list' %}?tab=applications&status=accepted"
+           class="px-4 py-2 rounded-xl text-sm font-medium transition-all {% if app_status_filter == 'accepted' %}bg-green-500 text-white shadow-lg shadow-green-500/20{% else %}bg-white border border-gray-200 text-gray-600 hover:bg-gray-50{% endif %}">
+            Accepted <span class="ml-1 px-1.5 py-0.5 rounded-full text-xs {% if app_status_filter == 'accepted' %}bg-white/20{% else %}bg-green-100 text-green-700{% endif %}">{{ app_accepted_count }}</span>
+        </a>
+        <a href="{% url 'student_list' %}?tab=applications&status=rejected"
+           class="px-4 py-2 rounded-xl text-sm font-medium transition-all {% if app_status_filter == 'rejected' %}bg-red-500 text-white shadow-lg shadow-red-500/20{% else %}bg-white border border-gray-200 text-gray-600 hover:bg-gray-50{% endif %}">
+            Rejected <span class="ml-1 px-1.5 py-0.5 rounded-full text-xs {% if app_status_filter == 'rejected' %}bg-white/20{% else %}bg-red-100 text-red-700{% endif %}">{{ app_rejected_count }}</span>
+        </a>
+    </div>
+
+    <!-- Search -->
+    <div class="relative">
+        <input type="text" name="q" value="{{ search_query }}" placeholder="Search applications..."
+               class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary w-full sm:w-64 transition-shadow"
+               hx-get="{% url 'student_list' %}?tab=applications{% if app_status_filter %}&status={{ app_status_filter }}{% endif %}"
+               hx-trigger="keyup changed delay:300ms, search"
+               hx-target="#application-results"
+               hx-push-url="true"
+               hx-indicator="#search-spinner-apps">
+        <span class="absolute left-3 top-2.5 text-gray-400">
+            <i class="fas fa-search"></i>
+        </span>
+        <span id="search-spinner-apps" class="htmx-indicator absolute right-3 top-2.5 text-primary">
+            <i class="fas fa-spinner fa-spin"></i>
+        </span>
+    </div>
+</div>
+
+<div id="application-results">
+    {% include 'management/_application_results.html' %}
 </div>
 {% endif %}
 
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-[slideUp_0.5s_ease-out]">
-    {% if students %}
-    <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-            <thead>
-                <tr class="bg-gradient-to-r from-primary to-secondary text-white">
-                    <th class="px-6 py-4 font-semibold first:pl-8 rounded-tl-lg">Student ID</th>
-                    <th class="px-6 py-4 font-semibold">Name</th>
-                    <th class="px-6 py-4 font-semibold">Email</th>
-                    <th class="px-6 py-4 font-semibold">Phone</th>
-                    <th class="px-6 py-4 font-semibold">Batches</th>
-                    <th class="px-6 py-4 font-semibold">Total Fees</th>
-                    <th class="px-6 py-4 font-semibold text-center last:pr-8 rounded-tr-lg">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                {% for student in students %}
-                <tr class="hover:bg-gray-50/80 transition-colors group">
-                    <td class="px-6 py-4 font-medium text-primary first:pl-8">
-                        {{ student.student_id }}
-                    </td>
-                    <td class="px-6 py-4">
-                        <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                                {{ student.first_name|first }}
-                            </div>
-                            <div>
-                                <div class="font-semibold text-gray-800">{{ student.first_name }} {{ student.last_name }}{% if student.is_orphan %} <span class="inline-block ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-bold rounded-full align-middle">Orphan</span>{% endif %}</div>
-                            </div>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 text-gray-600">
-                        {{ student.email }}
-                    </td>
-                    <td class="px-6 py-4 text-gray-600">
-                        {{ student.phone }}
-                    </td>
-                    <td class="px-6 py-4">
-                        <div class="flex flex-wrap gap-1">
-                            {% if student.batches.all %}
-                                {% for batch in student.batches.all %}
-                                    <span class="px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-xs font-medium border border-green-200" title="{{ batch.course.course_name }}">
-                                        {{ batch.course.course_code }} - {{ batch.batch_name }}
-                                    </span>
-                                {% endfor %}
-                            {% else %}
-                                <span class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 text-xs border border-gray-200">Not Enrolled</span>
-                            {% endif %}
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 font-bold text-gray-700">
-                        {{ currency_symbol }} {{ student.total_fees|default:"0" }}
-                    </td>
-                    <td class="px-6 py-4 max-w-[120px] text-center last:pr-8">
-                         <div class="flex items-center justify-center gap-2">
-                            <a href="{% url 'student_detail' student.uuid %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="View" aria-label="View {{ student.first_name }} {{ student.last_name }}"><i class="fas fa-eye"></i></a>
-                            <a href="{% url 'student_edit' student.uuid %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit" aria-label="Edit {{ student.first_name }} {{ student.last_name }}"><i class="fas fa-edit"></i></a>
-                             <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
-                                onclick="openDeleteModal('{% url 'student_delete' student.uuid %}', '{{ student.first_name }} {{ student.last_name|escapejs }}')"
-                                title="Delete" aria-label="Delete {{ student.first_name }} {{ student.last_name }}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    {% include 'management/components/pagination.html' with page_obj=students %}
-
-    {% else %}
-    <div class="text-center py-12">
-        <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 text-green-300">
-             <i class="fas fa-user-graduate text-4xl"></i>
-        </div>
-        {% if search_query %}
-        <h3 class="text-xl font-bold text-gray-800 mb-1">No Students Found</h3>
-        <p class="text-gray-500 mb-6">No students match your search "{{ search_query }}"</p>
-        <a href="{% url 'student_list' %}" class="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium inline-flex items-center gap-2">
-            <i class="fas fa-times"></i> Clear Search
-        </a>
-        {% else %}
-        <h3 class="text-xl font-bold text-gray-800 mb-1">No Students Yet</h3>
-        <p class="text-gray-500 mb-6">Get started by adding your first student.</p>
-        <a href="{% url 'student_add' %}" class="px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium inline-flex items-center gap-2">
-            <i class="fas fa-plus"></i> Add Student
-        </a>
-        {% endif %}
-    </div>
-    {% endif %}
 </div>
 
 {% include 'management/components/delete_modal.html' %}

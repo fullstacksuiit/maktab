@@ -1,14 +1,14 @@
 {% extends 'management/base_tailwind.html' %}
 
-{% block title %}{{ student.first_name }} {{ student.last_name }} - Student Detail - Maktab{% endblock %}
-{% block header_title %}{{ student.first_name }} {{ student.last_name }}{% endblock %}
+{% block title %}{{ student.full_name }} - Student Detail - Maktab{% endblock %}
+{% block header_title %}{{ student.full_name }}{% endblock %}
 
 {% block breadcrumb %}
 <nav class="mb-2 text-sm" aria-label="Breadcrumb">
     <ol class="flex items-center gap-1.5 text-gray-500">
         <li><a href="{% url 'student_list' %}" class="hover:text-primary transition-colors">Students</a></li>
         <li><i class="fas fa-chevron-right text-[10px] text-gray-300"></i></li>
-        <li class="text-gray-800 font-medium">{{ student.first_name }} {{ student.last_name }}</li>
+        <li class="text-gray-800 font-medium">{{ student.full_name }}</li>
     </ol>
 </nav>
 {% endblock %}
@@ -33,9 +33,9 @@
                     <div class="absolute bottom-0 left-0 -ml-10 -mb-10 w-32 h-32 bg-gold/20 rounded-full blur-3xl"></div>
 
                     <div class="relative z-10 w-24 h-24 rounded-full bg-white/20 border-4 border-white/30 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 backdrop-blur-sm shadow-lg shadow-black/10">
-                        {{ student.first_name|first }}{{ student.last_name|first }}
+                        {{ student.full_name|first }}
                     </div>
-                    <h4 class="relative z-10 text-xl font-bold mb-2">{{ student.first_name }} {{ student.last_name }}</h4>
+                    <h4 class="relative z-10 text-xl font-bold mb-2">{{ student.full_name }}</h4>
                     <span class="relative z-10 inline-block bg-white/20 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm border border-white/10">
                         <i class="fas fa-id-card mr-1"></i>{{ student.student_id }}
                     </span>

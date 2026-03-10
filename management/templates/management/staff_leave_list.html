@@ -60,7 +60,8 @@
 
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-[slideUp_0.5s_ease-out]">
     {% if leaves %}
-    <div class="overflow-x-auto">
+    <!-- Desktop Table View -->
+    <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-left text-sm">
             <thead>
                 <tr class="bg-gradient-to-r from-primary to-secondary text-white">
@@ -122,6 +123,43 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="md:hidden divide-y divide-gray-100">
+        {% for leave in leaves %}
+        <a href="{% url 'staff_leave_detail' leave.pk %}" class="block p-4 active:bg-gray-50">
+            <div class="flex items-start justify-between gap-3 mb-2">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                        {{ leave.staff.first_name|first }}
+                    </div>
+                    <div class="min-w-0">
+                        <h4 class="font-semibold text-gray-800 text-sm">{{ leave.staff.first_name }} {{ leave.staff.last_name }}</h4>
+                        <p class="text-xs text-gray-500">{{ leave.staff.staff_id }}</p>
+                    </div>
+                </div>
+                {% if leave.status == 'pending' %}
+                <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200 shrink-0">Pending</span>
+                {% elif leave.status == 'approved' %}
+                <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-200 shrink-0">Approved</span>
+                {% elif leave.status == 'rejected' %}
+                <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200 shrink-0">Rejected</span>
+                {% elif leave.status == 'cancelled' %}
+                <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 border border-gray-200 shrink-0">Cancelled</span>
+                {% endif %}
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-xs pl-[52px]">
+                <span class="px-2.5 py-1 rounded-full font-semibold {% if leave.leave_type.is_paid %}bg-blue-100 text-blue-700 border border-blue-200{% else %}bg-orange-100 text-orange-700 border border-orange-200{% endif %}">
+                    {{ leave.leave_type.name }}
+                </span>
+                <span class="text-gray-400">
+                    <i class="fas fa-calendar mr-1"></i>{{ leave.start_date|date:"d M Y" }}{% if leave.start_date != leave.end_date %} - {{ leave.end_date|date:"d M Y" }}{% endif %}
+                </span>
+                <span class="font-semibold text-gray-700">{{ leave.days }} day{{ leave.days|pluralize }}{% if leave.half_day %} (half){% endif %}</span>
+            </div>
+        </a>
+        {% endfor %}
     </div>
 
     {% include 'management/components/pagination.html' with page_obj=leaves %}
