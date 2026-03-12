@@ -280,6 +280,7 @@ class Student(models.Model):
     city = models.CharField(max_length=100, blank=True, default='Rourkela', verbose_name="City")
     state = models.CharField(max_length=100, blank=True, default='Odisha', verbose_name="State")
     pin_code = models.CharField(max_length=10, blank=True, default='769001', verbose_name="Pin Code")
+    photo = models.ImageField(upload_to='student_photos/', blank=True, null=True, verbose_name="Photo")
     is_orphan = models.BooleanField(default=False, verbose_name="Orphan")
     guardian_name = models.CharField(max_length=100, blank=True, default='', verbose_name="Guardian Name")
     guardian_phone = models.CharField(max_length=20, blank=True, default='', verbose_name="Guardian Phone")
@@ -621,6 +622,7 @@ class AdmissionApplication(models.Model):
     state = models.CharField(max_length=100, blank=True, default='', verbose_name="State")
     pin_code = models.CharField(max_length=10, blank=True, default='', verbose_name="Pin Code")
     notes = models.TextField(blank=True, default='', verbose_name="Notes / Message")
+    photo = models.ImageField(upload_to='application_photos/', blank=True, null=True, verbose_name="Photo")
 
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name="Status")
     rejection_reason = models.TextField(blank=True, default='', verbose_name="Rejection Reason")

@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from management.views import service_worker, auto_login_view
 
 urlpatterns = [
@@ -24,3 +26,6 @@ urlpatterns = [
     path("", auto_login_view),
     path("", include('management.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

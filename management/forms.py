@@ -171,7 +171,7 @@ class StudentForm(forms.ModelForm):
         model = Student
         fields = ['student_id', 'full_name', 'email', 'phone',
                   'date_of_birth', 'gender', 'address', 'city', 'state', 'pin_code',
-                  'is_orphan', 'guardian_name', 'guardian_phone', 'guardian_discount',
+                  'photo', 'is_orphan', 'guardian_name', 'guardian_phone', 'guardian_discount',
                   'batches', 'enrollment_date']
         widgets = {
             'student_id': styled_text_input('Auto-generated if left blank'),
@@ -553,7 +553,7 @@ class AdmissionApplicationForm(forms.ModelForm):
         fields = [
             'first_name', 'last_name', 'phone', 'email',
             'date_of_birth', 'gender', 'address', 'city', 'state', 'pin_code',
-            'notes',
+            'notes', 'photo',
         ]
         widgets = {
             'first_name': styled_text_input('Enter first name'),

@@ -32,9 +32,15 @@
                     <div class="absolute top-0 right-0 -mr-12 -mt-12 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
                     <div class="absolute bottom-0 left-0 -ml-10 -mb-10 w-32 h-32 bg-gold/20 rounded-full blur-3xl"></div>
 
+                    {% if student.photo %}
+                    <div class="relative z-10 w-24 h-24 rounded-full border-4 border-white/30 mx-auto mb-4 overflow-hidden shadow-lg shadow-black/10">
+                        <img src="{{ student.photo.url }}" alt="{{ student.full_name }}" class="w-full h-full object-cover">
+                    </div>
+                    {% else %}
                     <div class="relative z-10 w-24 h-24 rounded-full bg-white/20 border-4 border-white/30 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 backdrop-blur-sm shadow-lg shadow-black/10">
                         {{ student.full_name|first }}
                     </div>
+                    {% endif %}
                     <h4 class="relative z-10 text-xl font-bold mb-2">{{ student.full_name }}</h4>
                     <span class="relative z-10 inline-block bg-white/20 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm border border-white/10">
                         <i class="fas fa-id-card mr-1"></i>{{ student.student_id }}

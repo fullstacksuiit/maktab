@@ -36,9 +36,15 @@
         <div class="lg:col-span-1">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
                 <div class="bg-gradient-to-r from-primary to-secondary px-6 py-8 text-center text-white">
+                    {% if application.photo %}
+                    <div class="w-24 h-24 rounded-full border-4 border-white/30 mx-auto mb-4 overflow-hidden">
+                        <img src="{{ application.photo.url }}" alt="{{ application.first_name }}" class="w-full h-full object-cover">
+                    </div>
+                    {% else %}
                     <div class="w-24 h-24 rounded-full bg-white/20 border-4 border-white/30 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 backdrop-blur-sm">
                         {{ application.first_name|first }}{{ application.last_name|first }}
                     </div>
+                    {% endif %}
                     <h4 class="text-xl font-bold mb-2">{{ application.first_name }} {{ application.last_name }}</h4>
                     {% if application.status == 'pending' %}
                     <span class="inline-block bg-yellow-400/30 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm">

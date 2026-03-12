@@ -799,7 +799,7 @@ def student_list(request):
 def student_add(request):
     org = get_org(request)
     if request.method == 'POST':
-        form = StudentForm(request.POST)
+        form = StudentForm(request.POST, request.FILES)
         form.fields['batches'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
         if form.is_valid():
             student = form.save(commit=False)
@@ -822,7 +822,7 @@ def student_edit(request, uuid):
     org = get_org(request)
     student = get_object_or_404(Student, uuid=uuid, organization=org)
     if request.method == 'POST':
-        form = StudentForm(request.POST, instance=student)
+        form = StudentForm(request.POST, request.FILES, instance=student)
         form.fields['batches'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
         if form.is_valid():
             form.save()
@@ -2640,7 +2640,7 @@ def admission_apply(request, org_slug):
     org = get_object_or_404(Organization, slug=org_slug)
 
     if request.method == 'POST':
-        form = AdmissionApplicationForm(request.POST)
+        form = AdmissionApplicationForm(request.POST, request.FILES)
         if form.is_valid():
             application = form.save(commit=False)
             application.organization = org
@@ -2752,6 +2752,7 @@ def application_accept(request, pk):
             city=application.city,
             state=application.state,
             pin_code=application.pin_code,
+            photo=application.photo if application.photo else None,
             enrollment_date=date.today(),
             organization=org,
         )
