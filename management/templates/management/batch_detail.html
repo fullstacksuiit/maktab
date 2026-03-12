@@ -182,7 +182,7 @@
                                 <tr class="hover:bg-gray-50/80 transition-colors">
                                     <td class="px-4 py-3 font-medium text-primary">{{ student.student_id }}</td>
                                     <td class="px-4 py-3 font-semibold text-gray-800">{{ student.full_name }}</td>
-                                    <td class="px-4 py-3 text-gray-600">{{ student.phone }}</td>
+                                    <td class="px-4 py-3 text-gray-600"><a href="tel:{{ student.phone }}" class="hover:text-primary transition-colors">{{ student.phone }}</a></td>
                                     <td class="px-4 py-3 text-center">
                                         <a href="{% url 'student_detail' student.uuid %}" class="text-primary hover:text-primary/80 text-sm font-medium">
                                             <i class="fas fa-eye"></i> View
@@ -220,7 +220,7 @@
                                 <tr class="hover:bg-gray-50/80 transition-colors">
                                     <td class="px-4 py-3 font-medium text-primary">{{ teacher.staff_id }}</td>
                                     <td class="px-4 py-3 font-semibold text-gray-800">{{ teacher.first_name }} {{ teacher.last_name }}</td>
-                                    <td class="px-4 py-3 text-gray-600">{{ teacher.phone }}</td>
+                                    <td class="px-4 py-3 text-gray-600"><a href="tel:{{ teacher.phone }}" class="hover:text-primary transition-colors">{{ teacher.phone }}</a></td>
                                     <td class="px-4 py-3 text-gray-600">{{ teacher.department }}</td>
                                     <td class="px-4 py-3 text-center">
                                         <a href="{% url 'staff_detail' teacher.pk %}" class="text-primary hover:text-primary/80 text-sm font-medium">

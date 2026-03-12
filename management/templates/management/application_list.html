@@ -76,7 +76,7 @@
                             <div class="font-semibold text-gray-800">{{ app.first_name }} {{ app.last_name }}</div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 text-gray-600">{{ app.phone }}</td>
+                    <td class="px-6 py-4 text-gray-600"><a href="tel:{{ app.phone }}" class="hover:text-primary transition-colors">{{ app.phone }}</a></td>
                     <td class="px-6 py-4 text-gray-600 hidden md:table-cell">{{ app.email|default:"-" }}</td>
                     <td class="px-6 py-4 text-gray-600">{{ app.get_gender_display }}</td>
                     <td class="px-6 py-4">
@@ -111,7 +111,7 @@
                     </div>
                     <div class="min-w-0">
                         <h4 class="font-semibold text-gray-800 text-sm">{{ app.first_name }} {{ app.last_name }}</h4>
-                        <p class="text-xs text-gray-500">{{ app.get_gender_display }} &middot; {{ app.phone }}</p>
+                        <p class="text-xs text-gray-500">{{ app.get_gender_display }} &middot; <a href="tel:{{ app.phone }}" class="hover:text-primary transition-colors">{{ app.phone }}</a></p>
                     </div>
                 </div>
                 {% if app.status == 'pending' %}

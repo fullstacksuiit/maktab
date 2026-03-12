@@ -43,7 +43,7 @@
                         {{ student.email }}
                     </td>
                     <td class="px-6 py-4 text-gray-600">
-                        {{ student.phone }}
+                        <a href="tel:{{ student.phone }}" class="hover:text-primary transition-colors">{{ student.phone }}</a>
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex flex-wrap gap-1">
@@ -98,7 +98,7 @@
                 <span class="font-bold text-gray-700 text-sm shrink-0">{{ currency_symbol }} {{ student.total_fees|default:"0" }}</span>
             </div>
             <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 pl-[52px] mb-2">
-                {% if student.phone %}<span><i class="fas fa-phone mr-1 text-gray-400"></i>{{ student.phone }}</span>{% endif %}
+                {% if student.phone %}<span><i class="fas fa-phone mr-1 text-gray-400"></i><a href="tel:{{ student.phone }}" class="hover:text-primary transition-colors">{{ student.phone }}</a></span>{% endif %}
                 {% if student.email %}<span class="truncate"><i class="fas fa-envelope mr-1 text-gray-400"></i>{{ student.email }}</span>{% endif %}
             </div>
             {% if student.batches.all %}

@@ -98,7 +98,7 @@
                     </div>
                     <span class="font-medium">Contact</span>
                 </div>
-                 <div class="font-semibold text-gray-800 sm:w-2/3 sm:text-right mt-2 sm:mt-0">{{ user.organization.contact }}</div>
+                 <div class="font-semibold text-gray-800 sm:w-2/3 sm:text-right mt-2 sm:mt-0"><a href="tel:{{ user.organization.contact }}" class="hover:text-primary transition-colors">{{ user.organization.contact }}</a></div>
             </div>
 
             {% if user.organization.license %}
