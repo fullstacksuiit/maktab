@@ -43,7 +43,7 @@
 
                         <div>
                             <label for="{{ form.batch.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
-                                Batch <span class="text-gray-500 font-normal ml-1">(Optional)</span>
+                                Batch *
                             </label>
                             {{ form.batch }}
                             {% if form.batch.errors %}
@@ -55,7 +55,49 @@
                         </div>
                     </div>
 
+                    <!-- Month Range & Auto-Calc -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.fee_month_from.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                From Month
+                            </label>
+                            {{ form.fee_month_from }}
+                            {% if form.fee_month_from.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.fee_month_from.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="{{ form.fee_month_to.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                To Month
+                            </label>
+                            {{ form.fee_month_to }}
+                            {% if form.fee_month_to.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.fee_month_to.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Fee Calculation Preview -->
+                    <div id="feeCalcPreview" class="hidden bg-primary/5 border border-primary/10 rounded-xl p-4">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i class="fas fa-calculator text-primary"></i>
+                            <span class="text-sm font-semibold text-gray-700">Fee Calculation</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mb-3" id="monthTags"></div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600"><span id="monthCount">0</span> month(s) x <span id="perMonthFee">0</span></span>
+                            <span class="text-lg font-bold text-primary" id="calcTotal">0</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label for="{{ form.amount.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
                                 Amount *
@@ -81,19 +123,19 @@
                                 </div>
                             {% endif %}
                         </div>
-                    </div>
 
-                    <div>
-                        <label for="{{ form.payment_method.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
-                            Payment Method *
-                        </label>
-                        {{ form.payment_method }}
-                        {% if form.payment_method.errors %}
-                            <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
-                                <i class="fas fa-exclamation-circle mt-0.5"></i>
-                                <div>{% for error in form.payment_method.errors %}<p>{{ error }}</p>{% endfor %}</div>
-                            </div>
-                        {% endif %}
+                        <div>
+                            <label for="{{ form.payment_method.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Payment Method *
+                            </label>
+                            {{ form.payment_method }}
+                            {% if form.payment_method.errors %}
+                                <div class="text-red-500 text-xs mt-1 flex items-start gap-1">
+                                    <i class="fas fa-exclamation-circle mt-0.5"></i>
+                                    <div>{% for error in form.payment_method.errors %}<p>{{ error }}</p>{% endfor %}</div>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
 
                     <div>
@@ -109,12 +151,16 @@
                         {% endif %}
                     </div>
 
+                    <input type="hidden" name="submit_action" id="submit_action" value="save">
                     <div class="pt-6 border-t border-gray-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
                         <a href="{% url 'fee_payment_list' %}" class="px-6 py-2.5 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors text-center">
                             Cancel
                         </a>
                         <button type="submit" class="px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium text-center">
-                            <i class="fas fa-save mr-2"></i> {{ action }} Payment
+                            <i class="fas fa-save mr-2"></i> Save
+                        </button>
+                        <button type="submit" onclick="document.getElementById('submit_action').value='save_print'" class="px-6 py-2.5 bg-gray-800 text-white rounded-xl hover:bg-gray-700 shadow-lg shadow-gray-800/20 transition-all font-medium text-center">
+                            <i class="fas fa-print mr-2"></i> Save & Print
                         </button>
                     </div>
                 </form>
@@ -122,4 +168,163 @@
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    var batchFees = {{ batch_fees_json|safe }};
+    var studentEl = document.getElementById('{{ form.student.id_for_label }}');
+    var batchEl = document.getElementById('{{ form.batch.id_for_label }}');
+    var fromEl = document.getElementById('{{ form.fee_month_from.id_for_label }}');
+    var toEl = document.getElementById('{{ form.fee_month_to.id_for_label }}');
+    var amountEl = document.getElementById('{{ form.amount.id_for_label }}');
+    var preview = document.getElementById('feeCalcPreview');
+    var monthTags = document.getElementById('monthTags');
+    var monthCountEl = document.getElementById('monthCount');
+    var perMonthFeeEl = document.getElementById('perMonthFee');
+    var calcTotalEl = document.getElementById('calcTotal');
+
+    var guardianDiscount = 0;
+    var MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    // ─── Student → Batch auto-fetch ─────────────────────────────────────
+    function onStudentChange() {
+        var studentId = studentEl ? studentEl.value : '';
+        if (!studentId) return;
+
+        fetch('{% url "api_student_batches" %}?student_id=' + studentId)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                guardianDiscount = parseFloat(data.guardian_discount) || 0;
+
+                // Get TomSelect instance on batch field (if any)
+                var batchTS = batchEl && batchEl.tomselect;
+
+                if (batchTS) {
+                    batchTS.clear();
+                    batchTS.clearOptions();
+                    data.batches.forEach(function(b) {
+                        batchTS.addOption({ value: b.id, text: b.label });
+                    });
+                    // Auto-select if only one batch
+                    if (data.batches.length === 1) {
+                        batchTS.setValue(data.batches[0].id);
+                    }
+                    batchTS.refreshOptions(false);
+                } else {
+                    // Fallback: plain select
+                    batchEl.innerHTML = '<option value="">---------</option>';
+                    data.batches.forEach(function(b) {
+                        var opt = document.createElement('option');
+                        opt.value = b.id;
+                        opt.textContent = b.label;
+                        batchEl.appendChild(opt);
+                    });
+                    if (data.batches.length === 1) {
+                        batchEl.value = data.batches[0].id;
+                    }
+                }
+
+                // Update batchFees with fetched data
+                data.batches.forEach(function(b) {
+                    batchFees[b.id] = { fee: b.fee, period: b.fee_period, course_name: b.course_name };
+                });
+
+                calculate();
+            });
+    }
+
+    // Listen for student changes (TomSelect or plain select)
+    if (studentEl) {
+        var studentObserver = new MutationObserver(onStudentChange);
+        studentObserver.observe(studentEl, { attributes: true, childList: true });
+        studentEl.addEventListener('change', onStudentChange);
+    }
+
+    // ─── Fee calculation ────────────────────────────────────────────────
+    function getMonthsBetween(from, to) {
+        var months = [];
+        var parts1 = from.split('-');
+        var parts2 = to.split('-');
+        var y = parseInt(parts1[0]), m = parseInt(parts1[1]);
+        var ey = parseInt(parts2[0]), em = parseInt(parts2[1]);
+        while (y < ey || (y === ey && m <= em)) {
+            months.push(MONTH_NAMES[m-1] + ' ' + y);
+            m++;
+            if (m > 12) { m = 1; y++; }
+        }
+        return months;
+    }
+
+    function calculate() {
+        var batchId = batchEl ? batchEl.value : '';
+        var fromVal = fromEl ? fromEl.value : '';
+        var toVal = toEl ? toEl.value : '';
+
+        if (!batchId || !fromVal || !batchFees[batchId]) {
+            preview.classList.add('hidden');
+            return;
+        }
+
+        if (!toVal) toVal = fromVal;
+
+        if (toVal < fromVal) {
+            preview.classList.add('hidden');
+            return;
+        }
+
+        var fee = parseFloat(batchFees[batchId].fee);
+        var months = getMonthsBetween(fromVal, toVal);
+        var total = fee * months.length;
+
+        // Apply guardian discount
+        var discountAmt = 0;
+        if (guardianDiscount > 0) {
+            discountAmt = total * guardianDiscount / 100;
+            total = total - discountAmt;
+        }
+
+        // Show preview
+        preview.classList.remove('hidden');
+        monthTags.innerHTML = months.map(function(m) {
+            return '<span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-primary/10 text-primary border border-primary/20">' + m + '</span>';
+        }).join('');
+        monthCountEl.textContent = months.length;
+        perMonthFeeEl.textContent = fee.toFixed(2);
+        calcTotalEl.textContent = total.toFixed(2);
+
+        // Show discount info if applicable
+        var discountInfo = document.getElementById('discountInfo');
+        if (guardianDiscount > 0) {
+            if (!discountInfo) {
+                discountInfo = document.createElement('div');
+                discountInfo.id = 'discountInfo';
+                discountInfo.className = 'flex items-center justify-between text-sm mt-1 text-green-600';
+                preview.appendChild(discountInfo);
+            }
+            discountInfo.innerHTML = '<span><i class="fas fa-tag mr-1"></i>Guardian discount (' + guardianDiscount + '%)</span><span>-' + discountAmt.toFixed(2) + '</span>';
+        } else if (discountInfo) {
+            discountInfo.remove();
+        }
+
+        // Auto-fill amount
+        amountEl.value = total.toFixed(2);
+    }
+
+    // Auto-sync from → to when from changes and to is empty or less
+    if (fromEl) fromEl.addEventListener('change', function() {
+        if (!toEl.value || toEl.value < fromEl.value) {
+            toEl.value = fromEl.value;
+        }
+        calculate();
+    });
+    if (toEl) toEl.addEventListener('change', calculate);
+    if (batchEl) batchEl.addEventListener('change', calculate);
+
+    // Observe TomSelect changes (if batch uses TomSelect)
+    if (batchEl) {
+        var observer = new MutationObserver(calculate);
+        observer.observe(batchEl, { attributes: true, childList: true });
+    }
+})();
+</script>
 {% endblock %}

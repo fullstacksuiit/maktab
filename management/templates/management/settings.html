@@ -36,6 +36,14 @@
                             {% if form.org_name.errors %}<div class="text-red-500 text-xs mt-1">{% for error in form.org_name.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
                         </div>
                         <div>
+                            <label for="{{ form.org_name_urdu.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-building text-primary mr-1"></i> Organization Name (Urdu) <span class="urdu text-gray-500 font-normal">ادارے کا نام</span>
+                            </label>
+                            {{ form.org_name_urdu }}
+                            {% if form.org_name_urdu.errors %}<div class="text-red-500 text-xs mt-1">{% for error in form.org_name_urdu.errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                            <p class="text-xs text-gray-500 mt-1">This will appear on receipts in Urdu</p>
+                        </div>
+                        <div>
                             <label for="{{ form.contact.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
                                 <i class="fas fa-phone text-primary mr-1"></i> Contact Number
                             </label>

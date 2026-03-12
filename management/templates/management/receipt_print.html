@@ -1,163 +1,301 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Receipt #{{ payment.receipt_number }}</title>
-    <!-- Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#0d6b4e',
-                        secondary: '#1a9e6f',
-                        gold: '#c9a84c',
-                    }
-                }
-            }
-        }
-    </script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Poppins:wght@400;600;700&display=swap');
-        body { font-family: 'Poppins', sans-serif; }
-        .font-mono { font-family: 'Courier Prime', monospace; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #000; background: #eee; }
+        .no-print-wrap { display: flex; justify-content: center; padding: 20px; }
+        .receipt { width: 210mm; max-width: 100%; background: #fff; padding: 8mm 10mm; border: 1px solid #ccc; }
+        table { width: 100%; border-collapse: collapse; }
+        .ur { font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', serif; direction: rtl; unicode-bidi: bidi-override; }
+        .ur-inline { font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', serif; }
+        .bilingual { display: flex; justify-content: space-between; align-items: baseline; }
+        .bilingual .en { text-align: left; }
+        .bilingual .ur-side { text-align: right; font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; direction: rtl; }
+
+        /* Header */
+        .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 6px; }
+        .header .ur-name { font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size: 22px; font-weight: 700; direction: rtl; margin-bottom: 2px; line-height: 1.6; }
+        .header .en-name { font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2px; }
+        .header p { font-size: 10px; color: #333; }
+
+        .receipt-title-wrap { text-align: center; margin: 6px 0 8px; }
+        .receipt-title { font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; border: 1.5px solid #000; display: inline-block; padding: 3px 20px; }
+        .receipt-title .ur-inline { font-size: 15px; letter-spacing: 0; }
+
+        /* Meta row */
+        .meta-row { margin-bottom: 8px; }
+        .meta-row td { padding: 3px 0; vertical-align: top; }
+        .meta-row .label { font-size: 9px; text-transform: uppercase; color: #555; letter-spacing: 0.5px; }
+        .meta-row .label-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: 11px; color: #555; direction: rtl; }
+        .meta-row .value { font-weight: bold; font-size: 12px; }
+
+        /* Student box */
+        .student-box { border: 1px solid #000; padding: 6px 8px; margin-bottom: 8px; }
+        .student-box .label { font-size: 9px; text-transform: uppercase; color: #555; letter-spacing: 0.5px; }
+        .student-box .label-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: 11px; color: #555; direction: rtl; }
+        .student-box .name { font-size: 14px; font-weight: bold; }
+        .student-box .sid { font-size: 10px; color: #333; }
+
+        /* Section headers */
+        .section-hdr { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #000; padding-bottom: 2px; margin: 8px 0 4px; display: flex; justify-content: space-between; align-items: baseline; }
+        .section-hdr .ur-side { font-family: 'Noto Nastaliq Urdu', serif; font-size: 12px; text-transform: none; letter-spacing: 0; direction: rtl; }
+
+        /* Detail table */
+        .dtl-table td { padding: 3px 0; border-bottom: 1px dotted #aaa; font-size: 11px; }
+        .dtl-table td:first-child { width: 40%; }
+        .dtl-table td:last-child { text-align: right; }
+        .dtl-table tr:last-child td { border-bottom: none; }
+        .dtl-table .td-label-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: 10px; color: #555; direction: rtl; display: block; }
+
+        /* Breakdown table */
+        .bkdn-table { border: 1px solid #000; margin-bottom: 8px; }
+        .bkdn-table th { background: #f0f0f0; font-size: 9px; text-transform: uppercase; padding: 3px 6px; border-bottom: 1px solid #000; text-align: left; }
+        .bkdn-table th:last-child { text-align: right; }
+        .bkdn-table td { padding: 2px 6px; border-bottom: 1px dotted #ccc; font-size: 11px; }
+        .bkdn-table td:last-child { text-align: right; }
+        .bkdn-table tr:last-child td { border-bottom: none; }
+
+        /* Total box */
+        .total-box { border: 2px solid #000; padding: 6px 10px; margin: 8px 0; }
+        .total-box table td { font-size: 14px; font-weight: bold; padding: 0; }
+        .total-box table td:last-child { text-align: right; font-size: 16px; }
+        .total-box .ur-label { font-family: 'Noto Nastaliq Urdu', serif; font-size: 13px; direction: rtl; display: block; font-weight: normal; color: #333; }
+
+        /* Summary */
+        .summary-table td { padding: 2px 0; font-size: 10px; }
+        .summary-table td:last-child { text-align: right; }
+        .summary-table .divider td { border-top: 1px dashed #999; padding-top: 3px; font-weight: bold; font-size: 11px; }
+
+        /* Notes */
+        .notes-box { border: 1px dashed #999; padding: 4px 6px; margin: 6px 0; font-size: 10px; }
+        .notes-box .label { font-size: 9px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+
+        /* Bank details */
+        .bank-box { border: 1px solid #aaa; padding: 5px 8px; margin: 6px 0; font-size: 10px; }
+        .bank-box .label { font-size: 8px; text-transform: uppercase; color: #666; }
+        .bank-box .val { font-weight: bold; font-family: 'Courier New', monospace; }
+
+        /* Footer */
+        .footer { margin-top: 14px; }
+        .sig-line { width: 150px; border-bottom: 1px solid #000; margin-bottom: 3px; }
+        .footer-note { text-align: center; font-size: 9px; color: #555; border-top: 1px dashed #aaa; padding-top: 4px; margin-top: 10px; }
+        .footer-note .ur-inline { font-size: 12px; }
+
+        /* Buttons */
+        .btn-bar { position: fixed; top: 12px; right: 12px; display: flex; gap: 8px; z-index: 50; }
+        .btn-bar button, .btn-bar a { padding: 6px 14px; font-size: 12px; border-radius: 6px; text-decoration: none; cursor: pointer; border: 1px solid #ccc; background: #fff; color: #333; font-family: inherit; }
+        .btn-bar .btn-print { background: #222; color: #fff; border-color: #222; }
+
         @media print {
-            .no-print { display: none; }
-            body { background: white; }
-            .shadow-lg { box-shadow: none; }
+            .no-print { display: none !important; }
+            body { background: #fff; }
+            .no-print-wrap { padding: 0; }
+            .receipt { border: none; padding: 6mm 8mm; width: 100%; }
+            @page { size: A4; margin: 8mm; }
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+<body>
 
-    <div class="bg-white p-8 max-w-lg w-full shadow-lg border border-gray-200 relative print:shadow-none print:border-none">
-        <!-- Print Button -->
-        <button onclick="window.print()" class="no-print absolute top-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700 transition-colors flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-            Print Receipt
-        </button>
+    <div class="btn-bar no-print">
+        <a href="javascript:window.history.back()">&#8592; Back</a>
+        <button class="btn-print" onclick="window.print()">&#9113; Print</button>
+    </div>
+
+    <div class="no-print-wrap">
+    <div class="receipt">
 
         <!-- Header -->
-        <div class="text-center border-b-2 border-dashed border-primary/30 pb-6 mb-6">
-            <div class="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full text-primary mb-3">
-                <i class="fas fa-mosque text-2xl"></i>
-            </div>
-            <h1 class="text-2xl font-bold uppercase tracking-widest text-primary">Maktab {{ user.organization.org_name|default:"Academy" }}</h1>
-            <p class="text-sm text-gray-500 mt-1 uppercase tracking-wider">{{ user.organization.full_address|default:"Educational Institute" }}</p>
-            <p class="text-sm text-gray-500">{{ user.organization.contact|default:"" }}</p>
+        <div class="header">
+            {% if user.organization.org_name_urdu %}<div class="ur-name">{{ user.organization.org_name_urdu }}</div>{% endif %}
+            <div class="en-name">Maktab {{ user.organization.org_name|default:"Academy" }}</div>
+            <p>{{ user.organization.full_address|default:"Educational Institute" }}{% if user.organization.contact %} &bull; Phone: {{ user.organization.contact }}{% endif %}</p>
         </div>
 
-        <!-- Receipt Info -->
-        <div class="flex justify-between items-end mb-8">
-            <div class="text-left">
-                <p class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Receipt No</p>
-                <p class="font-bold text-xl text-gray-800 font-mono">#{{ payment.receipt_number }}</p>
-            </div>
-            <div class="text-right">
-                <p class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Date Issued</p>
-                <p class="font-bold text-gray-800">{{ payment.payment_date }}</p>
+        <div class="receipt-title-wrap">
+            <div class="receipt-title">
+                <span class="ur-inline">فیس رسید</span> &nbsp;/&nbsp; FEE RECEIPT
             </div>
         </div>
 
-        <!-- Received From -->
-        <div class="mb-8 bg-gray-50 p-4 rounded-xl border border-gray-100">
-            <p class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-2">Received From Student</p>
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-lg font-bold text-gray-800">
-                        {{ payment.student.full_name }}
-                    </p>
-                    <p class="text-sm text-primary font-medium mt-0.5">ID: {{ payment.student.student_id }}</p>
-                </div>
-            </div>
-        </div>
+        <!-- Receipt No / Date -->
+        <table class="meta-row">
+            <tr>
+                <td style="width:50%">
+                    <span class="label">Receipt No. <span class="label-ur">رسید نمبر</span></span><br>
+                    <span class="value">#{{ payment.receipt_number }}</span>
+                </td>
+                <td style="width:50%; text-align:right">
+                    <span class="label">Date <span class="label-ur">تاریخ</span></span><br>
+                    <span class="value">{{ payment.payment_date|date:"d/m/Y" }}</span>
+                </td>
+            </tr>
+        </table>
 
-        <!-- Payment Details Area -->
-        <div class="mb-6">
-            <table class="w-full text-left">
-                <tbody>
-                    <tr class="border-b border-dashed border-gray-200">
-                        <td class="py-3 text-gray-500 text-sm">Payment For</td>
-                        <td class="py-3 text-right font-medium text-gray-800">{% if payment.batch %}{{ payment.batch.course.course_name }} - {{ payment.batch.batch_name }}{% else %}General Fee{% endif %}</td>
-                    </tr>
-                    <tr class="border-b border-dashed border-gray-200">
-                        <td class="py-3 text-gray-500 text-sm">Payment Method</td>
-                        <td class="py-3 text-right font-medium text-gray-800">{{ payment.payment_method }}</td>
-                    </tr>
-                     <tr class="border-b border-gray-200">
-                        <td class="py-4 text-gray-800 font-bold text-lg">Total Amount</td>
-                        <td class="py-4 text-right font-bold text-2xl text-primary">{{ currency_symbol }} {{ payment.amount }}</td>
-                    </tr>
-                </tbody>
+        <!-- Student Info -->
+        <div class="student-box">
+            <table>
+                <tr>
+                    <td style="width:100%">
+                        <div>
+                            <span class="label">Received From</span>
+                            <span class="label-ur">وصول از</span>
+                        </div>
+                        <div class="name">{{ payment.student.full_name }}</div>
+                        <div class="sid">Student ID / طالب علم نمبر: {{ payment.student.student_id }}</div>
+                    </td>
+                </tr>
             </table>
         </div>
 
+        <!-- Payment Details -->
+        <div class="section-hdr">
+            <span class="en">Payment Details</span>
+            <span class="ur-side">ادائیگی کی تفصیلات</span>
+        </div>
+        <table class="dtl-table">
+            {% if payment.batch %}
+            <tr>
+                <td>Course / Batch<span class="td-label-ur">کورس / بیچ</span></td>
+                <td>{{ payment.batch.course.course_name }} - {{ payment.batch.batch_name }}</td>
+            </tr>
+            {% endif %}
+            {% if payment.fee_months_display %}
+            <tr>
+                <td>Fee Period<span class="td-label-ur">فیس کی مدت</span></td>
+                <td>{{ payment.fee_months_display }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td>Payment Method<span class="td-label-ur">ادائیگی کا طریقہ</span></td>
+                <td>{{ payment.payment_method }}</td>
+            </tr>
+        </table>
+
+        <!-- Month-wise Breakdown -->
+        {% if payment.fee_months_list %}
+        <div class="section-hdr">
+            <span class="en">Month-wise Breakdown</span>
+            <span class="ur-side">ماہانہ تفصیل</span>
+        </div>
+        <table class="bkdn-table">
+            <thead>
+                <tr>
+                    <th style="width:30px">#</th>
+                    <th>Month / مہینہ</th>
+                    <th>Amount / رقم</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for month in payment.fee_months_list %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ month|date:"F Y" }}</td>
+                    <td>{{ currency_symbol }} {{ per_month_fee }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        <!-- Total Amount -->
+        <div class="total-box">
+            <table>
+                <tr>
+                    <td>
+                        Total Amount Paid
+                        <span class="ur-label">کل ادا شدہ رقم</span>
+                    </td>
+                    <td>{{ currency_symbol }} {{ payment.amount }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Account Summary -->
+        <div class="section-hdr">
+            <span class="en">Account Summary</span>
+            <span class="ur-side">اکاؤنٹ کا خلاصہ</span>
+        </div>
+        <table class="summary-table">
+            <tr>
+                <td>Total Fees / کل فیس {{ payment.batch.course.get_fee_period_display|default:"" }}</td>
+                <td>{{ currency_symbol }} {{ total_fees }}</td>
+            </tr>
+            <tr>
+                <td>Total Paid to Date / آج تک ادا شدہ</td>
+                <td>{{ currency_symbol }} {{ total_paid }}</td>
+            </tr>
+            <tr class="divider">
+                <td>Balance Due / باقی رقم</td>
+                <td>{{ currency_symbol }} {{ pending_fees }}</td>
+            </tr>
+        </table>
+
+        <!-- Notes -->
         {% if payment.notes %}
-        <div class="mb-6 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
-            <p class="text-xs text-yellow-600 uppercase font-bold mb-1">Remarks</p>
-            <p class="text-sm italic text-gray-600">{{ payment.notes }}</p>
+        <div class="notes-box">
+            <div class="label">Remarks / <span class="ur-inline">ملاحظات</span></div>
+            <div>{{ payment.notes }}</div>
         </div>
         {% endif %}
 
-        <!-- Bank Details for Bank Transfer Payments -->
+        <!-- Bank Details -->
         {% if user.organization.bank_name or user.organization.upi_id %}
-        <div class="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
-            <p class="text-xs text-gray-500 uppercase font-bold mb-3 flex items-center gap-2">
-                <i class="fas fa-university"></i> Bank Details for Future Payments
-            </p>
-            <div class="grid grid-cols-2 gap-3 text-sm">
-                {% if user.organization.bank_name %}
-                <div>
-                    <p class="text-[10px] text-gray-400 uppercase">Bank Name</p>
-                    <p class="font-medium text-gray-800">{{ user.organization.bank_name }}</p>
-                </div>
-                {% endif %}
-                {% if user.organization.account_holder %}
-                <div>
-                    <p class="text-[10px] text-gray-400 uppercase">Account Holder</p>
-                    <p class="font-medium text-gray-800">{{ user.organization.account_holder }}</p>
-                </div>
-                {% endif %}
-                {% if user.organization.account_number %}
-                <div>
-                    <p class="text-[10px] text-gray-400 uppercase">Account No.</p>
-                    <p class="font-medium text-gray-800 font-mono">{{ user.organization.account_number }}</p>
-                </div>
-                {% endif %}
-                {% if user.organization.ifsc_code %}
-                <div>
-                    <p class="text-[10px] text-gray-400 uppercase">IFSC Code</p>
-                    <p class="font-medium text-gray-800 font-mono">{{ user.organization.ifsc_code }}</p>
-                </div>
-                {% endif %}
+        <div class="bank-box">
+            <div class="label" style="margin-bottom:3px; font-weight:bold;">Bank Details / <span class="ur-inline" style="font-size:11px">بینک کی تفصیلات</span></div>
+            <table style="font-size:10px">
+                <tr>
+                    {% if user.organization.bank_name %}
+                    <td style="padding:1px 8px 1px 0"><span class="label">Bank:</span> <span class="val">{{ user.organization.bank_name }}</span></td>
+                    {% endif %}
+                    {% if user.organization.account_holder %}
+                    <td style="padding:1px 8px 1px 0"><span class="label">Holder:</span> <span class="val">{{ user.organization.account_holder }}</span></td>
+                    {% endif %}
+                </tr>
+                <tr>
+                    {% if user.organization.account_number %}
+                    <td style="padding:1px 8px 1px 0"><span class="label">A/C No:</span> <span class="val">{{ user.organization.account_number }}</span></td>
+                    {% endif %}
+                    {% if user.organization.ifsc_code %}
+                    <td style="padding:1px 8px 1px 0"><span class="label">IFSC:</span> <span class="val">{{ user.organization.ifsc_code }}</span></td>
+                    {% endif %}
+                </tr>
                 {% if user.organization.upi_id %}
-                <div class="col-span-2">
-                    <p class="text-[10px] text-gray-400 uppercase">UPI ID</p>
-                    <p class="font-medium text-primary font-mono">{{ user.organization.upi_id }}</p>
-                </div>
+                <tr>
+                    <td colspan="2" style="padding:1px 0"><span class="label">UPI:</span> <span class="val">{{ user.organization.upi_id }}</span></td>
+                </tr>
                 {% endif %}
-            </div>
+            </table>
         </div>
         {% endif %}
 
         <!-- Footer -->
-        <div class="flex flex-col items-center mt-12 pt-4">
-             <div class="w-full flex justify-between items-end mb-6">
-                 <div class="text-left">
-                     <p class="text-[10px] text-gray-400 uppercase">System Generated</p>
-                 </div>
-                 <div class="text-center">
-                    <div class="w-48 border-b border-gray-300 mb-2"></div>
-                    <p class="text-xs text-gray-400 uppercase tracking-wider">Authorized Signature</p>
-                 </div>
-             </div>
-            
-            <p class="text-sm font-medium text-primary mb-1">Thank you for your payment!</p>
-            <p class="text-xs text-gray-400">Computer generated receipt.</p>
+        <div class="footer">
+            <table>
+                <tr>
+                    <td style="vertical-align:bottom">
+                        <div style="font-size:9px; color:#666;">System Generated</div>
+                        <div style="font-size:9px; color:#666;">{{ payment.created_at|date:"d/m/Y h:i A" }}</div>
+                    </td>
+                    <td style="text-align:right">
+                        <div style="font-size:11px; font-weight:bold; margin-bottom:4px;">{% if user.gender == 'M' %}Hafiz {% endif %}{{ user.get_full_name|default:user.username }}</div>
+                        <div class="sig-line" style="margin-left:auto"></div>
+                        <div style="font-size:9px; text-transform:uppercase; letter-spacing:1px; color:#555;">Authorized Signature / <span class="ur-inline" style="letter-spacing:0; text-transform:none;">مجاز دستخط</span></div>
+                    </td>
+                </tr>
+            </table>
+            <div class="footer-note">
+                <span class="ur-inline">ادائیگی کا شکریہ!</span> &bull; Thank you for your payment!<br>
+                <span class="ur-inline">یہ کمپیوٹر سے تیار کردہ رسید ہے</span> &bull; This is a computer generated receipt.
+            </div>
         </div>
+
+    </div>
     </div>
 
 </body>

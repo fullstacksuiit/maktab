@@ -25,6 +25,17 @@
                     <i class="fas fa-chevron-down text-xs"></i>
                 </div>
             </div>
+            <div class="relative">
+                <select name="status" onchange="this.form.submit()" class="appearance-none pl-4 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white text-gray-700 w-full sm:w-40">
+                    <option value="">All Status</option>
+                    <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending{% if pending_count %} ({{ pending_count }}){% endif %}</option>
+                    <option value="Approved" {% if selected_status == 'Approved' %}selected{% endif %}>Approved</option>
+                    <option value="Rejected" {% if selected_status == 'Rejected' %}selected{% endif %}>Rejected</option>
+                </select>
+                <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </div>
+            </div>
             <button type="submit" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium transition-colors sm:hidden">
                 <i class="fas fa-filter"></i> Filter
             </button>
@@ -40,13 +51,25 @@
     </div>
 </div>
 
-{% if search_query or selected_method %}
+{% if pending_count and not selected_status %}
+<div class="mb-4 px-4 py-3 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-800 text-sm flex items-center justify-between">
+    <span>
+        <i class="fas fa-clock mr-2"></i><strong>{{ pending_count }}</strong> payment{{ pending_count|pluralize }} pending approval
+    </span>
+    <a href="{% url 'fee_payment_list' %}?status=Pending" class="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-medium text-xs transition-colors">
+        Review Now
+    </a>
+</div>
+{% endif %}
+
+{% if search_query or selected_method or selected_status %}
 <div class="mb-4 px-4 py-2 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-sm flex items-center justify-between">
     <span>
         <i class="fas fa-filter mr-2"></i>Filtering by:
         {% if search_query %}"<strong>{{ search_query }}</strong>"{% endif %}
         {% if search_query and selected_method %} and {% endif %}
         {% if selected_method %}<strong>{{ selected_method }}</strong>{% endif %}
+        {% if selected_status %}{% if search_query or selected_method %} and {% endif %}<strong>{{ selected_status }}</strong>{% endif %}
     </span>
     <a href="{% url 'fee_payment_list' %}" class="text-blue-600 hover:text-blue-800 font-medium">Clear filter</a>
 </div>
@@ -63,8 +86,10 @@
                     <th class="px-6 py-4 font-semibold">Date</th>
                     <th class="px-6 py-4 font-semibold">Student</th>
                     <th class="px-6 py-4 font-semibold">Batch</th>
+                    <th class="px-6 py-4 font-semibold">Fee Month</th>
                     <th class="px-6 py-4 font-semibold">Amount</th>
                     <th class="px-6 py-4 font-semibold">Method</th>
+                    <th class="px-6 py-4 font-semibold">Status</th>
                     <th class="px-6 py-4 font-semibold text-center last:pr-8 rounded-tr-lg">Actions</th>
                 </tr>
             </thead>
@@ -88,19 +113,41 @@
                     <td class="px-6 py-4 text-gray-600">
                         {% if payment.batch %}{{ payment.batch.course.course_code }} - {{ payment.batch.batch_name }}{% else %}-{% endif %}
                     </td>
+                    <td class="px-6 py-4 text-gray-600">
+                        {% if payment.fee_months_display %}
+                            <span class="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">{{ payment.fee_months_display }}</span>
+                        {% else %}-{% endif %}
+                    </td>
                      <td class="px-6 py-4 font-bold text-gray-800">
                         {{ currency_symbol }} {{ payment.amount }}
                     </td>
                     <td class="px-6 py-4">
                         <span class="text-gray-600">{{ payment.get_payment_method_display }}</span>
                     </td>
-                    <td class="px-6 py-4 max-w-[120px] text-center last:pr-8">
-                        <div class="flex items-center justify-center gap-2">
-                            <a href="{% url 'print_receipt' payment.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors" target="_blank" title="Print Receipt" aria-label="Print receipt #{{ payment.receipt_number }}"><i class="fas fa-print"></i></a>
-                            <a href="{% url 'fee_payment_edit' payment.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit" aria-label="Edit payment #{{ payment.receipt_number }}"><i class="fas fa-edit"></i></a>
+                    <td class="px-6 py-4">
+                        {% if payment.status == 'Pending' %}
+                            <span class="px-2 py-0.5 rounded-md bg-yellow-100 text-yellow-700 text-xs font-medium border border-yellow-200"><i class="fas fa-clock mr-1"></i>Pending</span>
+                        {% elif payment.status == 'Approved' %}
+                            <span class="px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-xs font-medium border border-green-200"><i class="fas fa-check mr-1"></i>Approved</span>
+                        {% elif payment.status == 'Rejected' %}
+                            <span class="px-2 py-0.5 rounded-md bg-red-100 text-red-700 text-xs font-medium border border-red-200"><i class="fas fa-times mr-1"></i>Rejected</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-center last:pr-8">
+                        <div class="flex items-center justify-center gap-1">
+                            {% if payment.status == 'Pending' %}
+                            <form method="post" action="{% url 'fee_payment_approve' payment.pk %}" class="inline">{% csrf_token %}
+                                <button type="submit" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Approve"><i class="fas fa-check-circle"></i></button>
+                            </form>
+                            <form method="post" action="{% url 'fee_payment_reject' payment.pk %}" class="inline">{% csrf_token %}
+                                <button type="submit" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors" title="Reject"><i class="fas fa-times-circle"></i></button>
+                            </form>
+                            {% endif %}
+                            <a href="{% url 'print_receipt' payment.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors" target="_blank" title="Print Receipt"><i class="fas fa-print"></i></a>
+                            <a href="{% url 'fee_payment_edit' payment.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
                              <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
                                 onclick="openDeleteModal('{% url 'fee_payment_delete' payment.pk %}', 'Payment #{{ payment.receipt_number|escapejs }}')"
-                                title="Delete" aria-label="Delete payment #{{ payment.receipt_number }}">
+                                title="Delete">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -130,13 +177,27 @@
                 </div>
                 <span class="font-bold text-gray-800 text-sm shrink-0">{{ currency_symbol }} {{ payment.amount }}</span>
             </div>
-            <div class="flex items-center gap-3 text-xs text-gray-400 pl-[52px] mb-2">
+            <div class="flex flex-wrap items-center gap-2 text-xs text-gray-400 pl-[52px] mb-2">
+                {% if payment.fee_months_display %}<span class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-semibold border border-blue-100">{{ payment.fee_months_display }}</span>{% endif %}
                 <span><i class="fas fa-calendar mr-1"></i>{{ payment.payment_date|date:"d M Y" }}</span>
                 <span><i class="fas fa-credit-card mr-1"></i>{{ payment.get_payment_method_display }}</span>
+                {% if payment.status == 'Pending' %}
+                    <span class="px-2 py-0.5 rounded-md bg-yellow-100 text-yellow-700 font-semibold border border-yellow-200"><i class="fas fa-clock mr-1"></i>Pending</span>
+                {% elif payment.status == 'Rejected' %}
+                    <span class="px-2 py-0.5 rounded-md bg-red-100 text-red-700 font-semibold border border-red-200"><i class="fas fa-times mr-1"></i>Rejected</span>
+                {% endif %}
             </div>
             <div class="flex items-center gap-2 pl-[52px]">
+                {% if payment.status == 'Pending' %}
+                <form method="post" action="{% url 'fee_payment_approve' payment.pk %}" class="inline">{% csrf_token %}
+                    <button type="submit" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Approve"><i class="fas fa-check-circle"></i></button>
+                </form>
+                <form method="post" action="{% url 'fee_payment_reject' payment.pk %}" class="inline">{% csrf_token %}
+                    <button type="submit" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors" title="Reject"><i class="fas fa-times-circle"></i></button>
+                </form>
+                {% endif %}
                 <a href="{% url 'print_receipt' payment.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors" target="_blank" title="Print Receipt"><i class="fas fa-print"></i></a>
-                <a href="{% url 'fee_payment_edit' payment.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
+                <a href="{% url 'fee_payment_edit' payment.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
                 <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
                     onclick="openDeleteModal('{% url 'fee_payment_delete' payment.pk %}', 'Payment #{{ payment.receipt_number|escapejs }}')" title="Delete">
                     <i class="fas fa-trash"></i>

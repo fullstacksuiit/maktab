@@ -124,6 +124,10 @@ STATIC_ROOT = str(BASE_DIR / "staticfiles")
 if DEBUG:
     STATICFILES_DIRS = [str(BASE_DIR / "static")]
 
+# Media files (user uploads)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = str(BASE_DIR / "media")
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

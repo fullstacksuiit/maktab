@@ -274,7 +274,7 @@ def dashboard_view(request):
         organization=org, is_orphan=False
     ).annotate(
         total_fees=Coalesce(Sum('batches__course__fees'), 0, output_field=DecimalField()),
-        total_paid=Coalesce(Sum('fee_payments__amount'), 0, output_field=DecimalField()),
+        total_paid=Coalesce(Sum('fee_payments__amount', filter=Q(fee_payments__status='Approved')), 0, output_field=DecimalField()),
     ).annotate(
         pending_amount=models.F('total_fees') - models.F('total_paid')
     ).filter(
@@ -936,7 +936,7 @@ def staff_add(request):
     org = get_org(request)
     leave_types = LeaveType.objects.filter(organization=org)
     if request.method == 'POST':
-        form = StaffForm(request.POST)
+        form = StaffForm(request.POST, request.FILES)
         if form.is_valid():
             staff = form.save(commit=False)
             staff.organization = org
@@ -1002,7 +1002,7 @@ def staff_edit(request, pk):
     leave_types = LeaveType.objects.filter(organization=org)
     current_year = date.today().year
     if request.method == 'POST':
-        form = StaffForm(request.POST, instance=staff)
+        form = StaffForm(request.POST, request.FILES, instance=staff)
         if form.is_valid():
             staff = form.save()
             # Sync linked User account credentials if staff_id or phone changed
@@ -1715,6 +1715,14 @@ def fee_payment_list(request):
     if selected_method:
         payments_qs = payments_qs.filter(payment_method=selected_method)
 
+    # Status filter
+    selected_status = request.GET.get('status', '').strip()
+    if selected_status:
+        payments_qs = payments_qs.filter(status=selected_status)
+
+    # Count pending for badge
+    pending_count = FeePayment.objects.filter(organization=org, status='Pending').count()
+
     paginator = Paginator(payments_qs, 20)
     page_number = request.GET.get('page')
     payments = paginator.get_page(page_number)
@@ -1722,6 +1730,8 @@ def fee_payment_list(request):
         'payments': payments,
         'search_query': search_query,
         'selected_method': selected_method,
+        'selected_status': selected_status,
+        'pending_count': pending_count,
     })
 
 
@@ -1738,6 +1748,8 @@ def fee_payment_add(request):
             payment.organization = org
             payment.save()
             messages.success(request, f'Payment recorded! Receipt: {payment.receipt_number}')
+            if request.POST.get('submit_action') == 'save_print':
+                return redirect('print_receipt', pk=payment.pk)
             return redirect('fee_payment_list')
         else:
             messages.error(request, 'Please correct the errors below.')
@@ -1754,7 +1766,20 @@ def fee_payment_add(request):
             except Student.DoesNotExist:
                 pass
 
-    return render(request, 'management/fee_payment_add.html', {'form': form, 'action': 'Record'})
+    # Build batch fee data for JS auto-calculation
+    batch_fees = {}
+    for batch in Batch.objects.filter(organization=org, is_active=True).select_related('course'):
+        batch_fees[batch.pk] = {
+            'fee': str(batch.course.fees),
+            'period': batch.course.fee_period,
+            'course_name': f"{batch.course.course_code} - {batch.course.course_name}",
+        }
+
+    import json
+    return render(request, 'management/fee_payment_add.html', {
+        'form': form, 'action': 'Record',
+        'batch_fees_json': json.dumps(batch_fees),
+    })
 
 
 @login_required(login_url='login')
@@ -1769,6 +1794,8 @@ def fee_payment_edit(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, f'Payment #{payment.receipt_number} updated!')
+            if request.POST.get('submit_action') == 'save_print':
+                return redirect('print_receipt', pk=payment.pk)
             return redirect('fee_payment_list')
         else:
             messages.error(request, 'Please correct the errors below.')
@@ -1776,7 +1803,19 @@ def fee_payment_edit(request, pk):
         form = FeePaymentForm(instance=payment)
         form.fields['student'].queryset = Student.objects.filter(organization=org)
         form.fields['batch'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
-    return render(request, 'management/fee_payment_add.html', {'form': form, 'action': 'Edit'})
+    batch_fees = {}
+    for batch in Batch.objects.filter(organization=org, is_active=True).select_related('course'):
+        batch_fees[batch.pk] = {
+            'fee': str(batch.course.fees),
+            'period': batch.course.fee_period,
+            'course_name': f"{batch.course.course_code} - {batch.course.course_name}",
+        }
+
+    import json
+    return render(request, 'management/fee_payment_add.html', {
+        'form': form, 'action': 'Edit',
+        'batch_fees_json': json.dumps(batch_fees),
+    })
 
 
 @login_required(login_url='login')
@@ -1795,8 +1834,26 @@ def fee_payment_delete(request, pk):
 @internal_user_required
 def print_receipt(request, pk):
     org = get_org(request)
-    payment = get_object_or_404(FeePayment, pk=pk, organization=org)
-    return render(request, 'management/receipt_print.html', {'payment': payment, 'organization': org})
+    payment = get_object_or_404(FeePayment.objects.select_related('student', 'batch__course'), pk=pk, organization=org)
+    student = payment.student
+    total_fees = student.get_total_fees()
+    total_paid = student.get_total_paid()
+    pending_fees = student.get_pending_fees()
+
+    # Calculate per-month fee for breakdown
+    per_month_fee = 0
+    months_count = payment.fee_months_count
+    if months_count > 0:
+        per_month_fee = payment.amount / months_count
+
+    return render(request, 'management/receipt_print.html', {
+        'payment': payment,
+        'organization': org,
+        'total_fees': total_fees,
+        'total_paid': total_paid,
+        'pending_fees': pending_fees,
+        'per_month_fee': per_month_fee,
+    })
 
 
 # ─── Behavior Notes Views ────────────────────────────────────────────────────
@@ -1863,6 +1920,35 @@ def get_cities_for_state(request):
     state = request.GET.get('state', '')
     cities = sorted(CITY_DATA.get(state, {}).keys())
     return JsonResponse({'cities': cities})
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def api_student_batches(request):
+    """Return a student's enrolled batches with fee info as JSON."""
+    org = get_org(request)
+    student_id = request.GET.get('student_id', '')
+    if not student_id:
+        return JsonResponse({'batches': [], 'guardian_discount': 0})
+    try:
+        student = Student.objects.get(pk=student_id, organization=org)
+    except Student.DoesNotExist:
+        return JsonResponse({'batches': [], 'guardian_discount': 0})
+
+    batches = []
+    for batch in student.batches.filter(is_active=True).select_related('course'):
+        batches.append({
+            'id': batch.pk,
+            'label': f"{batch.batch_code} - {batch.batch_name} ({batch.course.course_name})",
+            'fee': str(batch.course.fees),
+            'fee_period': batch.course.fee_period,
+            'course_name': f"{batch.course.course_code} - {batch.course.course_name}",
+        })
+
+    return JsonResponse({
+        'batches': batches,
+        'guardian_discount': str(student.guardian_discount) if student.guardian_name and student.guardian_discount > 0 else '0',
+    })
 
 
 # ─── Settings ────────────────────────────────────────────────────────────────
@@ -2846,7 +2932,7 @@ def parent_dashboard(request):
         att_absent=Count('attendances', filter=Q(attendances__status='Absent')),
         att_late=Count('attendances', filter=Q(attendances__status='Late')),
         total_fees=Sum('batches__course__fees'),
-        total_paid=Coalesce(Sum('fee_payments__amount'), 0, output_field=DecimalField()),
+        total_paid=Coalesce(Sum('fee_payments__amount', filter=Q(fee_payments__status='Approved')), 0, output_field=DecimalField()),
     )
 
     students_data = []
@@ -3022,7 +3108,10 @@ def parent_pay_upi(request):
                 'batch_name': selected_batch.batch_name,
                 'student_name': selected_student.full_name,
                 'student_id': selected_student.student_id,
+                'student_pk': selected_student.pk,
+                'batch_pk': selected_batch.pk,
                 'months': months_display,
+                'months_raw': months,
                 'transaction_note': tn,
             }
         except Exception:
@@ -3035,6 +3124,83 @@ def parent_pay_upi(request):
         'month_options': month_options,
     }
     return render(request, 'management/parent_pay_upi.html', context)
+
+
+@login_required(login_url='login')
+@parent_required
+@require_POST
+def parent_confirm_payment(request):
+    """Parent confirms they have paid via UPI – creates a pending FeePayment."""
+    from .utils import normalize_phone
+
+    user = request.user
+    org = user.organization
+
+    student_pk = request.POST.get('student_pk')
+    batch_pk = request.POST.get('batch_pk')
+    amount = request.POST.get('amount')
+    months_raw = request.POST.getlist('months_raw')
+
+    if not (student_pk and batch_pk and amount and months_raw):
+        messages.error(request, 'Missing payment details. Please try again.')
+        return redirect('parent_pay_upi')
+
+    # Verify the student belongs to this parent
+    parent_phone = user.username.rsplit('_', 1)[0] if '_' in user.username else user.username
+    all_students = Student.objects.filter(organization=org).only('id', 'phone')
+    matched_ids = [s.id for s in all_students if normalize_phone(s.phone) == parent_phone]
+
+    try:
+        student = Student.objects.get(pk=student_pk, id__in=matched_ids)
+        batch = Batch.objects.get(pk=batch_pk, organization=org)
+    except (Student.DoesNotExist, Batch.DoesNotExist):
+        messages.error(request, 'Invalid student or batch.')
+        return redirect('parent_pay_upi')
+
+    # Build fee_month_from / fee_month_to from months_raw (e.g. ['2026-03', '2026-04'])
+    months_sorted = sorted(months_raw)
+    fee_month_from = date(int(months_sorted[0].split('-')[0]), int(months_sorted[0].split('-')[1]), 1)
+    fee_month_to = date(int(months_sorted[-1].split('-')[0]), int(months_sorted[-1].split('-')[1]), 1)
+
+    payment = FeePayment(
+        student=student,
+        batch=batch,
+        amount=amount,
+        fee_month_from=fee_month_from,
+        fee_month_to=fee_month_to,
+        payment_date=date.today(),
+        payment_method='UPI',
+        status='Pending',
+        notes=f'Online payment by parent. Months: {", ".join(months_sorted)}',
+        organization=org,
+    )
+    payment.save()
+    messages.success(request, 'Payment submitted! It will be visible once the admin approves it.')
+    return redirect('parent_dashboard')
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def fee_payment_approve(request, pk):
+    org = get_org(request)
+    payment = get_object_or_404(FeePayment, pk=pk, organization=org)
+    payment.status = 'Approved'
+    payment.save()
+    messages.success(request, f'Payment #{payment.receipt_number} approved!')
+    return redirect('fee_payment_list')
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def fee_payment_reject(request, pk):
+    org = get_org(request)
+    payment = get_object_or_404(FeePayment, pk=pk, organization=org)
+    payment.status = 'Rejected'
+    payment.save()
+    messages.success(request, f'Payment #{payment.receipt_number} rejected.')
+    return redirect('fee_payment_list')
 
 
 # ─── Calendar / Event Views ──────────────────────────────────────────────────

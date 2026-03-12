@@ -237,7 +237,8 @@ class StaffForm(forms.ModelForm):
         model = Staff
         fields = ['staff_id', 'first_name', 'last_name', 'email', 'phone',
                   'date_of_birth', 'gender', 'address', 'city', 'state', 'pin_code',
-                  'staff_role', 'department', 'joining_date', 'salary', 'working_hours_per_day']
+                  'staff_role', 'department', 'joining_date', 'salary', 'working_hours_per_day',
+                  'photo']
         widgets = {
             'staff_id': styled_text_input('Enter staff ID (e.g., STF001)'),
             'first_name': styled_text_input('Enter first name'),
@@ -341,11 +342,12 @@ class SettingsForm(forms.ModelForm):
 
     class Meta:
         model = Organization
-        fields = ['org_name', 'contact', 'address', 'state', 'city', 'pin_code',
+        fields = ['org_name', 'org_name_urdu', 'contact', 'address', 'state', 'city', 'pin_code',
                   'currency_symbol',
                   'bank_name', 'account_number', 'ifsc_code', 'account_holder', 'upi_id']
         widgets = {
             'org_name': styled_text_input('Organization Name'),
+            'org_name_urdu': styled_text_input('ادارے کا نام اردو میں'),
             'contact': styled_text_input('Contact Number'),
             'address': styled_textarea('Street / Area', rows=2),
             'pin_code': styled_text_input('Pin Code'),
@@ -390,10 +392,26 @@ class FeePaymentForm(forms.ModelForm):
         widget=styled_date_input(max_date=date.today()),
         initial=date.today
     )
+    fee_month_from = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': TAILWIND_INPUT,
+            'type': 'month',
+        }),
+        label="From Month",
+    )
+    fee_month_to = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': TAILWIND_INPUT,
+            'type': 'month',
+        }),
+        label="To Month",
+    )
 
     class Meta:
         model = FeePayment
-        fields = ['student', 'batch', 'amount', 'payment_date', 'payment_method', 'notes']
+        fields = ['student', 'batch', 'amount', 'fee_month_from', 'fee_month_to', 'payment_date', 'payment_method', 'notes']
         widgets = {
             'student': searchable_select('Search student...'),
             'batch': searchable_select('Search batch...'),
@@ -401,6 +419,15 @@ class FeePaymentForm(forms.ModelForm):
             'payment_method': styled_select(),
             'notes': styled_textarea('Optional notes', rows=3),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Pre-populate month fields in YYYY-MM format for type="month" input
+        if self.instance and self.instance.pk:
+            if self.instance.fee_month_from:
+                self.initial['fee_month_from'] = self.instance.fee_month_from.strftime('%Y-%m')
+            if self.instance.fee_month_to:
+                self.initial['fee_month_to'] = self.instance.fee_month_to.strftime('%Y-%m')
 
     def clean_payment_date(self):
         """Validate payment date is not in the future."""
@@ -415,6 +442,34 @@ class FeePaymentForm(forms.ModelForm):
         if amount is not None and amount <= 0:
             raise forms.ValidationError('Amount must be greater than zero.')
         return amount
+
+    def _parse_month(self, value):
+        """Parse YYYY-MM string into a date with day=1."""
+        if not value:
+            return None
+        try:
+            parts = value.strip().split('-')
+            return date(int(parts[0]), int(parts[1]), 1)
+        except (ValueError, IndexError):
+            raise forms.ValidationError('Enter a valid month (YYYY-MM).')
+
+    def clean_fee_month_from(self):
+        return self._parse_month(self.cleaned_data.get('fee_month_from'))
+
+    def clean_fee_month_to(self):
+        return self._parse_month(self.cleaned_data.get('fee_month_to'))
+
+    def clean(self):
+        cleaned_data = super().clean()
+        month_from = cleaned_data.get('fee_month_from')
+        month_to = cleaned_data.get('fee_month_to')
+        if month_from and month_to and month_to < month_from:
+            self.add_error('fee_month_to', 'To month cannot be before from month.')
+        if month_from and not month_to:
+            cleaned_data['fee_month_to'] = month_from
+        if month_to and not month_from:
+            cleaned_data['fee_month_from'] = month_to
+        return cleaned_data
 
 
 class InviteUserForm(forms.ModelForm):
@@ -490,11 +545,12 @@ class UserEditForm(forms.ModelForm):
     """Form for editing a user's role and details."""
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'role', 'is_active']
+        fields = ['first_name', 'last_name', 'email', 'gender', 'role', 'is_active']
         widgets = {
             'first_name': styled_text_input('First Name'),
             'last_name': styled_text_input('Last Name'),
             'email': styled_email_input('Email Address'),
+            'gender': styled_select(),
             'role': styled_select(),
             'is_active': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-primary focus:ring-primary border-gray-300 rounded'}),
         }

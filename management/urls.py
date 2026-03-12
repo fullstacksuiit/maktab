@@ -76,6 +76,8 @@ urlpatterns = [
     path('payments/edit/<int:pk>/', views.fee_payment_edit, name='fee_payment_edit'),
     path('payments/delete/<int:pk>/', views.fee_payment_delete, name='fee_payment_delete'),
     path('payments/print/<int:pk>/', views.print_receipt, name='print_receipt'),
+    path('payments/approve/<int:pk>/', views.fee_payment_approve, name='fee_payment_approve'),
+    path('payments/reject/<int:pk>/', views.fee_payment_reject, name='fee_payment_reject'),
 
     # User Management URLs
     path('users/', views.user_list, name='user_list'),
@@ -88,6 +90,7 @@ urlpatterns = [
 
     # API
     path('api/cities/', views.get_cities_for_state, name='api_cities'),
+    path('api/student-batches/', views.api_student_batches, name='api_student_batches'),
 
     # Admission Application - Public URLs
     path('apply/<slug:org_slug>/', views.admission_apply, name='admission_apply'),
@@ -103,6 +106,7 @@ urlpatterns = [
     path('parent/', views.parent_dashboard, name='parent_dashboard'),
     path('parent/change-password/', views.parent_change_password, name='parent_change_password'),
     path('parent/pay/', views.parent_pay_upi, name='parent_pay_upi'),
+    path('parent/pay/confirm/', views.parent_confirm_payment, name='parent_confirm_payment'),
 
     # Calendar & Event URLs
     path('calendar/', views.calendar_view, name='calendar'),

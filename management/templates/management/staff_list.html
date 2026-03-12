@@ -60,9 +60,13 @@
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
+                            {% if staff.photo %}
+                            <img src="{{ staff.photo.url }}" alt="{{ staff.first_name }}" class="w-9 h-9 rounded-full object-cover">
+                            {% else %}
                             <div class="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">
                                 {{ staff.first_name|first }}
                             </div>
+                            {% endif %}
                             <div>
                                 <div class="font-semibold text-gray-800">{{ staff.first_name }} {{ staff.last_name }}</div>
                             </div>
@@ -108,9 +112,13 @@
         <div class="p-4">
             <div class="flex items-start justify-between gap-3 mb-2">
                 <div class="flex items-center gap-3 min-w-0">
+                    {% if staff.photo %}
+                    <img src="{{ staff.photo.url }}" alt="{{ staff.first_name }}" class="w-10 h-10 rounded-full object-cover shrink-0">
+                    {% else %}
                     <div class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm shrink-0">
                         {{ staff.first_name|first }}
                     </div>
+                    {% endif %}
                     <div class="min-w-0">
                         <h4 class="font-semibold text-gray-800 text-sm">{{ staff.first_name }} {{ staff.last_name }}</h4>
                         <p class="text-xs text-gray-500"><span class="text-primary font-medium">{{ staff.staff_id }}</span> &middot; {{ staff.department }}</p>

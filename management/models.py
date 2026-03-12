@@ -10,6 +10,7 @@ import time
 class Organization(models.Model):
     """Organization/Maktab that can have multiple users"""
     org_name = models.CharField(max_length=255, verbose_name="Organization Name")
+    org_name_urdu = models.CharField(max_length=255, blank=True, default='', verbose_name="Organization Name (Urdu)")
     address = models.TextField(verbose_name="Address")
     city = models.CharField(max_length=100, blank=True, default='', verbose_name="City")
     state = models.CharField(max_length=100, blank=True, default='', verbose_name="State")
@@ -80,6 +81,17 @@ class User(AbstractUser):
         choices=ROLE_CHOICES,
         default='staff',
         verbose_name="Role"
+    )
+    GENDER_CHOICES = [
+        ('M', 'Male'),
+        ('F', 'Female'),
+    ]
+    gender = models.CharField(
+        max_length=1,
+        choices=GENDER_CHOICES,
+        blank=True,
+        default='',
+        verbose_name="Gender"
     )
     staff_profile = models.OneToOneField(
         'Staff',
@@ -357,7 +369,7 @@ class Student(models.Model):
         return "Not Enrolled"
 
     def get_total_paid(self):
-        total = self.fee_payments.aggregate(Sum('amount'))['amount__sum']
+        total = self.fee_payments.filter(status='Approved').aggregate(Sum('amount'))['amount__sum']
         return total or 0
 
     def get_pending_fees(self):
@@ -403,6 +415,7 @@ class Staff(models.Model):
     joining_date = models.DateField(verbose_name="Joining Date")
     salary = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Monthly Salary")
     working_hours_per_day = models.DecimalField(max_digits=4, decimal_places=1, default=8.0, verbose_name="Working Hours/Day")
+    photo = models.ImageField(upload_to='staff_photos/', blank=True, null=True, verbose_name="Photo")
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='staff_members')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -547,11 +560,20 @@ class FeePayment(models.Model):
         ('UPI', 'UPI'),
     ]
 
+    STATUS_CHOICES = [
+        ('Approved', 'Approved'),
+        ('Pending', 'Pending'),
+        ('Rejected', 'Rejected'),
+    ]
+
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='fee_payments')
     batch = models.ForeignKey(Batch, on_delete=models.SET_NULL, null=True, blank=True, related_name='fee_payments', verbose_name="Batch")
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Amount")
+    fee_month_from = models.DateField(blank=True, null=True, verbose_name="Fee Month From")
+    fee_month_to = models.DateField(blank=True, null=True, verbose_name="Fee Month To")
     payment_date = models.DateField(verbose_name="Payment Date")
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='Cash', verbose_name="Payment Method")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Approved', verbose_name="Status")
     receipt_number = models.CharField(max_length=50, blank=True, verbose_name="Receipt Number")
     notes = models.TextField(blank=True, null=True, verbose_name="Notes")
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='fee_payments')
@@ -564,10 +586,41 @@ class FeePayment(models.Model):
             models.Index(fields=['organization', 'receipt_number']),
             models.Index(fields=['student', 'payment_date']),
             models.Index(fields=['payment_method']),
+            models.Index(fields=['status']),
         ]
         constraints = [
             models.UniqueConstraint(fields=['organization', 'receipt_number'], name='unique_receipt_number_per_org'),
         ]
+
+    @property
+    def fee_months_count(self):
+        if self.fee_month_from and self.fee_month_to:
+            return (self.fee_month_to.year - self.fee_month_from.year) * 12 + (self.fee_month_to.month - self.fee_month_from.month) + 1
+        return 0
+
+    @property
+    def fee_months_display(self):
+        if self.fee_month_from and self.fee_month_to:
+            if self.fee_month_from == self.fee_month_to:
+                return self.fee_month_from.strftime('%b %Y')
+            return f"{self.fee_month_from.strftime('%b %Y')} - {self.fee_month_to.strftime('%b %Y')}"
+        return ''
+
+    @property
+    def fee_months_list(self):
+        """Return list of (month_date, month_label) tuples."""
+        if not self.fee_month_from or not self.fee_month_to:
+            return []
+        months = []
+        current = self.fee_month_from.replace(day=1)
+        end = self.fee_month_to.replace(day=1)
+        while current <= end:
+            months.append(current)
+            if current.month == 12:
+                current = current.replace(year=current.year + 1, month=1)
+            else:
+                current = current.replace(month=current.month + 1)
+        return months
 
     def __str__(self):
         return f"{self.receipt_number} - {self.student} - {self.amount}"
