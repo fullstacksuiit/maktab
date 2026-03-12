@@ -1,6 +1,6 @@
 {% extends 'management/base_tailwind.html' %}
 
-{% block title %}Application Submitted - {{ organization.org_name }}{% endblock %}
+{% block title %}Application Submitted - Maktab {{ organization.org_name }}{% endblock %}
 
 {% block content %}
 <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-50" style="padding: max(env(safe-area-inset-top), 2.5rem) env(safe-area-inset-right) max(env(safe-area-inset-bottom), 2.5rem) env(safe-area-inset-left)">
@@ -16,7 +16,7 @@
         </div>
         <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">Application Submitted!</h2>
         <p class="text-gray-600 mb-8 text-sm sm:text-base leading-relaxed">
-            Thank you for applying to <strong class="text-primary">{{ organization.org_name }}</strong>.
+            Thank you for applying to <strong class="text-primary">Maktab {{ organization.org_name }}</strong>.
             Your application is under review. We will contact you soon.
         </p>
         <a href="{% url 'admission_apply' org_slug=organization.slug %}"

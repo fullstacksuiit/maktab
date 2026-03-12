@@ -17,7 +17,7 @@
                 <span>Assalamu Alaikum!</span>
             </h1>
             <p class="text-white/80 text-sm sm:text-base">
-                You have <strong class="text-gold">{{ student_count }}</strong> student{{ student_count|pluralize }} enrolled{% if org %} at <strong class="text-gold">{{ org.org_name }}</strong>{% endif %}.
+                You have <strong class="text-gold">{{ student_count }}</strong> student{{ student_count|pluralize }} enrolled{% if org %} at <strong class="text-gold">Maktab {{ org.org_name }}</strong>{% endif %}.
             </p>
         </div>
     </div>
@@ -45,7 +45,7 @@
             <i class="fas fa-mosque text-sm sm:text-base"></i>
         </div>
         <div class="flex-1 min-w-0">
-            <p class="text-sm sm:text-base font-bold text-gray-800 group-hover:text-primary transition-colors">{{ org.org_name }}</p>
+            <p class="text-sm sm:text-base font-bold text-gray-800 group-hover:text-primary transition-colors">Maktab {{ org.org_name }}</p>
             <p class="text-xs text-gray-500 truncate"><i class="fas fa-map-marker-alt text-gray-400 mr-1"></i>{{ org.full_address }}</p>
         </div>
         {% if org.contact %}

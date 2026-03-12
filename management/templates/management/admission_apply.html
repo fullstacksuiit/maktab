@@ -1,6 +1,6 @@
 {% extends 'management/base_tailwind.html' %}
 
-{% block title %}Apply - {{ organization.org_name }}{% endblock %}
+{% block title %}Apply - Maktab {{ organization.org_name }}{% endblock %}
 
 {% block content %}
 <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-50 overflow-auto" style="padding: max(env(safe-area-inset-top), 2.5rem) env(safe-area-inset-right) max(env(safe-area-inset-bottom), 2.5rem) env(safe-area-inset-left)">
@@ -16,7 +16,7 @@
             <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-3">
                 <i class="fas fa-mosque text-3xl text-white"></i>
             </div>
-            <h2 class="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-gold">{{ organization.org_name }}</h2>
+            <h2 class="text-2xl sm:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-gold">Maktab {{ organization.org_name }}</h2>
             <p class="text-gray-500 mt-1 text-xs sm:text-base">Admission Application</p>
         </div>
 

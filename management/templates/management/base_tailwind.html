@@ -496,7 +496,7 @@
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-gray-800 truncate">{{ request.user.username }}</p>
-                    <p class="text-[11px] text-gray-400 truncate">{{ request.user.organization.org_name|default:"Admin" }}</p>
+                    <p class="text-[11px] text-gray-400 truncate">Maktab {{ request.user.organization.org_name|default:"Admin" }}</p>
                 </div>
                 <form action="{% url 'logout' %}" method="post">
                     {% csrf_token %}
@@ -520,7 +520,7 @@
             <!-- Right Actions -->
             <div class="flex items-center gap-4">
                 <!-- Organization name (desktop only) -->
-                <span class="hidden md:block text-xs text-white/70 font-medium">{{ request.user.organization.org_name|default:"" }}</span>
+                <span class="hidden md:block text-xs text-white/70 font-medium">Maktab {{ request.user.organization.org_name|default:"" }}</span>
             </div>
         </header>
 
