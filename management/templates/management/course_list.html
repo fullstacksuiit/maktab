@@ -52,10 +52,10 @@
                 {% for course in courses %}
                 <tr class="hover:bg-gray-50/80 transition-colors group">
                     <td class="px-6 py-4 font-medium text-primary first:pl-8">
-                        {{ course.course_code }}
+                        <a href="{% url 'course_detail' course.pk %}" class="hover:underline">{{ course.course_code }}</a>
                     </td>
                     <td class="px-6 py-4 font-semibold text-gray-800">
-                        {{ course.course_name }}
+                        <a href="{% url 'course_detail' course.pk %}" class="hover:text-primary transition-colors">{{ course.course_name }}</a>
                     </td>
                     <td class="px-6 py-4 text-gray-600">
                         {{ course.duration_value }} {{ course.get_duration_unit_display }}
@@ -75,6 +75,7 @@
                     </td>
                     <td class="px-6 py-4 max-w-[120px] text-center last:pr-8">
                         <div class="flex items-center justify-center gap-2">
+                            <a href="{% url 'course_detail' course.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-primary hover:bg-primary/10 transition-colors" title="View" aria-label="View {{ course.course_name }}"><i class="fas fa-eye"></i></a>
                             <a href="{% url 'course_edit' course.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit" aria-label="Edit {{ course.course_name }}"><i class="fas fa-edit"></i></a>
                              <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
                                 onclick="openDeleteModal('{% url 'course_delete' course.pk %}', '{{ course.course_name|escapejs }}')"
@@ -95,9 +96,9 @@
         <div class="p-4">
             <div class="flex items-start justify-between gap-3 mb-2">
                 <div class="min-w-0">
-                    <h4 class="font-semibold text-gray-800 text-sm">{{ course.course_name }}</h4>
+                    <a href="{% url 'course_detail' course.pk %}" class="font-semibold text-gray-800 text-sm hover:text-primary transition-colors">{{ course.course_name }}</a>
                     <p class="text-xs text-gray-500">
-                        <span class="text-primary font-medium">{{ course.course_code }}</span> &middot;
+                        <a href="{% url 'course_detail' course.pk %}" class="text-primary font-medium hover:underline">{{ course.course_code }}</a> &middot;
                         {{ course.duration_value }} {{ course.get_duration_unit_display }}
                     </p>
                 </div>
