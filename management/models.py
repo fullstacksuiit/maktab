@@ -399,7 +399,7 @@ class Staff(models.Model):
         ('Other', 'Other'),
     ]
 
-    staff_id = models.CharField(max_length=50, verbose_name="Staff ID")
+    staff_id = models.CharField(max_length=50, blank=True, default='', verbose_name="Staff ID")
     first_name = models.CharField(max_length=100, verbose_name="First Name")
     last_name = models.CharField(max_length=100, verbose_name="Last Name")
     email = models.EmailField(blank=True, default='', verbose_name="Email Address")
@@ -454,6 +454,31 @@ class Staff(models.Model):
 
     def __str__(self):
         return f"{self.staff_id} - {self.first_name} {self.last_name}"
+
+    def save(self, *args, **kwargs):
+        if not self.staff_id:
+            for attempt in range(5):
+                with transaction.atomic():
+                    last_staff = Staff.objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
+                    if last_staff and last_staff.staff_id.startswith('STF'):
+                        try:
+                            last_number = int(last_staff.staff_id[3:])
+                            new_number = last_number + 1
+                        except ValueError:
+                            new_number = 1
+                    else:
+                        new_number = 1
+                    self.staff_id = f"STF{new_number:04d}"
+                    try:
+                        super().save(*args, **kwargs)
+                        return
+                    except IntegrityError:
+                        if attempt == 4:
+                            raise
+                        time.sleep(0.1)
+                        continue
+        else:
+            super().save(*args, **kwargs)
 
 
 class Attendance(models.Model):

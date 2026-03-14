@@ -651,7 +651,7 @@ def batch_timetable(request):
     batch_data = []
     for b in batches:
         days = DAYS_MAP.get(b.days, [])
-        teachers = ', '.join([t.user.get_full_name() or t.user.username for t in b.teachers.all()])
+        teachers = ', '.join([f"{t.first_name} {t.last_name}".strip() for t in b.teachers.all()])
         batch_data.append({
             'id': b.pk,
             'name': b.batch_name,
@@ -936,7 +936,7 @@ def staff_add(request):
     org = get_org(request)
     leave_types = LeaveType.objects.filter(organization=org)
     if request.method == 'POST':
-        form = StaffForm(request.POST, request.FILES)
+        form = StaffForm(request.POST, request.FILES, organization=org)
         if form.is_valid():
             staff = form.save(commit=False)
             staff.organization = org
@@ -959,9 +959,12 @@ def staff_add(request):
             # Create leave balances with custom allocations
             current_year = date.today().year
             for lt in leave_types:
-                alloc_value = request.POST.get(f'leave_alloc_{lt.id}', '')
+                alloc_value = request.POST.get(f'leave_alloc_{lt.id}', '').strip()
                 if alloc_value != '':
-                    days = int(alloc_value)
+                    try:
+                        days = int(alloc_value)
+                    except (ValueError, TypeError):
+                        days = lt.days_per_year
                     yearly = days * 12 if lt.period == 'monthly' else days
                 else:
                     yearly = lt.yearly_allocation
@@ -974,7 +977,7 @@ def staff_add(request):
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
-        form = StaffForm()
+        form = StaffForm(organization=org)
 
     # Build leave allocation data for template
     leave_alloc_data = []
@@ -1002,10 +1005,10 @@ def staff_edit(request, pk):
     leave_types = LeaveType.objects.filter(organization=org)
     current_year = date.today().year
     if request.method == 'POST':
-        form = StaffForm(request.POST, request.FILES, instance=staff)
+        form = StaffForm(request.POST, request.FILES, instance=staff, organization=org)
         if form.is_valid():
             staff = form.save()
-            # Sync linked User account credentials if staff_id or phone changed
+            # Sync linked User account details (but NOT password - only sync name/email/username)
             try:
                 user_account = staff.user_account
                 if user_account:
@@ -1013,15 +1016,17 @@ def staff_edit(request, pk):
                     user_account.first_name = staff.first_name
                     user_account.last_name = staff.last_name
                     user_account.email = staff.email
-                    user_account.set_password(normalize_phone(staff.phone))
                     user_account.save()
             except User.DoesNotExist:
                 pass
             # Update leave balances with custom allocations
             for lt in leave_types:
-                alloc_value = request.POST.get(f'leave_alloc_{lt.id}', '')
+                alloc_value = request.POST.get(f'leave_alloc_{lt.id}', '').strip()
                 if alloc_value != '':
-                    days = int(alloc_value)
+                    try:
+                        days = int(alloc_value)
+                    except (ValueError, TypeError):
+                        days = lt.days_per_year
                     yearly = days * 12 if lt.period == 'monthly' else days
                 else:
                     yearly = lt.yearly_allocation
@@ -1034,7 +1039,7 @@ def staff_edit(request, pk):
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
-        form = StaffForm(instance=staff)
+        form = StaffForm(instance=staff, organization=org)
 
     # Build leave allocation data for template
     existing_balances = {
@@ -2059,7 +2064,7 @@ def export_students_excel(request):
     header_font = Font(bold=True, color="FFFFFF", size=12)
     header_fill = PatternFill(start_color="0D6B4E", end_color="0D6B4E", fill_type="solid")
 
-    headers = ['Student ID', 'First Name', 'Last Name', 'Email', 'Phone',
+    headers = ['Student ID', 'Full Name', 'Email', 'Phone',
                'Gender', 'Date of Birth', 'Enrollment Date', 'Enrolled Batches', 'Total Fees']
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col, value=header)
@@ -2071,14 +2076,13 @@ def export_students_excel(request):
     for row, student in enumerate(students, 2):
         ws.cell(row=row, column=1, value=student.student_id)
         ws.cell(row=row, column=2, value=student.full_name)
-        ws.cell(row=row, column=3, value='')
-        ws.cell(row=row, column=4, value=student.email)
-        ws.cell(row=row, column=5, value=student.phone)
-        ws.cell(row=row, column=6, value=student.get_gender_display())
-        ws.cell(row=row, column=7, value=str(student.date_of_birth))
-        ws.cell(row=row, column=8, value=str(student.enrollment_date))
-        ws.cell(row=row, column=9, value=student.get_enrolled_batches_list())
-        ws.cell(row=row, column=10, value=float(student.get_total_fees()))
+        ws.cell(row=row, column=3, value=student.email)
+        ws.cell(row=row, column=4, value=student.phone)
+        ws.cell(row=row, column=5, value=student.get_gender_display())
+        ws.cell(row=row, column=6, value=str(student.date_of_birth))
+        ws.cell(row=row, column=7, value=str(student.enrollment_date))
+        ws.cell(row=row, column=8, value=student.get_enrolled_batches_list())
+        ws.cell(row=row, column=9, value=float(student.get_total_fees()))
 
     for col in ws.columns:
         max_length = max(len(str(cell.value or '')) for cell in col)
@@ -2225,6 +2229,11 @@ def export_fee_payments_excel(request):
 def download_student_template(request):
     import openpyxl
     from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.worksheet.datavalidation import DataValidation
+
+    org = get_org(request)
+    org_batches = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+    batch_display_names = [f"{b.course.course_code} - {b.batch_name}" for b in org_batches]
 
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -2236,7 +2245,7 @@ def download_student_template(request):
     headers = [
         'Student ID', 'Full Name', 'Guardian Name', 'Contact 1',
         'Contact 2', 'Address', 'City', 'Enrollment Date',
-        'Date of Birth', 'Gender', 'Email'
+        'Date of Birth', 'Gender', 'Email', 'Batch'
     ]
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col, value=header)
@@ -2245,18 +2254,33 @@ def download_student_template(request):
         cell.alignment = Alignment(horizontal='center')
 
     # Sample data row
+    sample_batch = batch_display_names[0] if batch_display_names else 'QR1 - Morning'
     sample = [
         '', 'Ahmed Khan', 'Mohammad Khan', '9876543210',
         '9123456789', '123 Main Street', 'Rourkela', '2024-01-15',
-        '2005-03-15', 'M', 'ahmed@example.com'
+        '2005-03-15', 'M', 'ahmed@example.com', sample_batch
     ]
     hint_font = Font(italic=True, color="808080")
     for col, value in enumerate(sample, 1):
         cell = ws.cell(row=2, column=col, value=value)
         cell.font = hint_font
 
+    # Add dropdown validation for Batch column if batches exist
+    if batch_display_names:
+        batch_formula = '"' + ','.join(batch_display_names) + '"'
+        dv = DataValidation(type="list", formula1=batch_formula, allow_blank=True)
+        dv.error = "Please select a valid batch from the list."
+        dv.errorTitle = "Invalid Batch"
+        dv.prompt = "Select a batch"
+        dv.promptTitle = "Batch"
+        ws.add_data_validation(dv)
+        dv.add('L2:L502')
+
     # Instructions sheet
     ins = wb.create_sheet("Instructions")
+    batch_note = 'Select from dropdown or type exact batch name (format: "COURSE_CODE - BATCH_NAME"). Leave blank to skip.'
+    if batch_display_names:
+        batch_note += f' Available: {", ".join(batch_display_names)}'
     instructions = [
         ['Column', 'Required', 'Format / Notes'],
         ['Student ID', 'No', 'Leave blank for auto-generation. If provided, must be unique.'],
@@ -2270,6 +2294,7 @@ def download_student_template(request):
         ['Date of Birth', 'No', 'Date in any format (same as above). Cannot be in the future.'],
         ['Gender', 'Yes', 'M or Male, F or Female, O or Other'],
         ['Email', 'No', 'Valid email format (e.g. name@example.com)'],
+        ['Batch', 'No', batch_note],
     ]
     for row_idx, row_data in enumerate(instructions, 1):
         for col_idx, value in enumerate(row_data, 1):
@@ -2333,6 +2358,12 @@ def import_students(request):
             )
             import_ids = set()
 
+            # Build batch lookup: "COURSE_CODE - BATCH_NAME" -> Batch object
+            org_batches = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+            batch_lookup = {f"{b.course.course_code} - {b.batch_name}": b for b in org_batches}
+            # Also allow matching by batch_name alone
+            batch_name_lookup = {b.batch_name: b for b in org_batches}
+
             errors = []
             students_data = []
 
@@ -2362,7 +2393,7 @@ def import_students(request):
                 if not row or all(cell is None or str(cell).strip() == '' for cell in row):
                     continue
 
-                row = list(row) + [None] * max(0, 11 - len(row))
+                row = list(row) + [None] * max(0, 12 - len(row))
 
                 student_id = clean(row[0])
                 full_name = clean(row[1])
@@ -2375,6 +2406,14 @@ def import_students(request):
                 dob_raw = row[8]
                 gender_raw = clean(row[9])
                 email = clean(row[10])
+                batch_raw = clean(row[11])
+
+                # Batch validation
+                batch_obj = None
+                if batch_raw:
+                    batch_obj = batch_lookup.get(batch_raw) or batch_name_lookup.get(batch_raw)
+                    if not batch_obj:
+                        row_errors.append(f'Batch "{batch_raw}" not found. Use format "COURSE_CODE - BATCH_NAME".')
 
                 # Required fields
                 if not full_name:
@@ -2452,6 +2491,7 @@ def import_students(request):
                         'guardian_name': guardian_name,
                         'guardian_phone': contact2,
                         'enrollment_date': enrollment_date,
+                        '_batch': batch_obj,
                     })
 
             if errors:
@@ -2464,8 +2504,11 @@ def import_students(request):
                 try:
                     with transaction.atomic():
                         for data in students_data:
+                            batch_obj = data.pop('_batch', None)
                             student = Student(organization=org, **data)
                             student.save()
+                            if batch_obj:
+                                student.batches.add(batch_obj)
                     context['success_count'] = len(students_data)
                     context['has_results'] = True
                     messages.success(request, f'Successfully imported {len(students_data)} student(s)!')

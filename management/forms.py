@@ -233,6 +233,10 @@ class StaffForm(forms.ModelForm):
         widget=styled_date_input(max_date=date.today())
     )
 
+    def __init__(self, *args, organization=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.organization = organization
+
     class Meta:
         model = Staff
         fields = ['staff_id', 'first_name', 'last_name', 'email', 'phone',
@@ -240,7 +244,7 @@ class StaffForm(forms.ModelForm):
                   'staff_role', 'department', 'joining_date', 'salary', 'working_hours_per_day',
                   'photo']
         widgets = {
-            'staff_id': styled_text_input('Enter staff ID (e.g., STF001)'),
+            'staff_id': styled_text_input('Auto-generated if left blank (e.g., STF001)'),
             'first_name': styled_text_input('Enter first name'),
             'last_name': styled_text_input('Enter last name'),
             'email': styled_email_input('Enter email address (optional)'),
@@ -255,6 +259,16 @@ class StaffForm(forms.ModelForm):
             'salary': styled_number_input('Enter monthly salary', step='0.01', min_val=0),
             'working_hours_per_day': styled_number_input('e.g., 8', step='0.5', min_val=0.5),
         }
+
+    def clean_staff_id(self):
+        staff_id = self.cleaned_data.get('staff_id')
+        if staff_id and self.organization:
+            qs = Staff.objects.filter(organization=self.organization, staff_id=staff_id)
+            if self.instance and self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise forms.ValidationError('A staff member with this ID already exists.')
+        return staff_id
 
     def clean_date_of_birth(self):
         """Validate date of birth is not in the future."""
