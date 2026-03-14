@@ -940,6 +940,8 @@ def staff_add(request):
         if form.is_valid():
             staff = form.save(commit=False)
             staff.organization = org
+            if request.POST.get('remove_photo') == '1':
+                staff.photo = None
             staff.save()
             # Auto-create a User account for staff login (staff_id + phone)
             if not hasattr(staff, 'user_account') or staff.user_account is None:
@@ -1007,7 +1009,12 @@ def staff_edit(request, pk):
     if request.method == 'POST':
         form = StaffForm(request.POST, request.FILES, instance=staff, organization=org)
         if form.is_valid():
-            staff = form.save()
+            staff = form.save(commit=False)
+            if request.POST.get('remove_photo') == '1':
+                if staff.photo:
+                    staff.photo.delete(save=False)
+                staff.photo = None
+            staff.save()
             # Sync linked User account details (but NOT password - only sync name/email/username)
             try:
                 user_account = staff.user_account

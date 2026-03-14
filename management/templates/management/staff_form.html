@@ -97,8 +97,19 @@
                                 </label>
                             </div>
                             <input type="file" id="{{ form.photo.id_for_label }}" name="photo" accept="image/*" class="hidden"
-                                   onchange="if(this.files[0]){var r=new FileReader();r.onload=function(e){document.getElementById('photo-preview').src=e.target.result;document.getElementById('photo-preview').classList.remove('hidden');var p=document.getElementById('photo-placeholder');if(p)p.classList.add('hidden');};r.readAsDataURL(this.files[0]);}">
-                            <span class="text-xs text-gray-400 mt-2">Click camera icon to upload photo</span>
+                                   onchange="if(this.files[0]){var r=new FileReader();r.onload=function(e){document.getElementById('photo-preview').src=e.target.result;document.getElementById('photo-preview').classList.remove('hidden');var p=document.getElementById('photo-placeholder');if(p)p.classList.add('hidden');document.getElementById('remove-photo-check').checked=false;document.getElementById('remove-photo-btn').classList.remove('hidden');};r.readAsDataURL(this.files[0]);}">
+                            <input type="hidden" name="remove_photo" value="0" id="remove-photo-check-hidden">
+                            <input type="checkbox" name="remove_photo" value="1" id="remove-photo-check" class="hidden">
+                            <div class="flex items-center gap-3 mt-2">
+                                <span class="text-xs text-gray-400">Click camera icon to upload photo</span>
+                                {% if form.instance.photo %}
+                                <button type="button" id="remove-photo-btn"
+                                        class="text-xs text-red-500 hover:text-red-700 transition-colors flex items-center gap-1"
+                                        onclick="document.getElementById('remove-photo-check').checked=true;document.getElementById('photo-preview').classList.add('hidden');var p=document.getElementById('photo-placeholder');if(p){p.classList.remove('hidden');}else{var d=document.createElement('div');d.id='photo-placeholder';d.className='w-28 h-28 rounded-full bg-gray-100 border-4 border-gray-200 shadow-sm flex items-center justify-center';d.innerHTML='<i class=\'fas fa-user text-3xl text-gray-300\'></i>';document.getElementById('photo-preview').parentNode.insertBefore(d,document.getElementById('photo-preview'));}this.classList.add('hidden');">
+                                    <i class="fas fa-trash-alt"></i> Remove photo
+                                </button>
+                                {% endif %}
+                            </div>
                             {% if form.photo.errors %}
                                 <div class="text-red-500 text-xs mt-1">{% for error in form.photo.errors %}<p>{{ error }}</p>{% endfor %}</div>
                             {% endif %}
