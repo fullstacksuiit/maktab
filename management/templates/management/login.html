@@ -1,116 +1,301 @@
 {% extends 'management/base_tailwind.html' %}
 
-{% block title %}Login - Maktab{% endblock %}
+{% block title %}Login - Maktab Management Software | Madrasah & Islamic Education{% endblock %}
+{% block meta_description %}Sign in to Maktab - the best management software for Maktab, Madrasah & Islamic coaching centers. Manage students, attendance, fees & staff easily.{% endblock %}
+{% block meta_keywords %}maktab login, maktab software login, madrasah management login, Islamic school software, maktab app login{% endblock %}
+{% block og_title %}Login - Maktab Management Software{% endblock %}
+{% block og_description %}Sign in to your Maktab account. Complete management system for Islamic educational institutions.{% endblock %}
+{% block twitter_title %}Login - Maktab Management Software{% endblock %}
+{% block twitter_description %}Sign in to your Maktab account. Complete management system for Islamic educational institutions.{% endblock %}
+{% block meta_robots %}index, follow{% endblock %}
 
 {% block content %}
-<div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-50 overflow-auto" style="padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)">
-    <!-- Background Elements -->
-    <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div class="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-primary/20 to-gold/20 blur-3xl opacity-60 animate-pulse"></div>
-        <div class="absolute top-[30%] -right-[10%] w-[40%] h-[60%] rounded-full bg-gradient-to-bl from-secondary/20 to-primary/10 blur-3xl opacity-60"></div>
+<div class="fixed inset-0 z-50 flex flex-col md:flex-row bg-white overflow-auto">
+
+    <!-- LEFT PANEL - Feature showcase -->
+    <div class="hidden md:flex md:w-1/2 lg:w-[55%] bg-gradient-to-br from-[#0a2e1f] via-[#0d4a35] to-[#0d6b4e] relative flex-col items-center justify-center p-8 lg:p-16 overflow-hidden">
+
+        <!-- Subtle pattern overlay -->
+        <svg class="absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <pattern id="gridPattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                    <path d="M30 0 L60 30 L30 60 L0 30Z" fill="none" stroke="white" stroke-width="0.5"/>
+                    <circle cx="30" cy="30" r="8" fill="none" stroke="white" stroke-width="0.3"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#gridPattern)"/>
+        </svg>
+
+        <!-- Floating SVG illustration -->
+        <div class="relative z-10 mb-10 w-full max-w-md">
+            <svg viewBox="0 0 500 320" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full drop-shadow-2xl">
+                <!-- Background card -->
+                <rect x="60" y="40" width="380" height="240" rx="20" fill="white" fill-opacity="0.08" stroke="white" stroke-opacity="0.1"/>
+
+                <!-- Dashboard mockup -->
+                <rect x="85" y="70" width="200" height="130" rx="12" fill="white" fill-opacity="0.12" stroke="white" stroke-opacity="0.15"/>
+                <!-- Sidebar -->
+                <rect x="85" y="70" width="50" height="130" rx="12" fill="white" fill-opacity="0.06"/>
+                <circle cx="110" cy="92" r="8" fill="#c9a84c" fill-opacity="0.6"/>
+                <rect x="96" y="110" width="28" height="3" rx="1.5" fill="white" fill-opacity="0.2"/>
+                <rect x="96" y="120" width="28" height="3" rx="1.5" fill="white" fill-opacity="0.15"/>
+                <rect x="96" y="130" width="28" height="3" rx="1.5" fill="white" fill-opacity="0.15"/>
+                <rect x="96" y="140" width="28" height="3" rx="1.5" fill="white" fill-opacity="0.15"/>
+                <rect x="96" y="150" width="28" height="3" rx="1.5" fill="white" fill-opacity="0.15"/>
+                <!-- Chart area -->
+                <rect x="145" y="82" width="130" height="55" rx="6" fill="white" fill-opacity="0.06"/>
+                <!-- Bar chart -->
+                <rect x="160" y="115" width="12" height="18" rx="2" fill="#1a9e6f" fill-opacity="0.7">
+                    <animate attributeName="height" values="18;25;18" dur="3s" repeatCount="indefinite"/>
+                    <animate attributeName="y" values="115;108;115" dur="3s" repeatCount="indefinite"/>
+                </rect>
+                <rect x="178" y="105" width="12" height="28" rx="2" fill="#c9a84c" fill-opacity="0.7">
+                    <animate attributeName="height" values="28;20;28" dur="4s" repeatCount="indefinite"/>
+                    <animate attributeName="y" values="105;113;105" dur="4s" repeatCount="indefinite"/>
+                </rect>
+                <rect x="196" y="110" width="12" height="23" rx="2" fill="#1a9e6f" fill-opacity="0.7">
+                    <animate attributeName="height" values="23;30;23" dur="3.5s" repeatCount="indefinite"/>
+                    <animate attributeName="y" values="110;103;110" dur="3.5s" repeatCount="indefinite"/>
+                </rect>
+                <rect x="214" y="100" width="12" height="33" rx="2" fill="#c9a84c" fill-opacity="0.7">
+                    <animate attributeName="height" values="33;22;33" dur="4.5s" repeatCount="indefinite"/>
+                    <animate attributeName="y" values="100;111;100" dur="4.5s" repeatCount="indefinite"/>
+                </rect>
+                <rect x="232" y="108" width="12" height="25" rx="2" fill="#1a9e6f" fill-opacity="0.7">
+                    <animate attributeName="height" values="25;32;25" dur="3.8s" repeatCount="indefinite"/>
+                    <animate attributeName="y" values="108;101;108" dur="3.8s" repeatCount="indefinite"/>
+                </rect>
+                <rect x="250" y="98" width="12" height="35" rx="2" fill="#c9a84c" fill-opacity="0.7">
+                    <animate attributeName="height" values="35;26;35" dur="4.2s" repeatCount="indefinite"/>
+                    <animate attributeName="y" values="98;107;98" dur="4.2s" repeatCount="indefinite"/>
+                </rect>
+                <!-- Stats cards -->
+                <rect x="145" y="148" width="60" height="42" rx="6" fill="white" fill-opacity="0.08" stroke="white" stroke-opacity="0.1"/>
+                <rect x="155" y="158" width="30" height="4" rx="2" fill="#1a9e6f" fill-opacity="0.5"/>
+                <rect x="155" y="168" width="40" height="6" rx="2" fill="white" fill-opacity="0.3"/>
+                <rect x="215" y="148" width="60" height="42" rx="6" fill="white" fill-opacity="0.08" stroke="white" stroke-opacity="0.1"/>
+                <rect x="225" y="158" width="30" height="4" rx="2" fill="#c9a84c" fill-opacity="0.5"/>
+                <rect x="225" y="168" width="40" height="6" rx="2" fill="white" fill-opacity="0.3"/>
+
+                <!-- Right side floating cards -->
+                <g>
+                    <rect x="310" y="65" width="110" height="60" rx="10" fill="white" fill-opacity="0.1" stroke="white" stroke-opacity="0.12"/>
+                    <circle cx="336" cy="88" r="10" fill="#1a9e6f" fill-opacity="0.4"/>
+                    <path d="M332 88 L335 91 L341 85" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <rect x="352" y="82" width="50" height="4" rx="2" fill="white" fill-opacity="0.25"/>
+                    <rect x="352" y="92" width="35" height="3" rx="1.5" fill="white" fill-opacity="0.15"/>
+                    <animateTransform attributeName="transform" type="translate" values="0,0; 0,-6; 0,0" dur="5s" repeatCount="indefinite"/>
+                </g>
+                <g>
+                    <rect x="320" y="145" width="110" height="60" rx="10" fill="white" fill-opacity="0.1" stroke="white" stroke-opacity="0.12"/>
+                    <circle cx="346" cy="168" r="10" fill="#c9a84c" fill-opacity="0.4"/>
+                    <text x="342" y="173" fill="white" fill-opacity="0.7" font-size="11" font-family="sans-serif">&#8377;</text>
+                    <rect x="362" y="162" width="50" height="4" rx="2" fill="white" fill-opacity="0.25"/>
+                    <rect x="362" y="172" width="35" height="3" rx="1.5" fill="white" fill-opacity="0.15"/>
+                    <animateTransform attributeName="transform" type="translate" values="0,0; 0,6; 0,0" dur="6s" repeatCount="indefinite"/>
+                </g>
+
+                <!-- Floating notification badge -->
+                <g>
+                    <circle cx="430" cy="55" r="18" fill="#c9a84c" fill-opacity="0.25" stroke="#c9a84c" stroke-opacity="0.3"/>
+                    <text x="425" y="60" fill="white" fill-opacity="0.8" font-size="14" font-weight="bold" font-family="sans-serif">12</text>
+                    <animate attributeName="opacity" values="1;0.7;1" dur="2s" repeatCount="indefinite"/>
+                </g>
+            </svg>
+        </div>
+
+        <!-- Feature icons row -->
+        <div class="relative z-10 flex gap-6 mb-10">
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center backdrop-blur-sm">
+                    <i class="fas fa-user-graduate text-xl text-emerald-300"></i>
+                </div>
+                <span class="text-white/60 text-xs font-medium">Students</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center backdrop-blur-sm">
+                    <i class="fas fa-clipboard-check text-xl text-emerald-300"></i>
+                </div>
+                <span class="text-white/60 text-xs font-medium">Attendance</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center backdrop-blur-sm">
+                    <i class="fas fa-chart-line text-xl text-amber-300"></i>
+                </div>
+                <span class="text-white/60 text-xs font-medium">Analytics</span>
+            </div>
+            <div class="flex flex-col items-center gap-2">
+                <div class="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center backdrop-blur-sm">
+                    <i class="fas fa-rupee-sign text-xl text-amber-300"></i>
+                </div>
+                <span class="text-white/60 text-xs font-medium">Fees</span>
+            </div>
+        </div>
+
+        <!-- Feature list -->
+        <div class="relative z-10 space-y-4 w-full max-w-sm">
+            <div class="flex items-center gap-4">
+                <div class="w-9 h-9 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-users text-emerald-300 text-sm"></i>
+                </div>
+                <div>
+                    <span class="text-white font-semibold text-sm">Student Management</span>
+                    <span class="text-white/40 text-sm ml-2">- Enrollment & records</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="w-9 h-9 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-money-bill-wave text-emerald-300 text-sm"></i>
+                </div>
+                <div>
+                    <span class="text-white font-semibold text-sm">Fee Collection</span>
+                    <span class="text-white/40 text-sm ml-2">- Receipts & tracking</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="w-9 h-9 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-calendar-check text-amber-300 text-sm"></i>
+                </div>
+                <div>
+                    <span class="text-white font-semibold text-sm">Smart Attendance</span>
+                    <span class="text-white/40 text-sm ml-2">- Batch-wise tracking</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="w-9 h-9 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-mobile-alt text-amber-300 text-sm"></i>
+                </div>
+                <div>
+                    <span class="text-white font-semibold text-sm">Parent Portal</span>
+                    <span class="text-white/40 text-sm ml-2">- Real-time updates</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom tagline -->
+        <p class="relative z-10 mt-10 text-white/30 text-xs tracking-[0.2em] uppercase font-medium">Islamic Education, Simplified</p>
     </div>
 
-    <div class="relative w-full max-w-md p-5 sm:p-8 mx-4 my-4 glass rounded-3xl shadow-2xl border border-white/50 animate-[slideUp_0.6s_ease-out]">
-        
-        <div class="text-center mb-5 sm:mb-8">
-            <p class="text-primary italic font-serif text-lg mb-4">Bismillah ir-Rahman ir-Raheem</p>
-            <div class="w-20 h-20 mx-auto bg-gradient-to-tr from-primary to-secondary rounded-2xl flex items-center justify-center shadow-lg mb-4 transform hover:rotate-6 transition-transform duration-300">
-                <i class="fas fa-mosque text-4xl text-white"></i>
-            </div>
-            <h2 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-gold mb-2">Assalamu Alaikum</h2>
-            <p id="login-subtitle" class="text-gray-500">Welcome back to your dashboard</p>
-        </div>
+    <!-- RIGHT PANEL - Login form -->
+    <div class="flex-1 flex flex-col items-center justify-center p-6 sm:p-8 lg:p-16 overflow-y-auto" style="padding-top: max(env(safe-area-inset-top), 1.5rem); padding-bottom: max(env(safe-area-inset-bottom), 1.5rem);">
+        <div class="w-full max-w-sm">
 
-        <!-- Login Type Toggle -->
-        <div class="flex bg-gray-100 rounded-xl p-1 mb-6 gap-1">
-            <button type="button" id="tab-org" onclick="switchTab('org')"
-                class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 bg-gradient-to-r from-primary to-secondary text-white shadow-md shadow-primary/20">
-                <i class="fas fa-building text-xs"></i> Admin
-            </button>
-            <button type="button" id="tab-staff" onclick="switchTab('staff')"
-                class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50">
-                <i class="fas fa-chalkboard-teacher text-xs"></i> Staff
-            </button>
-            <button type="button" id="tab-parent" onclick="switchTab('parent')"
-                class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50">
-                <i class="fas fa-child text-xs"></i> Parent
-            </button>
-        </div>
-
-        <form method="post" novalidate id="loginForm" class="space-y-5">
-            {% csrf_token %}
-
-            {% if form.non_field_errors %}
-                <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg text-sm flex items-start gap-3">
-                    <i class="fas fa-exclamation-triangle mt-0.5"></i>
+            <!-- Logo + Branding -->
+            <div class="mb-8 login-fade-in" style="animation-delay: 0.1s">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-11 h-11 bg-gradient-to-tr from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+                        <i class="fas fa-mosque text-white text-lg"></i>
+                    </div>
                     <div>
-                        {% for error in form.non_field_errors %}
-                            <p>{{ error }}</p>
-                        {% endfor %}
+                        <h1 class="text-2xl font-bold text-gray-900 leading-none">Maktab <span class="sr-only">Management Software - Login</span></h1>
+                        <p class="text-xs text-gray-400 font-medium">Management System</p>
                     </div>
                 </div>
-            {% endif %}
-
-            <div>
-                <label id="username-label" class="block text-sm font-medium text-gray-700 mb-1.5 ml-1">Username</label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <i id="username-icon" class="fas fa-user"></i>
-                    </div>
-                    {{ form.username }}
-                </div>
-                {% if form.username.errors %}
-                    <p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.username.errors.0 }}</p>
-                {% endif %}
+                <h2 class="text-2xl font-bold text-gray-900 mb-1">Welcome back</h2>
+                <p id="login-subtitle" class="text-gray-400">Sign in to your account to continue</p>
             </div>
 
-            <div>
-                <label id="password-label" class="block text-sm font-medium text-gray-700 mb-1.5 ml-1">Password</label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                        <i id="password-icon" class="fas fa-lock"></i>
-                    </div>
-                    {{ form.password }}
-                </div>
-                 {% if form.password.errors %}
-                    <p class="mt-1 text-xs text-red-500 font-medium ml-1">{{ form.password.errors.0 }}</p>
-                {% endif %}
+            <!-- Login Type Toggle -->
+            <div class="flex bg-gray-100 rounded-xl p-1 mb-7 gap-1 login-fade-in" style="animation-delay: 0.2s">
+                <button type="button" id="tab-org" onclick="switchTab('org')"
+                    class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 bg-gradient-to-r from-primary to-secondary text-white shadow-md shadow-primary/20">
+                    <i class="fas fa-building text-xs"></i> Admin
+                </button>
+                <button type="button" id="tab-staff" onclick="switchTab('staff')"
+                    class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50">
+                    <i class="fas fa-chalkboard-teacher text-xs"></i> Staff
+                </button>
+                <button type="button" id="tab-parent" onclick="switchTab('parent')"
+                    class="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50">
+                    <i class="fas fa-child text-xs"></i> Parent
+                </button>
             </div>
 
-            <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-xl shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 group">
-                <span>Login Securely</span>
-                <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-            </button>
-        </form>
+            <form method="post" novalidate id="loginForm" class="space-y-5">
+                {% csrf_token %}
 
-        <div class="mt-5 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-100 text-center">
-             <p class="text-sm text-gray-500">Don't have an account? <a href="{% url 'signup' %}" class="font-semibold text-primary hover:text-gold transition-colors">Sign up here</a></p>
+                {% if form.non_field_errors %}
+                    <div class="p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg text-sm flex items-start gap-3">
+                        <i class="fas fa-exclamation-triangle mt-0.5"></i>
+                        <div>
+                            {% for error in form.non_field_errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="login-fade-in" style="animation-delay: 0.3s">
+                    <label id="username-label" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Username</label>
+                    <div class="relative">
+                        {{ form.username }}
+                    </div>
+                    {% if form.username.errors %}
+                        <p class="mt-1 text-xs text-red-500 font-medium">{{ form.username.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="login-fade-in" style="animation-delay: 0.4s">
+                    <label id="password-label" class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Password</label>
+                    <div class="relative">
+                        {{ form.password }}
+                    </div>
+                     {% if form.password.errors %}
+                        <p class="mt-1 text-xs text-red-500 font-medium">{{ form.password.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="login-fade-in" style="animation-delay: 0.5s">
+                    <button type="submit" id="loginBtn" class="w-full py-3.5 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl shadow-lg shadow-gray-900/20 hover:shadow-gray-900/30 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2.5 text-sm">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Sign In</span>
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-8 text-center login-fade-in" style="animation-delay: 0.6s">
+                <p class="text-sm text-gray-400">Don't have an account? <a href="{% url 'signup' %}" class="font-semibold text-primary hover:text-secondary transition-colors">Create account</a></p>
+            </div>
+
+            <!-- Strix Venture footer -->
+            <div class="mt-10 text-center login-fade-in" style="animation-delay: 0.7s">
+                <p class="text-xs text-gray-300">Maktab | A <span class="font-semibold text-gray-400">Strix Venture</span></p>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Special Style overrides for this page only, to hide sidebar/header if needed or style inputs -->
 <style>
-    /* Styling Django Form Inputs via CSS since we can't easily change widget attrs in template without custom tags or view changes yet */
     #loginForm input {
         width: 100%;
-        padding: 0.75rem 1rem 0.75rem 2.5rem; /* Left padding for icon */
-        background-color: #f9fafb;
-        border: 1px solid #e5e7eb;
+        padding: 0.85rem 1rem;
+        background-color: #ffffff;
+        border: 1.5px solid #e5e7eb;
         border-radius: 0.75rem;
-        transition: all 0.2s;
-        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        font-size: 0.925rem;
+        color: #111827;
+    }
+    #loginForm input::placeholder {
+        color: #9ca3af;
     }
     #loginForm input:focus {
         outline: none;
         border-color: #0d6b4e;
-        box-shadow: 0 0 0 4px rgba(13, 107, 78, 0.1);
-        background-color: #ffffff;
+        box-shadow: 0 0 0 4px rgba(13, 107, 78, 0.08);
     }
-    
-    /* Hide the sidebar, header, and mobile header for the login page */
+
     #sidebar, header, #mobile-header, #sidebar-overlay { display: none !important; }
     main { margin-left: 0 !important; padding-top: 0 !important; }
+
+    .login-fade-in {
+        opacity: 0;
+        animation: loginFadeIn 0.5s ease forwards;
+    }
+    @keyframes loginFadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 </style>
 
 <script>
@@ -119,9 +304,7 @@ function switchTab(type) {
     var tabStaff = document.getElementById('tab-staff');
     var tabParent = document.getElementById('tab-parent');
     var label = document.getElementById('username-label');
-    var icon = document.getElementById('username-icon');
     var pwLabel = document.getElementById('password-label');
-    var pwIcon = document.getElementById('password-icon');
     var subtitle = document.getElementById('login-subtitle');
     var input = document.getElementById('id_username');
     var pwInput = document.getElementById('id_password');
@@ -130,7 +313,6 @@ function switchTab(type) {
     var inactiveClass = 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50';
     var baseClass = 'flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ';
 
-    // Reset all tabs to inactive
     tabOrg.className = baseClass + inactiveClass;
     tabStaff.className = baseClass + inactiveClass;
     tabParent.className = baseClass + inactiveClass;
@@ -138,30 +320,24 @@ function switchTab(type) {
     if (type === 'staff') {
         tabStaff.className = baseClass + activeClass;
         label.textContent = 'Staff ID';
-        icon.className = 'fas fa-id-badge';
         pwLabel.textContent = 'Phone Number';
-        pwIcon.className = 'fas fa-phone';
         subtitle.textContent = 'Login with your Staff ID & phone number';
         if (input) input.setAttribute('placeholder', 'Enter your Staff ID');
         if (pwInput) pwInput.setAttribute('placeholder', 'Enter your phone number');
     } else if (type === 'parent') {
         tabParent.className = baseClass + activeClass;
         label.textContent = 'Phone Number';
-        icon.className = 'fas fa-phone';
         pwLabel.textContent = 'Password';
-        pwIcon.className = 'fas fa-lock';
         subtitle.textContent = "Login with your child's registered phone number";
         if (input) input.setAttribute('placeholder', 'e.g. 9876543210');
-        if (pwInput) pwInput.setAttribute('placeholder', '');
+        if (pwInput) pwInput.setAttribute('placeholder', 'Enter your password');
     } else {
         tabOrg.className = baseClass + activeClass;
         label.textContent = 'Username';
-        icon.className = 'fas fa-user';
         pwLabel.textContent = 'Password';
-        pwIcon.className = 'fas fa-lock';
-        subtitle.textContent = 'Welcome back to your dashboard';
+        subtitle.textContent = 'Sign in to your account to continue';
         if (input) input.setAttribute('placeholder', 'Enter your username');
-        if (pwInput) pwInput.setAttribute('placeholder', '');
+        if (pwInput) pwInput.setAttribute('placeholder', 'Enter your password');
     }
 }
 </script>

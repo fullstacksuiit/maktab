@@ -18,11 +18,14 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from management.views import service_worker, auto_login_view
+from management.views import service_worker, auto_login_view, robots_txt, sitemap_xml, features_page
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("sw.js", service_worker, name='service_worker'),
+    path("robots.txt", robots_txt, name='robots_txt'),
+    path("sitemap.xml", sitemap_xml, name='sitemap_xml'),
+    path("features/", features_page, name='features'),
     path("", auto_login_view),
     path("", include('management.urls')),
 ]

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maktab - Best Maktab Management Software | Madrasah & Islamic Education</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Maktab is the #1 maktab management software for Islamic coaching centers, madrasah & educational institutions. Manage students, attendance, fees, staff, payroll & more. Free signup!">
+    <meta name="keywords" content="maktab software, maktab management system, madrasah software, Islamic school management, madrasa management software, student management system, attendance software, fee management, Islamic education software, coaching center software, maktab app, madrasah management system, best maktab software, free maktab software, maktab ERP, Islamic school ERP, madrasa attendance, maktab fee collection, parent portal maktab, maktab student management">
+    <meta name="author" content="Strix">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    {% load static %}
+    <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Maktab - Best Maktab Management Software for Islamic Education">
+    <meta property="og:description" content="Complete management software for Maktab, Madrasah & Islamic coaching centers. Students, attendance, fees, payroll, parent portal & more. Start free!">
+    <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}/">
+    <meta property="og:site_name" content="Maktab">
+    <meta property="og:locale" content="en_IN">
+
+    <!-- OG Image -->
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'management/images/og-image.svg' %}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Maktab - Best Maktab Management Software">
+    <meta name="twitter:description" content="Complete management software for Maktab, Madrasah & Islamic coaching centers. Start free!">
+    <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'management/images/og-image.svg' %}">
+
+    <!-- Google Search Console Verification (replace with your code from Google Search Console) -->
+    <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE_HERE"> -->
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Maktab",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web",
+        "description": "Complete management software for Maktab, Madrasah and Islamic coaching centers. Manage students, attendance, fees, staff payroll, parent portal and more.",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "INR",
+            "description": "Free to get started"
+        },
+        "featureList": [
+            "Student Management",
+            "Attendance Tracking",
+            "Fee Collection & Receipts",
+            "Staff & Payroll Management",
+            "Parent Portal",
+            "Course & Batch Management",
+            "Expense Tracking",
+            "Timetable Management",
+            "Reports & Analytics",
+            "Mobile Friendly PWA"
+        ],
+        "creator": {
+            "@type": "Organization",
+            "name": "Strix",
+            "url": "http://strix.co.in/"
+        }
+    }
+    </script>
+
+    <!-- Organization Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Maktab",
+        "description": "Maktab Management Software - The best solution for Islamic educational institutions",
+        "url": "{{ request.scheme }}://{{ request.get_host }}/",
+        "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'management/icons/icon-512x512.png' %}"
+    }
+    </script>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'management/icons/icon-96x96.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'management/icons/icon-192x192.png' %}">
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0d6b4e',
+                        secondary: '#1a9e6f',
+                        gold: '#c9a84c',
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, #0d6b4e, #1a9e6f, #c9a84c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(13, 107, 78, 0.15);
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .float-anim { animation: float 3s ease-in-out infinite; }
+        .float-anim-delay { animation: float 3s ease-in-out 1s infinite; }
+    </style>
+</head>
+<body class="bg-white text-gray-800 antialiased">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+            <a href="/" class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center shadow-md">
+                    <i class="fas fa-mosque text-sm"></i>
+                </div>
+                <span class="text-xl font-bold text-gray-900">Maktab</span>
+            </a>
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
+                <a href="#features" class="hover:text-primary transition-colors">Features</a>
+                <a href="#why-maktab" class="hover:text-primary transition-colors">Why Maktab</a>
+                <a href="#faq" class="hover:text-primary transition-colors">FAQ</a>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{% url 'login' %}" class="text-sm font-semibold text-gray-600 hover:text-primary transition-colors px-4 py-2">Login</a>
+                <a href="{% url 'signup' %}" class="text-sm font-semibold text-white bg-gradient-to-r from-primary to-secondary px-5 py-2.5 rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all">
+                    Get Started Free
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="pt-32 pb-20 px-4 bg-gradient-to-b from-gray-50 to-white overflow-hidden relative">
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+            <div class="flex-1 text-center lg:text-left">
+                <div class="inline-flex items-center gap-2 bg-primary/5 text-primary text-xs font-bold px-4 py-2 rounded-full mb-6 uppercase tracking-wider">
+                    <i class="fas fa-star"></i> #1 Maktab Management Software
+                </div>
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
+                    The Best <span class="gradient-text">Maktab Software</span> for Islamic Education
+                </h1>
+                <p class="text-lg text-gray-500 max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed">
+                    Complete management system for <strong>Maktab</strong>, <strong>Madrasah</strong> &amp; Islamic coaching centers.
+                    Manage students, attendance, fees, staff, payroll &amp; parent portal — all in one place.
+                </p>
+                <div class="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+                    <a href="{% url 'signup' %}" class="w-full sm:w-auto text-center px-8 py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold rounded-2xl shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all text-base">
+                        <i class="fas fa-rocket mr-2"></i> Start Free — No Credit Card
+                    </a>
+                    <a href="#features" class="w-full sm:w-auto text-center px-8 py-4 bg-gray-100 text-gray-700 font-semibold rounded-2xl hover:bg-gray-200 transition-all text-base">
+                        <i class="fas fa-play-circle mr-2"></i> See Features
+                    </a>
+                </div>
+                <p class="mt-6 text-sm text-gray-400">Trusted by Maktabs & Madrasahs across India</p>
+            </div>
+            <!-- Hero Illustration -->
+            <div class="flex-1 max-w-lg">
+                <div class="relative">
+                    <div class="absolute -inset-4 bg-gradient-to-r from-primary/10 to-gold/10 rounded-3xl blur-3xl"></div>
+                    <div class="relative bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 float-anim">
+                        <!-- Mini dashboard mockup -->
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                                <i class="fas fa-mosque text-white text-xs"></i>
+                            </div>
+                            <span class="font-bold text-sm text-gray-900">Maktab Dashboard</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <div class="bg-green-50 rounded-xl p-3">
+                                <p class="text-xs text-green-600 font-medium">Students</p>
+                                <p class="text-xl font-bold text-green-700">248</p>
+                            </div>
+                            <div class="bg-blue-50 rounded-xl p-3">
+                                <p class="text-xs text-blue-600 font-medium">Attendance</p>
+                                <p class="text-xl font-bold text-blue-700">92%</p>
+                            </div>
+                            <div class="bg-amber-50 rounded-xl p-3">
+                                <p class="text-xs text-amber-600 font-medium">Fees Collected</p>
+                                <p class="text-xl font-bold text-amber-700">1.2L</p>
+                            </div>
+                            <div class="bg-purple-50 rounded-xl p-3">
+                                <p class="text-xs text-purple-600 font-medium">Staff</p>
+                                <p class="text-xl font-bold text-purple-700">18</p>
+                            </div>
+                        </div>
+                        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div class="h-full w-3/4 bg-gradient-to-r from-primary to-secondary rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 px-4 bg-white">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
+                    Everything Your <span class="gradient-text">Maktab</span> Needs
+                </h2>
+                <p class="text-gray-500 max-w-2xl mx-auto text-lg">
+                    A complete maktab management system designed specifically for Islamic educational institutions, madrasahs and coaching centers.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Feature 1 -->
+                <div class="feature-card bg-white border border-gray-100 rounded-2xl p-6 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mb-4">
+                        <i class="fas fa-user-graduate text-primary text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Student Management</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Complete student enrollment, profiles, batch assignment, results tracking and student history. Import students in bulk via Excel.</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="feature-card bg-white border border-gray-100 rounded-2xl p-6 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-4">
+                        <i class="fas fa-clipboard-check text-blue-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Attendance Tracking</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Batch-wise student and staff attendance. Daily tracking, monthly reports, and automatic leave management for your maktab.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="feature-card bg-white border border-gray-100 rounded-2xl p-6 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center mb-4">
+                        <i class="fas fa-money-bill-wave text-amber-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Fee Collection</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Collect fees, generate printed receipts, track pending payments. Complete fee management for your madrasah with reports.</p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="feature-card bg-white border border-gray-100 rounded-2xl p-6 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center mb-4">
+                        <i class="fas fa-chalkboard-teacher text-purple-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Staff & Payroll</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Manage teachers and staff profiles, attendance, leave requests, salary components and monthly payroll generation.</p>
+                </div>
+
+                <!-- Feature 5 -->
+                <div class="feature-card bg-white border border-gray-100 rounded-2xl p-6 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-xl bg-pink-50 flex items-center justify-center mb-4">
+                        <i class="fas fa-child text-pink-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Parent Portal</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Parents can login to view their child's attendance, fee status and results. Real-time updates keep parents informed.</p>
+                </div>
+
+                <!-- Feature 6 -->
+                <div class="feature-card bg-white border border-gray-100 rounded-2xl p-6 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center mb-4">
+                        <i class="fas fa-chart-pie text-red-500 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Accounts & Expenses</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Track all income and expenses. View accounts overview, record expenses by category, and keep your maktab finances organized.</p>
+                </div>
+
+                <!-- Feature 7 -->
+                <div class="feature-card bg-white border border-gray-100 rounded-2xl p-6 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-xl bg-cyan-50 flex items-center justify-center mb-4">
+                        <i class="fas fa-book-quran text-cyan-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Courses & Batches</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Create courses (Hifz, Nazira, Aalim, etc.), organize students into batches, manage timetables and track progress.</p>
+                </div>
+
+                <!-- Feature 8 -->
+                <div class="feature-card bg-white border border-gray-100 rounded-2xl p-6 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center mb-4">
+                        <i class="fas fa-mobile-alt text-indigo-600 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Mobile Friendly (PWA)</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Works on any phone, tablet or desktop. Install as an app on your home screen — no app store download needed.</p>
+                </div>
+
+                <!-- Feature 9 -->
+                <div class="feature-card bg-white border border-gray-100 rounded-2xl p-6 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center mb-4">
+                        <i class="fas fa-calendar-alt text-orange-500 text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Calendar & Timetable</h3>
+                    <p class="text-gray-500 text-sm leading-relaxed">Manage your maktab calendar, holidays, events. Set up batch-wise timetables for organized daily operations.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Maktab Section -->
+    <section id="why-maktab" class="py-20 px-4 bg-gray-50">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
+                    Why Choose <span class="gradient-text">Maktab</span>?
+                </h2>
+                <p class="text-gray-500 max-w-2xl mx-auto text-lg">
+                    Built specifically for Islamic educational institutions — not a generic school software.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
+                        <i class="fas fa-mosque text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2">Built for Maktabs</h3>
+                    <p class="text-gray-500 text-sm">Designed specifically for Islamic coaching centers, Madrasahs and Maktabs — not a generic school ERP.</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
+                        <i class="fas fa-bolt text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2">Easy to Use</h3>
+                    <p class="text-gray-500 text-sm">Simple, clean interface that anyone can use. No training needed — get started in minutes.</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
+                        <i class="fas fa-shield-alt text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2">Secure & Private</h3>
+                    <p class="text-gray-500 text-sm">Your data stays safe. Each organization gets their own isolated environment with role-based access.</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-gold to-amber-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-gold/20">
+                        <i class="fas fa-rupee-sign text-white text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2">Free to Start</h3>
+                    <p class="text-gray-500 text-sm">Get started absolutely free. No credit card required. Perfect for small to large maktabs.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section (great for SEO - targets long-tail keywords) -->
+    <section id="faq" class="py-20 px-4 bg-white">
+        <div class="max-w-3xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4">
+                    Frequently Asked Questions
+                </h2>
+                <p class="text-gray-500 text-lg">Common questions about Maktab management software</p>
+            </div>
+
+            <div class="space-y-4">
+                <details class="group bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden">
+                    <summary class="flex items-center justify-between p-6 cursor-pointer font-semibold text-gray-900 hover:text-primary transition-colors">
+                        <span>What is Maktab management software?</span>
+                        <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <div class="px-6 pb-6 text-gray-500 text-sm leading-relaxed">
+                        Maktab management software is a digital solution designed to help Islamic educational institutions (Maktabs, Madrasahs, Islamic coaching centers) manage their daily operations. It includes student enrollment, attendance tracking, fee collection, staff management, payroll, parent portal and more — all in one easy-to-use platform.
+                    </div>
+                </details>
+
+                <details class="group bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden">
+                    <summary class="flex items-center justify-between p-6 cursor-pointer font-semibold text-gray-900 hover:text-primary transition-colors">
+                        <span>Is Maktab software free to use?</span>
+                        <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <div class="px-6 pb-6 text-gray-500 text-sm leading-relaxed">
+                        Yes! You can sign up and start using Maktab for free. No credit card is required. The software is designed to be accessible to all Islamic educational institutions, whether small or large.
+                    </div>
+                </details>
+
+                <details class="group bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden">
+                    <summary class="flex items-center justify-between p-6 cursor-pointer font-semibold text-gray-900 hover:text-primary transition-colors">
+                        <span>Can parents access their child's information?</span>
+                        <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <div class="px-6 pb-6 text-gray-500 text-sm leading-relaxed">
+                        Yes! Maktab includes a dedicated Parent Portal where parents can log in to view their child's attendance, fee payment status, and academic results in real-time.
+                    </div>
+                </details>
+
+                <details class="group bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden">
+                    <summary class="flex items-center justify-between p-6 cursor-pointer font-semibold text-gray-900 hover:text-primary transition-colors">
+                        <span>Does it work on mobile phones?</span>
+                        <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <div class="px-6 pb-6 text-gray-500 text-sm leading-relaxed">
+                        Absolutely! Maktab is a Progressive Web App (PWA) that works perfectly on any smartphone, tablet, or computer. You can even install it on your home screen like a native app — no app store needed.
+                    </div>
+                </details>
+
+                <details class="group bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden">
+                    <summary class="flex items-center justify-between p-6 cursor-pointer font-semibold text-gray-900 hover:text-primary transition-colors">
+                        <span>What features does the maktab software include?</span>
+                        <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <div class="px-6 pb-6 text-gray-500 text-sm leading-relaxed">
+                        Maktab includes: Student Management, Attendance Tracking (student & staff), Fee Collection with printed receipts, Course & Batch Management, Staff Profiles & Payroll, Parent Portal, Expense Tracking, Accounts Overview, Calendar & Timetable, and more. It's a complete ERP for your maktab or madrasah.
+                    </div>
+                </details>
+
+                <details class="group bg-gray-50 rounded-2xl border border-gray-100 overflow-hidden">
+                    <summary class="flex items-center justify-between p-6 cursor-pointer font-semibold text-gray-900 hover:text-primary transition-colors">
+                        <span>How is this different from other school management software?</span>
+                        <i class="fas fa-chevron-down text-gray-400 group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <div class="px-6 pb-6 text-gray-500 text-sm leading-relaxed">
+                        Unlike generic school ERPs, Maktab is purpose-built for Islamic educational institutions. It understands the unique workflow of Maktabs and Madrasahs — batch-based teaching (Hifz, Nazira, Aalim courses), Islamic calendar integration, Urdu/Arabic language support, and fee structures common to Islamic coaching centers.
+                    </div>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Schema for Google Rich Results -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "What is Maktab management software?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Maktab management software is a digital solution designed to help Islamic educational institutions (Maktabs, Madrasahs, Islamic coaching centers) manage their daily operations. It includes student enrollment, attendance tracking, fee collection, staff management, payroll, parent portal and more."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Is Maktab software free to use?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes! You can sign up and start using Maktab for free. No credit card is required."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Can parents access their child's information?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes! Maktab includes a dedicated Parent Portal where parents can log in to view their child's attendance, fee payment status, and academic results in real-time."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Does it work on mobile phones?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Absolutely! Maktab is a Progressive Web App (PWA) that works perfectly on any smartphone, tablet, or computer. You can install it on your home screen like a native app."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What features does the maktab software include?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Maktab includes: Student Management, Attendance Tracking, Fee Collection with printed receipts, Course & Batch Management, Staff Profiles & Payroll, Parent Portal, Expense Tracking, Accounts Overview, Calendar & Timetable, and more."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How is this different from other school management software?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Unlike generic school ERPs, Maktab is purpose-built for Islamic educational institutions. It understands the unique workflow of Maktabs and Madrasahs — batch-based teaching, Islamic calendar integration, Urdu/Arabic language support, and fee structures common to Islamic coaching centers."
+                }
+            }
+        ]
+    }
+    </script>
+
+    <!-- CTA Section -->
+    <section class="py-20 px-4 bg-gradient-to-br from-[#0a2e1f] via-[#0d4a35] to-[#0d6b4e] relative overflow-hidden">
+        <div class="absolute inset-0 opacity-5">
+            <svg class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="ctaPattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                        <path d="M30 0 L60 30 L30 60 L0 30Z" fill="none" stroke="white" stroke-width="0.5"/>
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#ctaPattern)"/>
+            </svg>
+        </div>
+        <div class="max-w-3xl mx-auto text-center relative z-10">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+                Ready to Simplify Your Maktab Management?
+            </h2>
+            <p class="text-white/60 text-lg mb-8 max-w-xl mx-auto">
+                Join hundreds of Maktabs and Madrasahs already using our software. Sign up free and get started in minutes.
+            </p>
+            <a href="{% url 'signup' %}" class="inline-flex items-center gap-2.5 px-8 py-4 bg-white text-primary font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all text-base">
+                <i class="fas fa-rocket"></i> Create Free Account
+            </a>
+            <p class="mt-4 text-white/40 text-sm">No credit card required. Setup in 2 minutes.</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-4 bg-gray-900 text-gray-400">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center">
+                        <i class="fas fa-mosque text-xs"></i>
+                    </div>
+                    <span class="text-lg font-bold text-white">Maktab</span>
+                    <span class="text-sm text-gray-500">— Islamic Education, Simplified</span>
+                </div>
+                <div class="flex items-center gap-6 text-sm">
+                    <a href="{% url 'login' %}" class="hover:text-white transition-colors">Login</a>
+                    <a href="{% url 'signup' %}" class="hover:text-white transition-colors">Sign Up</a>
+                    <a href="#features" class="hover:text-white transition-colors">Features</a>
+                    <a href="#faq" class="hover:text-white transition-colors">FAQ</a>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
+                <p>A <a href="http://strix.co.in/" target="_blank" rel="noopener noreferrer" class="font-medium text-gray-300 hover:text-white transition-colors">Strix</a> Venture</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

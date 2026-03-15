@@ -7,6 +7,22 @@
 </div>
 {% endif %}
 
+<!-- Bulk Action Bar (hidden by default) -->
+<div id="bulk-action-bar" class="hidden mb-4 px-4 py-3 bg-primary/5 border border-primary/20 rounded-xl flex items-center justify-between animate-[slideUp_0.2s_ease-out]">
+    <span class="text-sm font-semibold text-primary">
+        <i class="fas fa-check-circle mr-1"></i>
+        <span id="selected-count">0</span> student(s) selected
+    </span>
+    <div class="flex items-center gap-2">
+        <button type="button" onclick="openBulkAssignModal()" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 text-sm font-medium transition-all flex items-center gap-2 shadow-lg shadow-primary/20 hover:-translate-y-0.5">
+            <i class="fas fa-layer-group"></i> Assign Batch
+        </button>
+        <button type="button" onclick="openBulkDeleteModal()" class="px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 text-sm font-medium transition-all flex items-center gap-2 shadow-lg shadow-red-500/20 hover:-translate-y-0.5">
+            <i class="fas fa-trash"></i> Delete Selected
+        </button>
+    </div>
+</div>
+
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
     {% if students %}
     <!-- Desktop Table View -->
@@ -14,7 +30,12 @@
         <table class="w-full text-left text-sm">
             <thead>
                 <tr class="bg-gradient-to-r from-primary to-secondary text-white">
-                    <th class="px-6 py-4 font-semibold first:pl-8 rounded-tl-lg">Student ID</th>
+                    <th class="pl-4 pr-2 py-4 w-10">
+                        <label class="flex items-center justify-center cursor-pointer">
+                            <input type="checkbox" id="select-all-desktop" onchange="toggleSelectAll(this)" class="w-4 h-4 rounded border-white/50 text-primary focus:ring-primary/50 cursor-pointer">
+                        </label>
+                    </th>
+                    <th class="px-6 py-4 font-semibold">Student ID</th>
                     <th class="px-6 py-4 font-semibold">Name</th>
                     <th class="px-6 py-4 font-semibold">Email</th>
                     <th class="px-6 py-4 font-semibold">Phone</th>
@@ -25,8 +46,13 @@
             </thead>
             <tbody class="divide-y divide-gray-100">
                 {% for student in students %}
-                <tr class="hover:bg-gray-50/80 transition-colors group">
-                    <td class="px-6 py-4 font-medium text-primary first:pl-8">
+                <tr class="hover:bg-gray-50/80 transition-colors group student-row" data-uuid="{{ student.uuid }}">
+                    <td class="pl-4 pr-2 py-4">
+                        <label class="flex items-center justify-center cursor-pointer">
+                            <input type="checkbox" class="student-checkbox w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary/50 cursor-pointer" value="{{ student.uuid }}" data-name="{{ student.full_name|escapejs }}" onchange="updateBulkBar()">
+                        </label>
+                    </td>
+                    <td class="px-6 py-4 font-medium text-primary">
                         {{ student.student_id }}
                     </td>
                     <td class="px-6 py-4">
@@ -58,8 +84,15 @@
                             {% endif %}
                         </div>
                     </td>
-                    <td class="px-6 py-4 font-bold text-gray-700">
-                        {{ currency_symbol }} {{ student.total_fees|default:"0" }}
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-gray-700">{{ currency_symbol }} {{ student.get_total_fees }}</div>
+                        {% if student.is_orphan %}
+                            <span class="text-[10px] text-green-600 font-semibold"><i class="fas fa-hand-holding-heart mr-0.5"></i>Fees Waived</span>
+                        {% elif student.discount_amount > 0 %}
+                            <span class="text-[10px] text-green-600 font-semibold"><i class="fas fa-tag mr-0.5"></i>{{ currency_symbol }} {{ student.discount_amount }} off</span>
+                        {% elif student.guardian_discount > 0 %}
+                            <span class="text-[10px] text-green-600 font-semibold"><i class="fas fa-percentage mr-0.5"></i>{{ student.guardian_discount }}% off</span>
+                        {% endif %}
                     </td>
                     <td class="px-6 py-4 max-w-[120px] text-center last:pr-8">
                          <div class="flex items-center justify-center gap-2">
@@ -84,6 +117,9 @@
         <div class="p-4">
             <div class="flex items-start justify-between gap-3 mb-2">
                 <div class="flex items-center gap-3 min-w-0">
+                    <label class="flex items-center cursor-pointer shrink-0">
+                        <input type="checkbox" class="student-checkbox w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary/50 cursor-pointer" value="{{ student.uuid }}" data-name="{{ student.full_name|escapejs }}" onchange="updateBulkBar()">
+                    </label>
                     <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
                         {{ student.full_name|first }}
                     </div>
@@ -95,14 +131,23 @@
                         <p class="text-xs text-gray-500"><span class="text-primary font-medium">{{ student.student_id }}</span></p>
                     </div>
                 </div>
-                <span class="font-bold text-gray-700 text-sm shrink-0">{{ currency_symbol }} {{ student.total_fees|default:"0" }}</span>
+                <div class="text-right shrink-0">
+                    <span class="font-bold text-gray-700 text-sm">{{ currency_symbol }} {{ student.get_total_fees }}</span>
+                    {% if student.is_orphan %}
+                        <p class="text-[10px] text-green-600 font-semibold"><i class="fas fa-hand-holding-heart mr-0.5"></i>Waived</p>
+                    {% elif student.discount_amount > 0 %}
+                        <p class="text-[10px] text-green-600 font-semibold"><i class="fas fa-tag mr-0.5"></i>{{ currency_symbol }} {{ student.discount_amount }} off</p>
+                    {% elif student.guardian_discount > 0 %}
+                        <p class="text-[10px] text-green-600 font-semibold"><i class="fas fa-percentage mr-0.5"></i>{{ student.guardian_discount }}% off</p>
+                    {% endif %}
+                </div>
             </div>
-            <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 pl-[52px] mb-2">
+            <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 pl-[68px] mb-2">
                 {% if student.phone %}<span><i class="fas fa-phone mr-1 text-gray-400"></i><a href="tel:{{ student.phone }}" class="hover:text-primary transition-colors">{{ student.phone }}</a></span>{% endif %}
                 {% if student.email %}<span class="truncate"><i class="fas fa-envelope mr-1 text-gray-400"></i>{{ student.email }}</span>{% endif %}
             </div>
             {% if student.batches.all %}
-            <div class="flex flex-wrap gap-1 pl-[52px] mb-2">
+            <div class="flex flex-wrap gap-1 pl-[68px] mb-2">
                 {% for batch in student.batches.all %}
                 <span class="px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-[11px] font-medium border border-green-200">
                     {{ batch.course.course_code }} - {{ batch.batch_name }}
@@ -110,11 +155,11 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div class="pl-[52px] mb-2">
+            <div class="pl-[68px] mb-2">
                 <span class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[11px] border border-gray-200">Not Enrolled</span>
             </div>
             {% endif %}
-            <div class="flex items-center gap-2 pl-[52px]">
+            <div class="flex items-center gap-2 pl-[68px]">
                 <a href="{% url 'student_detail' student.uuid %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="View"><i class="fas fa-eye"></i></a>
                 <a href="{% url 'student_edit' student.uuid %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
                 <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
@@ -149,3 +194,88 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+function toggleSelectAll(master) {
+    var checkboxes = document.querySelectorAll('.student-checkbox');
+    checkboxes.forEach(function(cb) { cb.checked = master.checked; });
+    // Sync the other select-all if exists
+    var otherMaster = master.id === 'select-all-desktop' ?
+        document.getElementById('select-all-mobile') :
+        document.getElementById('select-all-desktop');
+    if (otherMaster) otherMaster.checked = master.checked;
+    updateBulkBar();
+}
+
+function updateBulkBar() {
+    var checked = document.querySelectorAll('.student-checkbox:checked');
+    var bar = document.getElementById('bulk-action-bar');
+    var count = document.getElementById('selected-count');
+    var total = document.querySelectorAll('.student-checkbox');
+    var selectAllDesktop = document.getElementById('select-all-desktop');
+
+    count.textContent = checked.length;
+
+    if (checked.length > 0) {
+        bar.classList.remove('hidden');
+    } else {
+        bar.classList.add('hidden');
+    }
+
+    // Update select-all state
+    if (selectAllDesktop) {
+        selectAllDesktop.checked = total.length > 0 && checked.length === total.length;
+        selectAllDesktop.indeterminate = checked.length > 0 && checked.length < total.length;
+    }
+}
+
+function openBulkDeleteModal() {
+    var checked = document.querySelectorAll('.student-checkbox:checked');
+    if (checked.length === 0) return;
+
+    // Populate the hidden form with selected UUIDs
+    var form = document.getElementById('bulkDeleteForm');
+    // Remove old hidden inputs
+    form.querySelectorAll('input[name="selected_students"]').forEach(function(el) { el.remove(); });
+    checked.forEach(function(cb) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_students';
+        input.value = cb.value;
+        form.appendChild(input);
+    });
+
+    document.getElementById('bulkDeleteCount').textContent = checked.length;
+    document.getElementById('bulkDeleteModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeBulkDeleteModal() {
+    document.getElementById('bulkDeleteModal').classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function openBulkAssignModal() {
+    var checked = document.querySelectorAll('.student-checkbox:checked');
+    if (checked.length === 0) return;
+
+    var form = document.getElementById('bulkAssignForm');
+    form.querySelectorAll('input[name="selected_students"]').forEach(function(el) { el.remove(); });
+    checked.forEach(function(cb) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_students';
+        input.value = cb.value;
+        form.appendChild(input);
+    });
+
+    document.getElementById('bulkAssignCount').textContent = checked.length;
+    document.getElementById('bulkAssignModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeBulkAssignModal() {
+    document.getElementById('bulkAssignModal').classList.add('hidden');
+    document.body.style.overflow = '';
+}
+</script>

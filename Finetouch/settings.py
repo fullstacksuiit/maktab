@@ -57,7 +57,6 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [],
-        "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
@@ -65,6 +64,18 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "management.context_processors.currency_symbol",
+            ],
+            "loaders": [
+                (
+                    "django.template.loaders.cached.Loader",
+                    [
+                        "django.template.loaders.filesystem.Loader",
+                        "django.template.loaders.app_directories.Loader",
+                    ],
+                ),
+            ] if not DEBUG else [
+                "django.template.loaders.filesystem.Loader",
+                "django.template.loaders.app_directories.Loader",
             ],
         },
     },
@@ -82,6 +93,18 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+
+# Caching
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "finetouch-cache",
+        "TIMEOUT": 300,
+    }
+}
+
+# Cache sessions in memory instead of DB
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 
 
 # Password validation
@@ -142,6 +165,10 @@ AUTHENTICATION_BACKENDS = [
     'management.backends.PhoneOrUsernameBackend',
 ]
 
+# Cookie Settings (unique names to avoid conflicts with other local Django apps)
+CSRF_COOKIE_NAME = 'finetouch_csrftoken'
+SESSION_COOKIE_NAME = 'finetouch_sessionid'
+
 # Session Settings
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 30  # 30 days
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
@@ -183,4 +210,4 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'rahmantanshit@gmail.com'          # Replace with your Gmail address
 EMAIL_HOST_PASSWORD = 'vkxj yvqq liqj atfc'            # Replace with Gmail App Password
-DEFAULT_FROM_EMAIL = 'Maktab <your-noreply@gmail.com>'
+DEFAULT_FROM_EMAIL = 'Maktab <rahmantanshit@gmail.com>'

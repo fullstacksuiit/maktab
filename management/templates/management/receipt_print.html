@@ -11,15 +11,15 @@
         .no-print-wrap { display: flex; justify-content: center; padding: 20px; }
         .receipt { width: 210mm; max-width: 100%; background: #fff; padding: 8mm 10mm; border: 1px solid #ccc; }
         table { width: 100%; border-collapse: collapse; }
-        .ur { font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', serif; direction: rtl; unicode-bidi: bidi-override; }
-        .ur-inline { font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', serif; }
+        .ur { font-family: 'Jameel Noori Nastaleeq Kasheeda', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', serif; direction: rtl; unicode-bidi: bidi-override; }
+        .ur-inline { font-family: 'Jameel Noori Nastaleeq Kasheeda', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', serif; }
         .bilingual { display: flex; justify-content: space-between; align-items: baseline; }
         .bilingual .en { text-align: left; }
-        .bilingual .ur-side { text-align: right; font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; direction: rtl; }
+        .bilingual .ur-side { text-align: right; font-family: 'Jameel Noori Nastaleeq Kasheeda', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; direction: rtl; }
 
         /* Header */
         .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 6px; }
-        .header .ur-name { font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size: 22px; font-weight: 700; direction: rtl; margin-bottom: 2px; line-height: 1.6; }
+        .header .ur-name { font-family: 'Jameel Noori Nastaleeq Kasheeda', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size: 22px; font-weight: 700; direction: rtl; margin-bottom: 2px; line-height: 1.6; }
         .header .en-name { font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2px; }
         .header p { font-size: 10px; color: #333; }
 
@@ -283,7 +283,7 @@
                         <div style="font-size:9px; color:#666;">{{ payment.created_at|date:"d/m/Y h:i A" }}</div>
                     </td>
                     <td style="text-align:right">
-                        <div style="font-size:11px; font-weight:bold; margin-bottom:4px;">{% if user.gender == 'M' %}Hafiz {% endif %}{{ user.get_full_name|default:user.username }}</div>
+                        <div style="font-size:11px; font-weight:bold; margin-bottom:4px;">{% if user_prefix %}{{ user_prefix }} {% endif %}{{ user.get_full_name|default:user.username }}</div>
                         <div class="sig-line" style="margin-left:auto"></div>
                         <div style="font-size:9px; text-transform:uppercase; letter-spacing:1px; color:#555;">Authorized Signature / <span class="ur-inline" style="letter-spacing:0; text-transform:none;">مجاز دستخط</span></div>
                     </td>

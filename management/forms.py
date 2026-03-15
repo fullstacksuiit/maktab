@@ -56,6 +56,11 @@ class SignUpForm(UserCreationForm):
         required=False,
         widget=styled_text_input('License (Optional)')
     )
+    gender = forms.ChoiceField(
+        choices=[('', 'Select Gender'), ('M', 'Male'), ('F', 'Female')],
+        required=True,
+        widget=forms.Select(attrs={'class': TAILWIND_SELECT, 'id': 'id_gender'})
+    )
     password1 = forms.CharField(
         widget=styled_password_input('Password')
     )
@@ -105,6 +110,7 @@ class SignUpForm(UserCreationForm):
         # Set user as admin of this organization
         user.organization = organization
         user.role = 'admin'
+        user.gender = self.cleaned_data.get('gender', '')
         if commit:
             user.save()
         return user
@@ -171,8 +177,8 @@ class StudentForm(forms.ModelForm):
         model = Student
         fields = ['student_id', 'full_name', 'email', 'phone',
                   'date_of_birth', 'gender', 'address', 'city', 'state', 'pin_code',
-                  'photo', 'is_orphan', 'guardian_name', 'guardian_phone', 'guardian_discount',
-                  'batches', 'enrollment_date']
+                  'photo', 'is_orphan', 'guardian_name', 'guardian_phone', 'guardian_discount', 'discount_amount',
+                  'opening_balance', 'batches', 'enrollment_date']
         widgets = {
             'student_id': styled_text_input('Auto-generated if left blank'),
             'full_name': styled_text_input('Enter full name'),
@@ -187,6 +193,8 @@ class StudentForm(forms.ModelForm):
             'guardian_name': styled_text_input('Guardian full name'),
             'guardian_phone': styled_text_input('Guardian phone number'),
             'guardian_discount': styled_text_input('Discount % (e.g. 10)'),
+            'discount_amount': styled_text_input('Fixed discount amount (e.g. 200)'),
+            'opening_balance': styled_text_input('Previous pending dues (e.g. 500)'),
             'batches': searchable_select_multiple('Search batches...'),
         }
 

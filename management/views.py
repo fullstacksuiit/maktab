@@ -44,6 +44,56 @@ def service_worker(request):
         return HttpResponse(f.read(), content_type='application/javascript')
 
 
+def robots_txt(request):
+    """Serve robots.txt for search engine crawlers."""
+    host = request.build_absolute_uri('/')[:-1]
+    content = f"""User-agent: *
+Allow: /
+Allow: /login/
+Allow: /signup/
+Disallow: /admin/
+Disallow: /static/
+Disallow: /media/
+
+Sitemap: {host}/sitemap.xml
+"""
+    return HttpResponse(content.strip(), content_type='text/plain')
+
+
+def sitemap_xml(request):
+    """Serve sitemap.xml for search engine indexing."""
+    host = request.build_absolute_uri('/')[:-1]
+    content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>{host}/</loc>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>{host}/login/</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>{host}/signup/</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    <url>
+        <loc>{host}/features/</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+</urlset>"""
+    return HttpResponse(content.strip(), content_type='application/xml')
+
+
+def features_page(request):
+    """Public features page for SEO."""
+    return render(request, 'management/features.html')
+
+
 def get_org(request):
     """Helper to get the current user's organization."""
     return request.user.organization
@@ -156,7 +206,7 @@ def auto_login_view(request):
         except (signing.BadSignature, User.DoesNotExist):
             pass
 
-    return redirect('login')
+    return render(request, 'management/landing.html')
 
 
 def logout_view(request):
@@ -363,7 +413,7 @@ def course_detail(request, pk):
         student_count=Count('students', distinct=True),
     )
 
-    total_students = Student.objects.filter(batches__course=course, organization=org).distinct().count()
+    total_students = Student.objects.filter(batches__course=course, organization=org).values('pk').distinct().count()
     active_batches = batches.filter(is_active=True).count()
     total_batches = batches.count()
 
@@ -743,7 +793,7 @@ def student_list(request):
     active_tab = request.GET.get('tab', 'students')
 
     # --- Students tab data ---
-    students_qs = Student.objects.filter(organization=org).prefetch_related('batches__course', 'fee_payments').annotate(
+    students_qs = Student.objects.filter(organization=org).prefetch_related('batches__course').annotate(
         total_fees=Sum('batches__course__fees'),
     )
     student_search = request.GET.get('q', '').strip() if active_tab == 'students' else ''
@@ -775,10 +825,14 @@ def student_list(request):
     app_paginator = Paginator(applications_qs, 20)
     applications = app_paginator.get_page(request.GET.get('page') if active_tab == 'applications' else 1)
 
+    # Batches for bulk assign
+    batches = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+
     context = {
         'active_tab': active_tab,
         'students': students,
         'search_query': student_search if active_tab == 'students' else app_search,
+        'batches': batches,
         # Application context
         'applications': applications,
         'app_status_filter': app_status_filter,
@@ -849,6 +903,353 @@ def student_delete(request, uuid):
 
 
 @login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def student_bulk_delete(request):
+    org = get_org(request)
+    uuids = request.POST.getlist('selected_students')
+    if not uuids:
+        messages.warning(request, 'No students selected.')
+        return redirect('student_list')
+    students = Student.objects.filter(uuid__in=uuids, organization=org)
+    count = students.count()
+    students.delete()
+    messages.success(request, f'{count} student(s) deleted successfully!')
+    return redirect('student_list')
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def student_bulk_assign_batch(request):
+    org = get_org(request)
+    uuids = request.POST.getlist('selected_students')
+    batch_id = request.POST.get('batch')
+    if not uuids or not batch_id:
+        messages.warning(request, 'No students or batch selected.')
+        return redirect('student_list')
+    batch = get_object_or_404(Batch, pk=batch_id, organization=org)
+    students = Student.objects.filter(uuid__in=uuids, organization=org)
+    count = 0
+    for student in students:
+        if not student.batches.filter(pk=batch.pk).exists():
+            student.batches.add(batch)
+            count += 1
+    messages.success(request, f'{count} student(s) assigned to {batch.course.course_code} - {batch.batch_name}.')
+    return redirect('student_list')
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def student_export_excel(request):
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+    org = get_org(request)
+    students = Student.objects.filter(organization=org).prefetch_related('batches__course').order_by('student_id')
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Students'
+
+    headers = [
+        'Student ID', 'Full Name', 'Email', 'Phone', 'Date of Birth', 'Gender',
+        'Address', 'City', 'State', 'Pin Code', 'Is Orphan',
+        'Guardian Name', 'Guardian Phone', 'Guardian Discount (%)', 'Discount Amount (Fixed)',
+        'Opening Balance', 'Batches (Course Code - Batch Name)', 'Enrollment Date',
+    ]
+
+    # Style header row
+    header_font = Font(name='Calibri', bold=True, color='FFFFFF', size=11)
+    header_fill = PatternFill(start_color='0D6B4E', end_color='0D6B4E', fill_type='solid')
+    header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    thin_border = Border(
+        left=Side(style='thin', color='D1D5DB'),
+        right=Side(style='thin', color='D1D5DB'),
+        top=Side(style='thin', color='D1D5DB'),
+        bottom=Side(style='thin', color='D1D5DB'),
+    )
+
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = thin_border
+
+    gender_map = {'M': 'Male', 'F': 'Female', 'O': 'Other'}
+
+    for row_num, student in enumerate(students, 2):
+        batches_str = ', '.join(
+            f'{b.course.course_code} - {b.batch_name}' for b in student.batches.all()
+        )
+        row_data = [
+            student.student_id,
+            student.full_name,
+            student.email,
+            student.phone,
+            student.date_of_birth.strftime('%Y-%m-%d') if student.date_of_birth else '',
+            gender_map.get(student.gender, student.gender),
+            student.address,
+            student.city,
+            student.state,
+            student.pin_code,
+            'Yes' if student.is_orphan else 'No',
+            student.guardian_name,
+            student.guardian_phone,
+            float(student.guardian_discount),
+            float(student.discount_amount),
+            float(student.opening_balance),
+            batches_str,
+            student.enrollment_date.strftime('%Y-%m-%d') if student.enrollment_date else '',
+        ]
+        for col_num, value in enumerate(row_data, 1):
+            cell = ws.cell(row=row_num, column=col_num, value=value)
+            cell.border = thin_border
+            cell.alignment = Alignment(vertical='center')
+
+    # Auto-adjust column widths
+    for col in ws.columns:
+        max_length = 0
+        for cell in col:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col[0].column_letter].width = min(max_length + 4, 40)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="students_{org.org_name}_{date.today().strftime("%Y%m%d")}.xlsx"'
+    wb.save(response)
+    return response
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def student_import_excel(request):
+    import openpyxl
+
+    org = get_org(request)
+    batches = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+
+    if request.method == 'POST':
+        excel_file = request.FILES.get('excel_file')
+        if not excel_file:
+            messages.error(request, 'Please select an Excel file.')
+            return redirect('student_import_excel')
+
+        if not excel_file.name.endswith(('.xlsx', '.xls')):
+            messages.error(request, 'Please upload a valid Excel file (.xlsx or .xls).')
+            return redirect('student_import_excel')
+
+        try:
+            wb = openpyxl.load_workbook(excel_file)
+            ws = wb.active
+
+            rows = list(ws.iter_rows(min_row=2, values_only=True))
+            if not rows:
+                messages.warning(request, 'The Excel file has no data rows.')
+                return redirect('student_import_excel')
+
+            gender_map = {'male': 'M', 'female': 'F', 'other': 'O', 'm': 'M', 'f': 'F', 'o': 'O'}
+
+            # Build batch lookup with multiple keys for flexible matching
+            batch_lookup = {}
+            for b in batches:
+                # Primary key: "COURSE_CODE - BATCH_NAME"
+                batch_lookup[f'{b.course.course_code} - {b.batch_name}'.strip().lower()] = b
+                # Also match by batch_name alone
+                batch_lookup[b.batch_name.strip().lower()] = b
+                # Also match by course_code alone
+                batch_lookup[b.course.course_code.strip().lower()] = b
+                # Also match by "COURSE_NAME - BATCH_NAME"
+                batch_lookup[f'{b.course.course_name} - {b.batch_name}'.strip().lower()] = b
+
+            created_count = 0
+            updated_count = 0
+            skipped_count = 0
+            errors = []
+
+            for row_idx, row in enumerate(rows, start=2):
+                # Skip completely empty rows
+                if not any(row):
+                    continue
+
+                try:
+                    student_id = str(row[0] or '').strip()
+                    full_name = str(row[1] or '').strip()
+                    email = str(row[2] or '').strip()
+                    phone = str(row[3] or '').strip()
+                    dob_raw = row[4]
+                    gender_raw = str(row[5] or '').strip().lower()
+                    address = str(row[6] or '').strip()
+                    city = str(row[7] or '').strip() or 'Rourkela'
+                    state = str(row[8] or '').strip() or 'Odisha'
+                    pin_code = str(row[9] or '').strip() or '769001'
+                    is_orphan_raw = str(row[10] or '').strip().lower()
+                    guardian_name = str(row[11] or '').strip()
+                    guardian_phone = str(row[12] or '').strip()
+                    guardian_discount = row[13] or 0
+                    discount_amount_raw = row[14] or 0
+                    opening_balance_raw = row[15] or 0
+                    batches_raw = str(row[16] or '').strip()
+                    enrollment_raw = row[17] if len(row) > 17 else None
+
+                    if not full_name:
+                        errors.append(f'Row {row_idx}: Full Name is required.')
+                        skipped_count += 1
+                        continue
+
+                    if not phone:
+                        errors.append(f'Row {row_idx}: Phone is required.')
+                        skipped_count += 1
+                        continue
+
+                    # Parse date of birth
+                    dob = None
+                    if dob_raw:
+                        if isinstance(dob_raw, datetime):
+                            dob = dob_raw.date()
+                        elif isinstance(dob_raw, date):
+                            dob = dob_raw
+                        else:
+                            try:
+                                dob = datetime.strptime(str(dob_raw).strip(), '%Y-%m-%d').date()
+                            except ValueError:
+                                pass
+
+                    # Parse gender
+                    gender = gender_map.get(gender_raw, 'M')
+
+                    # Parse enrollment date
+                    enrollment_date = None
+                    if enrollment_raw:
+                        if isinstance(enrollment_raw, datetime):
+                            enrollment_date = enrollment_raw.date()
+                        elif isinstance(enrollment_raw, date):
+                            enrollment_date = enrollment_raw
+                        else:
+                            try:
+                                enrollment_date = datetime.strptime(str(enrollment_raw).strip(), '%Y-%m-%d').date()
+                            except ValueError:
+                                pass
+                    if not enrollment_date:
+                        enrollment_date = date.today()
+
+                    # Parse is_orphan
+                    is_orphan = is_orphan_raw in ('yes', 'true', '1')
+
+                    # Parse guardian discount
+                    try:
+                        guardian_discount = float(guardian_discount)
+                    except (ValueError, TypeError):
+                        guardian_discount = 0
+
+                    # Parse discount amount
+                    try:
+                        discount_amount = float(discount_amount_raw)
+                    except (ValueError, TypeError):
+                        discount_amount = 0
+
+                    # Parse opening balance
+                    try:
+                        opening_balance = float(opening_balance_raw)
+                    except (ValueError, TypeError):
+                        opening_balance = 0
+
+                    # Update existing student or create new one
+                    existing = None
+                    if student_id:
+                        existing = Student.objects.filter(organization=org, student_id=student_id).first()
+
+                    if existing:
+                        existing.full_name = full_name
+                        existing.email = email
+                        existing.phone = phone
+                        existing.date_of_birth = dob
+                        existing.gender = gender
+                        existing.address = address
+                        existing.city = city
+                        existing.state = state
+                        existing.pin_code = pin_code
+                        existing.is_orphan = is_orphan
+                        existing.guardian_name = guardian_name
+                        existing.guardian_phone = guardian_phone
+                        existing.guardian_discount = guardian_discount
+                        existing.discount_amount = discount_amount
+                        existing.opening_balance = opening_balance
+                        existing.enrollment_date = enrollment_date
+                        existing.save()
+                        student = existing
+
+                        # Replace batches with what's in the file (only if column has data)
+                        if batches_raw:
+                            new_batches = []
+                            for batch_entry in batches_raw.split(','):
+                                batch_key = batch_entry.strip().lower()
+                                if batch_key and batch_key in batch_lookup:
+                                    new_batches.append(batch_lookup[batch_key])
+                            if new_batches:
+                                student.batches.set(new_batches)
+                            else:
+                                errors.append(f'Row {row_idx}: Batch "{batches_raw}" not found, batches unchanged.')
+
+                        updated_count += 1
+                    else:
+                        student = Student(
+                            student_id=student_id,
+                            full_name=full_name,
+                            email=email,
+                            phone=phone,
+                            date_of_birth=dob,
+                            gender=gender,
+                            address=address,
+                            city=city,
+                            state=state,
+                            pin_code=pin_code,
+                            is_orphan=is_orphan,
+                            guardian_name=guardian_name,
+                            guardian_phone=guardian_phone,
+                            guardian_discount=guardian_discount,
+                            discount_amount=discount_amount,
+                            opening_balance=opening_balance,
+                            enrollment_date=enrollment_date,
+                            organization=org,
+                        )
+                        student.save()
+
+                        # Assign batches for new students
+                        if batches_raw:
+                            for batch_entry in batches_raw.split(','):
+                                batch_key = batch_entry.strip().lower()
+                                if batch_key in batch_lookup:
+                                    student.batches.add(batch_lookup[batch_key])
+
+                        created_count += 1
+
+                except Exception as e:
+                    errors.append(f'Row {row_idx}: {str(e)}')
+                    skipped_count += 1
+
+            parts = []
+            if created_count:
+                parts.append(f'{created_count} created')
+            if updated_count:
+                parts.append(f'{updated_count} updated')
+            if parts:
+                messages.success(request, f'Students imported: {", ".join(parts)}.')
+            if skipped_count:
+                messages.warning(request, f'{skipped_count} row(s) skipped. ' + ' | '.join(errors[:5]))
+            if not created_count and not updated_count and not skipped_count:
+                messages.info(request, 'No students found in the file.')
+
+        except Exception as e:
+            messages.error(request, f'Error reading Excel file: {str(e)}')
+
+        return redirect('student_list')
+
+    return render(request, 'management/student_import.html', {'batches': batches})
+
+
+@login_required(login_url='login')
 @internal_user_required
 def student_detail(request, uuid):
     org = get_org(request)
@@ -869,14 +1270,84 @@ def student_detail(request, uuid):
     total_fees = student.get_total_fees()
     total_paid = student.get_total_paid()
 
+    # Build month-wise dues status per batch
+    today = date.today()
+    dues_by_batch = []
+    # Pre-fetch all approved payments once and group by batch_id to avoid N+1
+    approved_payments_list = list(fee_payments.filter(status='Approved'))
+    payments_by_batch = {}
+    for payment in approved_payments_list:
+        payments_by_batch.setdefault(payment.batch_id, []).append(payment)
+
+    for batch in student.batches.select_related('course').all():
+        # Collect all paid months for this batch from pre-grouped data
+        paid_months = set()
+        for payment in payments_by_batch.get(batch.pk, []):
+            for m in payment.fee_months_list:
+                paid_months.add((m.year, m.month))
+
+        # Generate expected months: from enrollment (or batch start) to current month
+        start = student.enrollment_date.replace(day=1) if student.enrollment_date else today.replace(day=1)
+        end = today.replace(day=1)
+        current = start
+        months = []
+        while current <= end:
+            status = 'paid' if (current.year, current.month) in paid_months else 'pending'
+            months.append({
+                'date': current,
+                'label': current.strftime('%b %Y'),
+                'short': current.strftime('%b'),
+                'year': current.year,
+                'status': status,
+            })
+            if current.month == 12:
+                current = current.replace(year=current.year + 1, month=1)
+            else:
+                current = current.replace(month=current.month + 1)
+
+        pending_count = sum(1 for m in months if m['status'] == 'pending')
+        paid_count = sum(1 for m in months if m['status'] == 'paid')
+
+        # Apply student discount to monthly fee
+        base_fee = batch.course.fees or 0
+        if student.is_orphan:
+            monthly_fee = 0
+        elif student.discount_amount > 0:
+            monthly_fee = max(base_fee - student.discount_amount, 0)
+        elif student.guardian_discount > 0:
+            monthly_fee = base_fee - (base_fee * student.guardian_discount / 100)
+        else:
+            monthly_fee = base_fee
+
+        dues_by_batch.append({
+            'batch': batch,
+            'months': months,
+            'pending_count': pending_count,
+            'paid_count': paid_count,
+            'monthly_fee': monthly_fee,
+            'original_fee': base_fee,
+            'pending_amount': pending_count * monthly_fee,
+        })
+
+    # Compute attendance percentage in a single query instead of model method
+    att_result = Attendance.objects.filter(
+        student=student, organization=org
+    ).aggregate(
+        total=Count('id'),
+        present=Count('id', filter=Q(status__in=['Present', 'Late']))
+    )
+    att_total = att_result['total'] or 0
+    attendance_percentage = round((att_result['present'] / att_total) * 100, 1) if att_total > 0 else 0
+
     context = {
         'student': student,
         'attendances': attendances,
         'fee_payments': fee_payments,
         'behavior_notes': behavior_notes,
-        'attendance_percentage': student.get_attendance_percentage(),
+        'attendance_percentage': attendance_percentage,
         'total_paid': total_paid,
-        'pending_fees': student.get_pending_fees(),
+        'pending_fees': total_fees + student.opening_balance - total_paid,
+        'dues_by_batch': dues_by_batch,
     }
     return render(request, 'management/student_detail.html', context)
 
@@ -1113,7 +1584,7 @@ def staff_detail(request, pk):
 @internal_user_required
 def attendance_list(request):
     org = get_org(request)
-    attendances = Attendance.objects.filter(organization=org).select_related('student', 'batch__course')
+    attendances = Attendance.objects.filter(organization=org).select_related('student', 'batch__course', 'marked_by')
 
     batch_id = request.GET.get('batch')
     filter_date = request.GET.get('date')
@@ -1408,7 +1879,7 @@ def mark_all_absent(request):
 @internal_user_required
 def staff_attendance_list(request):
     org = get_org(request)
-    attendances = StaffAttendance.objects.filter(organization=org).select_related('staff')
+    attendances = StaffAttendance.objects.filter(organization=org).select_related('staff', 'marked_by')
 
     filter_date = request.GET.get('date')
     staff_role = request.GET.get('role')
@@ -1426,12 +1897,19 @@ def staff_attendance_list(request):
         total_hours=Sum('hours'),
     )
 
-    # Calculate total earnings from filtered results
+    # Calculate total earnings from filtered results using DB aggregation
     total_earnings = 0
     if summary['total_hours']:
-        for att in attendances.select_related('staff'):
-            if att.hours:
-                total_earnings += float(att.hours) * att.staff.hourly_rate
+        from django.db.models import F
+        total_earnings = attendances.filter(
+            hours__isnull=False, staff__working_hours_per_day__gt=0
+        ).aggregate(
+            total=Coalesce(
+                Sum(F('hours') * F('staff__salary') / (F('staff__working_hours_per_day') * 26)),
+                0, output_field=DecimalField()
+            )
+        )['total']
+        total_earnings = round(float(total_earnings), 2)
 
     paginator = Paginator(attendances, 50)
     page_number = request.GET.get('page')
@@ -1751,10 +2229,13 @@ def fee_payment_list(request):
 @manager_or_admin_required
 def fee_payment_add(request):
     org = get_org(request)
+    # Single query for active batches - reused for form dropdown and JS fee data
+    active_batches = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+
     if request.method == 'POST':
         form = FeePaymentForm(request.POST)
         form.fields['student'].queryset = Student.objects.filter(organization=org)
-        form.fields['batch'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+        form.fields['batch'].queryset = active_batches
         if form.is_valid():
             payment = form.save(commit=False)
             payment.organization = org
@@ -1768,7 +2249,7 @@ def fee_payment_add(request):
     else:
         form = FeePaymentForm()
         form.fields['student'].queryset = Student.objects.filter(organization=org)
-        form.fields['batch'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+        form.fields['batch'].queryset = active_batches
 
         student_uuid = request.GET.get('student')
         if student_uuid:
@@ -1778,16 +2259,15 @@ def fee_payment_add(request):
             except Student.DoesNotExist:
                 pass
 
-    # Build batch fee data for JS auto-calculation
+    # Build batch fee data for JS auto-calculation (reuse already-fetched batches)
     batch_fees = {}
-    for batch in Batch.objects.filter(organization=org, is_active=True).select_related('course'):
+    for batch in active_batches:
         batch_fees[batch.pk] = {
             'fee': str(batch.course.fees),
             'period': batch.course.fee_period,
             'course_name': f"{batch.course.course_code} - {batch.course.course_name}",
         }
 
-    import json
     return render(request, 'management/fee_payment_add.html', {
         'form': form, 'action': 'Record',
         'batch_fees_json': json.dumps(batch_fees),
@@ -1799,10 +2279,13 @@ def fee_payment_add(request):
 def fee_payment_edit(request, pk):
     org = get_org(request)
     payment = get_object_or_404(FeePayment, pk=pk, organization=org)
+    # Single query for active batches - reused for form dropdown and JS fee data
+    active_batches = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+
     if request.method == 'POST':
         form = FeePaymentForm(request.POST, instance=payment)
         form.fields['student'].queryset = Student.objects.filter(organization=org)
-        form.fields['batch'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+        form.fields['batch'].queryset = active_batches
         if form.is_valid():
             form.save()
             messages.success(request, f'Payment #{payment.receipt_number} updated!')
@@ -1814,16 +2297,17 @@ def fee_payment_edit(request, pk):
     else:
         form = FeePaymentForm(instance=payment)
         form.fields['student'].queryset = Student.objects.filter(organization=org)
-        form.fields['batch'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+        form.fields['batch'].queryset = active_batches
+
+    # Build batch fee data for JS auto-calculation (reuse already-fetched batches)
     batch_fees = {}
-    for batch in Batch.objects.filter(organization=org, is_active=True).select_related('course'):
+    for batch in active_batches:
         batch_fees[batch.pk] = {
             'fee': str(batch.course.fees),
             'period': batch.course.fee_period,
             'course_name': f"{batch.course.course_code} - {batch.course.course_name}",
         }
 
-    import json
     return render(request, 'management/fee_payment_add.html', {
         'form': form, 'action': 'Edit',
         'batch_fees_json': json.dumps(batch_fees),
@@ -1959,7 +2443,8 @@ def api_student_batches(request):
 
     return JsonResponse({
         'batches': batches,
-        'guardian_discount': str(student.guardian_discount) if student.guardian_name and student.guardian_discount > 0 else '0',
+        'guardian_discount': str(student.guardian_discount) if student.guardian_discount > 0 else '0',
+        'discount_amount': str(student.discount_amount) if student.discount_amount > 0 else '0',
     })
 
 
@@ -2054,480 +2539,6 @@ def user_delete(request, pk):
     messages.success(request, f'User "{username}" deleted successfully!')
     return redirect('user_list')
 
-
-# ─── Excel Exports ───────────────────────────────────────────────────────────
-
-@login_required(login_url='login')
-@manager_or_admin_required
-def export_students_excel(request):
-    org = get_org(request)
-    import openpyxl
-    from openpyxl.styles import Font, PatternFill, Alignment
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Students"
-
-    header_font = Font(bold=True, color="FFFFFF", size=12)
-    header_fill = PatternFill(start_color="0D6B4E", end_color="0D6B4E", fill_type="solid")
-
-    headers = ['Student ID', 'Full Name', 'Email', 'Phone',
-               'Gender', 'Date of Birth', 'Enrollment Date', 'Enrolled Batches', 'Total Fees']
-    for col, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=header)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = Alignment(horizontal='center')
-
-    students = Student.objects.filter(organization=org).prefetch_related('batches__course')
-    for row, student in enumerate(students, 2):
-        ws.cell(row=row, column=1, value=student.student_id)
-        ws.cell(row=row, column=2, value=student.full_name)
-        ws.cell(row=row, column=3, value=student.email)
-        ws.cell(row=row, column=4, value=student.phone)
-        ws.cell(row=row, column=5, value=student.get_gender_display())
-        ws.cell(row=row, column=6, value=str(student.date_of_birth))
-        ws.cell(row=row, column=7, value=str(student.enrollment_date))
-        ws.cell(row=row, column=8, value=student.get_enrolled_batches_list())
-        ws.cell(row=row, column=9, value=float(student.get_total_fees()))
-
-    for col in ws.columns:
-        max_length = max(len(str(cell.value or '')) for cell in col)
-        ws.column_dimensions[col[0].column_letter].width = min(max_length + 2, 40)
-
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="students.xlsx"'
-    wb.save(response)
-    return response
-
-
-@login_required(login_url='login')
-@manager_or_admin_required
-def export_staff_excel(request):
-    org = get_org(request)
-    import openpyxl
-    from openpyxl.styles import Font, PatternFill, Alignment
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Staff"
-
-    header_font = Font(bold=True, color="FFFFFF", size=12)
-    header_fill = PatternFill(start_color="0D6B4E", end_color="0D6B4E", fill_type="solid")
-
-    headers = ['Staff ID', 'First Name', 'Last Name', 'Email', 'Phone',
-               'Role', 'Department', 'Joining Date', 'Salary']
-    for col, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=header)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = Alignment(horizontal='center')
-
-    staff_members = Staff.objects.filter(organization=org)
-    for row, staff in enumerate(staff_members, 2):
-        ws.cell(row=row, column=1, value=staff.staff_id)
-        ws.cell(row=row, column=2, value=staff.first_name)
-        ws.cell(row=row, column=3, value=staff.last_name)
-        ws.cell(row=row, column=4, value=staff.email)
-        ws.cell(row=row, column=5, value=staff.phone)
-        ws.cell(row=row, column=6, value=staff.staff_role)
-        ws.cell(row=row, column=7, value=staff.department)
-        ws.cell(row=row, column=8, value=str(staff.joining_date))
-        ws.cell(row=row, column=9, value=float(staff.salary))
-
-    for col in ws.columns:
-        max_length = max(len(str(cell.value or '')) for cell in col)
-        ws.column_dimensions[col[0].column_letter].width = min(max_length + 2, 40)
-
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="staff.xlsx"'
-    wb.save(response)
-    return response
-
-
-@login_required(login_url='login')
-@manager_or_admin_required
-def export_attendance_excel(request):
-    org = get_org(request)
-    import openpyxl
-    from openpyxl.styles import Font, PatternFill, Alignment
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Attendance"
-
-    header_font = Font(bold=True, color="FFFFFF", size=12)
-    header_fill = PatternFill(start_color="0D6B4E", end_color="0D6B4E", fill_type="solid")
-
-    headers = ['Date', 'Student ID', 'Student Name', 'Course', 'Batch', 'Status', 'Notes']
-    for col, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=header)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = Alignment(horizontal='center')
-
-    attendances = Attendance.objects.filter(organization=org).select_related('student', 'batch__course')
-    for row, att in enumerate(attendances, 2):
-        ws.cell(row=row, column=1, value=str(att.date))
-        ws.cell(row=row, column=2, value=att.student.student_id)
-        ws.cell(row=row, column=3, value=att.student.full_name)
-        ws.cell(row=row, column=4, value=att.batch.course.course_name if att.batch else "N/A")
-        ws.cell(row=row, column=5, value=att.batch.batch_name if att.batch else "N/A")
-        ws.cell(row=row, column=6, value=att.status)
-        ws.cell(row=row, column=7, value=att.notes or '')
-
-    for col in ws.columns:
-        max_length = max(len(str(cell.value or '')) for cell in col)
-        ws.column_dimensions[col[0].column_letter].width = min(max_length + 2, 40)
-
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="attendance.xlsx"'
-    wb.save(response)
-    return response
-
-
-@login_required(login_url='login')
-@manager_or_admin_required
-def export_fee_payments_excel(request):
-    org = get_org(request)
-    import openpyxl
-    from openpyxl.styles import Font, PatternFill, Alignment
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Fee Payments"
-
-    header_font = Font(bold=True, color="FFFFFF", size=12)
-    header_fill = PatternFill(start_color="0D6B4E", end_color="0D6B4E", fill_type="solid")
-
-    headers = ['Receipt Number', 'Student ID', 'Student Name', 'Course', 'Batch', 'Amount', 'Date', 'Method', 'Remarks']
-    for col, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=header)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = Alignment(horizontal='center')
-
-    payments = FeePayment.objects.filter(organization=org).select_related('student', 'batch__course')
-    for row, payment in enumerate(payments, 2):
-        ws.cell(row=row, column=1, value=payment.receipt_number)
-        ws.cell(row=row, column=2, value=payment.student.student_id)
-        ws.cell(row=row, column=3, value=payment.student.full_name)
-        ws.cell(row=row, column=4, value=payment.batch.course.course_name if payment.batch else "N/A")
-        ws.cell(row=row, column=5, value=payment.batch.batch_name if payment.batch else "N/A")
-        ws.cell(row=row, column=6, value=float(payment.amount))
-        ws.cell(row=row, column=7, value=str(payment.payment_date))
-        ws.cell(row=row, column=8, value=payment.payment_method)
-        ws.cell(row=row, column=9, value=payment.notes or '')
-
-    for col in ws.columns:
-        max_length = max(len(str(cell.value or '')) for cell in col)
-        ws.column_dimensions[col[0].column_letter].width = min(max_length + 2, 40)
-
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="fee_payments.xlsx"'
-    wb.save(response)
-    return response
-
-
-# ─── Student Import ──────────────────────────────────────────────────────────
-
-@login_required(login_url='login')
-@manager_or_admin_required
-def download_student_template(request):
-    import openpyxl
-    from openpyxl.styles import Font, PatternFill, Alignment
-    from openpyxl.worksheet.datavalidation import DataValidation
-
-    org = get_org(request)
-    org_batches = Batch.objects.filter(organization=org, is_active=True).select_related('course')
-    batch_display_names = [f"{b.course.course_code} - {b.batch_name}" for b in org_batches]
-
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Student Import"
-
-    header_font = Font(bold=True, color="FFFFFF", size=12)
-    header_fill = PatternFill(start_color="0D6B4E", end_color="0D6B4E", fill_type="solid")
-
-    headers = [
-        'Student ID', 'Full Name', 'Guardian Name', 'Contact 1',
-        'Contact 2', 'Address', 'City', 'Enrollment Date',
-        'Date of Birth', 'Gender', 'Email', 'Batch'
-    ]
-    for col, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col, value=header)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = Alignment(horizontal='center')
-
-    # Sample data row
-    sample_batch = batch_display_names[0] if batch_display_names else 'QR1 - Morning'
-    sample = [
-        '', 'Ahmed Khan', 'Mohammad Khan', '9876543210',
-        '9123456789', '123 Main Street', 'Rourkela', '2024-01-15',
-        '2005-03-15', 'M', 'ahmed@example.com', sample_batch
-    ]
-    hint_font = Font(italic=True, color="808080")
-    for col, value in enumerate(sample, 1):
-        cell = ws.cell(row=2, column=col, value=value)
-        cell.font = hint_font
-
-    # Add dropdown validation for Batch column if batches exist
-    if batch_display_names:
-        batch_formula = '"' + ','.join(batch_display_names) + '"'
-        dv = DataValidation(type="list", formula1=batch_formula, allow_blank=True)
-        dv.error = "Please select a valid batch from the list."
-        dv.errorTitle = "Invalid Batch"
-        dv.prompt = "Select a batch"
-        dv.promptTitle = "Batch"
-        ws.add_data_validation(dv)
-        dv.add('L2:L502')
-
-    # Instructions sheet
-    ins = wb.create_sheet("Instructions")
-    batch_note = 'Select from dropdown or type exact batch name (format: "COURSE_CODE - BATCH_NAME"). Leave blank to skip.'
-    if batch_display_names:
-        batch_note += f' Available: {", ".join(batch_display_names)}'
-    instructions = [
-        ['Column', 'Required', 'Format / Notes'],
-        ['Student ID', 'No', 'Leave blank for auto-generation. If provided, must be unique.'],
-        ['Full Name', 'Yes', 'Student full name. First word = First Name, rest = Last Name.'],
-        ['Guardian Name', 'No', 'Parent / guardian name'],
-        ['Contact 1', 'Yes', '7-20 characters. Digits, spaces, +, -, ( ) allowed'],
-        ['Contact 2', 'No', 'Secondary phone number (same format as Contact 1)'],
-        ['Address', 'Yes', 'Street / area text'],
-        ['City', 'No', 'Defaults to "Rourkela" if left blank'],
-        ['Enrollment Date', 'Yes', 'Date in any format: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY, MM/DD/YYYY'],
-        ['Date of Birth', 'No', 'Date in any format (same as above). Cannot be in the future.'],
-        ['Gender', 'Yes', 'M or Male, F or Female, O or Other'],
-        ['Email', 'No', 'Valid email format (e.g. name@example.com)'],
-        ['Batch', 'No', batch_note],
-    ]
-    for row_idx, row_data in enumerate(instructions, 1):
-        for col_idx, value in enumerate(row_data, 1):
-            cell = ins.cell(row=row_idx, column=col_idx, value=value)
-            if row_idx == 1:
-                cell.font = header_font
-                cell.fill = header_fill
-
-    for sheet in [ws, ins]:
-        for col in sheet.columns:
-            max_length = max(len(str(cell.value or '')) for cell in col)
-            sheet.column_dimensions[col[0].column_letter].width = min(max_length + 2, 50)
-
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="student_import_template.xlsx"'
-    wb.save(response)
-    return response
-
-
-@login_required(login_url='login')
-@manager_or_admin_required
-def import_students(request):
-    org = get_org(request)
-    context = {'errors': [], 'success_count': 0, 'has_results': False}
-
-    if request.method == 'POST':
-        file = request.FILES.get('excel_file')
-        if not file:
-            messages.error(request, 'Please select an Excel file to upload.')
-            return render(request, 'management/student_import.html', context)
-
-        if not file.name.endswith('.xlsx'):
-            messages.error(request, 'Please upload a valid .xlsx file.')
-            return render(request, 'management/student_import.html', context)
-
-        if file.size > 5 * 1024 * 1024:
-            messages.error(request, 'File size exceeds 5MB limit.')
-            return render(request, 'management/student_import.html', context)
-
-        try:
-            import openpyxl
-            from django.core.validators import validate_email
-            from django.core.exceptions import ValidationError as DjangoValidationError
-
-            wb = openpyxl.load_workbook(file, read_only=True, data_only=True)
-            ws = wb.active
-            rows = list(ws.iter_rows(min_row=2, values_only=True))
-            wb.close()
-
-            if not rows:
-                messages.error(request, 'The uploaded file contains no data rows.')
-                return render(request, 'management/student_import.html', context)
-
-            if len(rows) > 500:
-                messages.error(request, 'Maximum 500 rows allowed per import.')
-                return render(request, 'management/student_import.html', context)
-
-            # Pre-fetch lookups
-            existing_ids = set(
-                Student.objects.filter(organization=org).values_list('student_id', flat=True)
-            )
-            import_ids = set()
-
-            # Build batch lookup: "COURSE_CODE - BATCH_NAME" -> Batch object
-            org_batches = Batch.objects.filter(organization=org, is_active=True).select_related('course')
-            batch_lookup = {f"{b.course.course_code} - {b.batch_name}": b for b in org_batches}
-            # Also allow matching by batch_name alone
-            batch_name_lookup = {b.batch_name: b for b in org_batches}
-
-            errors = []
-            students_data = []
-
-            def clean(val):
-                return '' if val is None else str(val).strip()
-
-            def parse_date(val, field_name):
-                if val is None or (isinstance(val, str) and val.strip() == ''):
-                    return None, None
-                if isinstance(val, (date, datetime)):
-                    return val if isinstance(val, date) and not isinstance(val, datetime) else val.date() if isinstance(val, datetime) else val, None
-                val_str = str(val).strip()
-                for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%d-%m-%Y', '%d.%m.%Y', '%Y/%m/%d'):
-                    try:
-                        return datetime.strptime(val_str, fmt).date(), None
-                    except ValueError:
-                        continue
-                return None, f'{field_name}: could not parse date "{val_str}". Use YYYY-MM-DD or DD/MM/YYYY format.'
-
-            gender_map = {'m': 'M', 'male': 'M', 'f': 'F', 'female': 'F', 'o': 'O', 'other': 'O'}
-            phone_pattern = re.compile(r'^[\d\s\-\+\(\)]{7,20}$')
-
-            for idx, row in enumerate(rows):
-                row_num = idx + 2
-                row_errors = []
-
-                if not row or all(cell is None or str(cell).strip() == '' for cell in row):
-                    continue
-
-                row = list(row) + [None] * max(0, 12 - len(row))
-
-                student_id = clean(row[0])
-                full_name = clean(row[1])
-                guardian_name = clean(row[2])
-                contact1 = clean(row[3])
-                contact2 = clean(row[4])
-                address = clean(row[5])
-                city = clean(row[6]) or 'Rourkela'
-                enrollment_raw = row[7]
-                dob_raw = row[8]
-                gender_raw = clean(row[9])
-                email = clean(row[10])
-                batch_raw = clean(row[11])
-
-                # Batch validation
-                batch_obj = None
-                if batch_raw:
-                    batch_obj = batch_lookup.get(batch_raw) or batch_name_lookup.get(batch_raw)
-                    if not batch_obj:
-                        row_errors.append(f'Batch "{batch_raw}" not found. Use format "COURSE_CODE - BATCH_NAME".')
-
-                # Required fields
-                if not full_name:
-                    row_errors.append('Full Name is required.')
-                if not contact1:
-                    row_errors.append('Contact 1 is required.')
-                if not gender_raw:
-                    row_errors.append('Gender is required.')
-                if not address:
-                    row_errors.append('Address is required.')
-                if not enrollment_raw:
-                    row_errors.append('Enrollment Date is required.')
-
-                # Student ID uniqueness
-                if student_id:
-                    if student_id in existing_ids:
-                        row_errors.append(f'Student ID "{student_id}" already exists.')
-                    elif student_id in import_ids:
-                        row_errors.append(f'Student ID "{student_id}" is duplicated in this file.')
-                    else:
-                        import_ids.add(student_id)
-
-                # Contact 1 validation
-                if contact1 and not phone_pattern.match(contact1):
-                    row_errors.append('Contact 1: invalid format (7-20 chars, digits/spaces/+-() allowed).')
-
-                # Contact 2 validation (optional)
-                if contact2 and not phone_pattern.match(contact2):
-                    row_errors.append('Contact 2: invalid format (7-20 chars, digits/spaces/+-() allowed).')
-
-                # Gender
-                gender = gender_map.get(gender_raw.lower()) if gender_raw else None
-                if gender_raw and not gender:
-                    row_errors.append(f'Gender "{gender_raw}" is invalid. Use M/Male, F/Female, or O/Other.')
-
-                # Dates
-                dob, dob_err = parse_date(dob_raw, 'Date of Birth')
-                if dob_err:
-                    row_errors.append(dob_err)
-                elif dob:
-                    if dob > date.today():
-                        row_errors.append('Date of Birth cannot be in the future.')
-                    if dob.year < 1900:
-                        row_errors.append('Date of Birth is not valid (before 1900).')
-
-                enrollment_date, enroll_err = parse_date(enrollment_raw, 'Enrollment Date')
-                if enroll_err:
-                    row_errors.append(enroll_err)
-                elif enrollment_date:
-                    if enrollment_date > date.today():
-                        row_errors.append('Enrollment Date cannot be in the future.')
-
-                if dob and enrollment_date and enrollment_date < dob:
-                    row_errors.append('Enrollment Date cannot be before Date of Birth.')
-
-                # Email
-                if email:
-                    try:
-                        validate_email(email)
-                    except DjangoValidationError:
-                        row_errors.append(f'Email "{email}" is not valid.')
-
-                if row_errors:
-                    errors.append({'row': row_num, 'errors': row_errors})
-                else:
-                    students_data.append({
-                        'student_id': student_id or '',
-                        'full_name': full_name,
-                        'email': email,
-                        'phone': contact1,
-                        'gender': gender,
-                        'date_of_birth': dob,
-                        'address': address,
-                        'city': city,
-                        'guardian_name': guardian_name,
-                        'guardian_phone': contact2,
-                        'enrollment_date': enrollment_date,
-                        '_batch': batch_obj,
-                    })
-
-            if errors:
-                context['errors'] = errors
-                context['has_results'] = True
-                messages.error(request, f'Import failed: {len(errors)} row(s) have errors. No students were imported.')
-            elif not students_data:
-                messages.error(request, 'No valid data rows found in the file.')
-            else:
-                try:
-                    with transaction.atomic():
-                        for data in students_data:
-                            batch_obj = data.pop('_batch', None)
-                            student = Student(organization=org, **data)
-                            student.save()
-                            if batch_obj:
-                                student.batches.add(batch_obj)
-                    context['success_count'] = len(students_data)
-                    context['has_results'] = True
-                    messages.success(request, f'Successfully imported {len(students_data)} student(s)!')
-                except Exception as e:
-                    logger.error(f'Student import error: {e}')
-                    messages.error(request, f'An error occurred during import: {str(e)}')
-
-        except Exception as e:
-            logger.error(f'Student import file error: {e}')
-            messages.error(request, f'Could not read the file: {str(e)}')
-
-    return render(request, 'management/student_import.html', context)
 
 
 # ─── Staff Leave Views ──────────────────────────────────────────────────────

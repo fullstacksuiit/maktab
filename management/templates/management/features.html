@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Features - Maktab Management Software | Student, Attendance, Fees, Staff, Parent Portal</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Explore all features of Maktab management software — student enrollment, batch-wise attendance, fee collection with receipts, staff payroll, parent portal, timetable, expense tracking & more for your Maktab or Madrasah.">
+    <meta name="keywords" content="maktab software features, madrasah attendance software, maktab fee collection, Islamic school student management, maktab parent portal, madrasah payroll software, maktab timetable, Islamic education ERP features, maktab expense tracking, madrasa batch management">
+    <meta name="author" content="Strix">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    {% load static %}
+    <link rel="canonical" href="{{ request.scheme }}://{{ request.get_host }}/features/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Features - Maktab Management Software">
+    <meta property="og:description" content="All features of the best maktab management software. Students, attendance, fees, payroll, parent portal & more.">
+    <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}/features/">
+    <meta property="og:site_name" content="Maktab">
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'management/images/og-image.svg' %}">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Features - Maktab Management Software">
+    <meta name="twitter:description" content="All features of the best maktab management software.">
+    <meta name="twitter:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'management/images/og-image.svg' %}">
+
+    <!-- Breadcrumb Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "{{ request.scheme }}://{{ request.get_host }}/"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Features",
+                "item": "{{ request.scheme }}://{{ request.get_host }}/features/"
+            }
+        ]
+    }
+    </script>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'management/icons/icon-96x96.png' %}">
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0d6b4e',
+                        secondary: '#1a9e6f',
+                        gold: '#c9a84c',
+                    },
+                    fontFamily: { sans: ['Poppins', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Poppins', sans-serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, #0d6b4e, #1a9e6f, #c9a84c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-800 antialiased">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+            <a href="/" class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center shadow-md">
+                    <i class="fas fa-mosque text-sm"></i>
+                </div>
+                <span class="text-xl font-bold text-gray-900">Maktab</span>
+            </a>
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
+                <a href="/" class="hover:text-primary transition-colors">Home</a>
+                <a href="/features/" class="text-primary font-bold">Features</a>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{% url 'login' %}" class="text-sm font-semibold text-gray-600 hover:text-primary transition-colors px-4 py-2">Login</a>
+                <a href="{% url 'signup' %}" class="text-sm font-semibold text-white bg-gradient-to-r from-primary to-secondary px-5 py-2.5 rounded-xl shadow-md shadow-primary/20 hover:shadow-lg transition-all">
+                    Get Started Free
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb -->
+    <div class="pt-20 px-4">
+        <div class="max-w-7xl mx-auto">
+            <nav class="text-sm text-gray-400 py-4" aria-label="Breadcrumb">
+                <a href="/" class="hover:text-primary">Home</a>
+                <span class="mx-2">/</span>
+                <span class="text-gray-700 font-medium">Features</span>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Hero -->
+    <header class="pb-16 px-4">
+        <div class="max-w-7xl mx-auto text-center">
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-4">
+                All <span class="gradient-text">Maktab Software</span> Features
+            </h1>
+            <p class="text-lg text-gray-500 max-w-3xl mx-auto">
+                Everything your Maktab, Madrasah or Islamic coaching center needs to run smoothly — from student enrollment to fee receipts to parent portal.
+            </p>
+        </div>
+    </header>
+
+    <!-- Feature Details -->
+    <main class="px-4 pb-20">
+        <div class="max-w-5xl mx-auto space-y-20">
+
+            <!-- Student Management -->
+            <section class="flex flex-col md:flex-row items-start gap-8" id="students">
+                <div class="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-user-graduate text-primary text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3">Student Management</h2>
+                    <p class="text-gray-500 leading-relaxed mb-4">
+                        Manage your entire maktab student lifecycle — from enrollment to graduation. Create detailed student profiles with photos, guardian information, contact details, and academic history.
+                    </p>
+                    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-primary text-xs"></i> Student enrollment & profiles</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-primary text-xs"></i> Bulk import via Excel</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-primary text-xs"></i> Assign to courses & batches</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-primary text-xs"></i> Photo upload & ID generation</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-primary text-xs"></i> Guardian & contact details</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-primary text-xs"></i> Search & filter students</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-primary text-xs"></i> Student result tracking</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-primary text-xs"></i> Admission application flow</li>
+                    </ul>
+                </div>
+            </section>
+
+            <hr class="border-gray-100">
+
+            <!-- Attendance -->
+            <section class="flex flex-col md:flex-row items-start gap-8" id="attendance">
+                <div class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-clipboard-check text-blue-600 text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3">Attendance Tracking</h2>
+                    <p class="text-gray-500 leading-relaxed mb-4">
+                        Batch-wise daily attendance for students and staff. Track presence, absence, and leave with monthly summary reports. The fastest way to mark attendance for your maktab.
+                    </p>
+                    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-blue-600 text-xs"></i> Batch-wise student attendance</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-blue-600 text-xs"></i> Staff attendance tracking</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-blue-600 text-xs"></i> Monthly attendance reports</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-blue-600 text-xs"></i> Leave management</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-blue-600 text-xs"></i> Quick one-tap marking</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-blue-600 text-xs"></i> Attendance percentage calculation</li>
+                    </ul>
+                </div>
+            </section>
+
+            <hr class="border-gray-100">
+
+            <!-- Fee Collection -->
+            <section class="flex flex-col md:flex-row items-start gap-8" id="fees">
+                <div class="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-money-bill-wave text-amber-600 text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3">Fee Collection & Receipts</h2>
+                    <p class="text-gray-500 leading-relaxed mb-4">
+                        Collect fees from students, generate professional printed receipts, track pending payments, and get a complete overview of your maktab's fee collection status.
+                    </p>
+                    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-amber-600 text-xs"></i> Record fee payments</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-amber-600 text-xs"></i> Printable fee receipts</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-amber-600 text-xs"></i> Pending fee tracking</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-amber-600 text-xs"></i> Batch-wise fee reports</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-amber-600 text-xs"></i> Payment history per student</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-amber-600 text-xs"></i> Multi-currency support</li>
+                    </ul>
+                </div>
+            </section>
+
+            <hr class="border-gray-100">
+
+            <!-- Staff & Payroll -->
+            <section class="flex flex-col md:flex-row items-start gap-8" id="staff">
+                <div class="w-16 h-16 rounded-2xl bg-purple-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-chalkboard-teacher text-purple-600 text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3">Staff & Payroll Management</h2>
+                    <p class="text-gray-500 leading-relaxed mb-4">
+                        Manage your maktab's teachers and staff with detailed profiles, attendance tracking, leave management, salary components, and monthly payroll generation.
+                    </p>
+                    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> Staff profiles & roles</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> Salary components setup</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> Monthly payroll generation</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> Leave request & approval</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> Staff self-service portal</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-purple-600 text-xs"></i> Auto-generated staff IDs</li>
+                    </ul>
+                </div>
+            </section>
+
+            <hr class="border-gray-100">
+
+            <!-- Parent Portal -->
+            <section class="flex flex-col md:flex-row items-start gap-8" id="parents">
+                <div class="w-16 h-16 rounded-2xl bg-pink-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-child text-pink-600 text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3">Parent Portal</h2>
+                    <p class="text-gray-500 leading-relaxed mb-4">
+                        Give parents their own login to track their child's progress. Parents can view attendance records, fee payment history, and academic results — all from their phone.
+                    </p>
+                    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-pink-600 text-xs"></i> Dedicated parent login</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-pink-600 text-xs"></i> View child's attendance</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-pink-600 text-xs"></i> Fee payment status</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-pink-600 text-xs"></i> Academic results</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-pink-600 text-xs"></i> Mobile-friendly interface</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-pink-600 text-xs"></i> Real-time updates</li>
+                    </ul>
+                </div>
+            </section>
+
+            <hr class="border-gray-100">
+
+            <!-- Courses & Batches -->
+            <section class="flex flex-col md:flex-row items-start gap-8" id="courses">
+                <div class="w-16 h-16 rounded-2xl bg-cyan-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-book-quran text-cyan-600 text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3">Courses & Batch Management</h2>
+                    <p class="text-gray-500 leading-relaxed mb-4">
+                        Organize your maktab into courses (Hifz, Nazira, Aalim, Deeniyat, etc.) and batches. Assign teachers, set timetables, and manage students batch-wise.
+                    </p>
+                    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-cyan-600 text-xs"></i> Create courses (Hifz, Nazira, etc.)</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-cyan-600 text-xs"></i> Organize into batches</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-cyan-600 text-xs"></i> Assign teachers to batches</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-cyan-600 text-xs"></i> Batch-wise timetable</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-cyan-600 text-xs"></i> Course fee configuration</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-cyan-600 text-xs"></i> Student batch transfers</li>
+                    </ul>
+                </div>
+            </section>
+
+            <hr class="border-gray-100">
+
+            <!-- Accounts & Expenses -->
+            <section class="flex flex-col md:flex-row items-start gap-8" id="accounts">
+                <div class="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-chart-pie text-red-500 text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3">Accounts & Expense Tracking</h2>
+                    <p class="text-gray-500 leading-relaxed mb-4">
+                        Keep your maktab's finances in order. Track all income from fees, record expenses by category, view accounts overview, and make informed financial decisions.
+                    </p>
+                    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-red-500 text-xs"></i> Income & expense tracking</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-red-500 text-xs"></i> Expense categories</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-red-500 text-xs"></i> Accounts overview dashboard</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-red-500 text-xs"></i> Financial reports</li>
+                    </ul>
+                </div>
+            </section>
+
+            <hr class="border-gray-100">
+
+            <!-- More Features -->
+            <section class="flex flex-col md:flex-row items-start gap-8" id="more">
+                <div class="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-plus-circle text-indigo-600 text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3">And Much More</h2>
+                    <p class="text-gray-500 leading-relaxed mb-4">
+                        Maktab is packed with features designed to make running your Islamic educational institution easier.
+                    </p>
+                    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-600 text-xs"></i> Calendar & holiday management</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-600 text-xs"></i> PWA — install like an app</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-600 text-xs"></i> Role-based access control</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-600 text-xs"></i> Multi-organization support</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-600 text-xs"></i> Urdu language support</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-600 text-xs"></i> Email notifications</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-600 text-xs"></i> Mobile responsive design</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-indigo-600 text-xs"></i> Secure data isolation</li>
+                    </ul>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- CTA -->
+    <section class="py-16 px-4 bg-gradient-to-br from-[#0a2e1f] via-[#0d4a35] to-[#0d6b4e]">
+        <div class="max-w-3xl mx-auto text-center">
+            <h2 class="text-3xl font-extrabold text-white mb-4">Start Managing Your Maktab Today</h2>
+            <p class="text-white/60 text-lg mb-8">Free signup. No credit card needed. Get started in 2 minutes.</p>
+            <a href="{% url 'signup' %}" class="inline-flex items-center gap-2.5 px-8 py-4 bg-white text-primary font-bold rounded-2xl shadow-xl hover:shadow-2xl transition-all">
+                <i class="fas fa-rocket"></i> Create Free Account
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-10 px-4 bg-gray-900 text-gray-400">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center">
+                    <i class="fas fa-mosque text-xs"></i>
+                </div>
+                <span class="text-lg font-bold text-white">Maktab</span>
+            </div>
+            <div class="flex items-center gap-6 text-sm">
+                <a href="/" class="hover:text-white transition-colors">Home</a>
+                <a href="/features/" class="hover:text-white transition-colors">Features</a>
+                <a href="{% url 'login' %}" class="hover:text-white transition-colors">Login</a>
+                <a href="{% url 'signup' %}" class="hover:text-white transition-colors">Sign Up</a>
+            </div>
+        </div>
+        <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm max-w-7xl mx-auto">
+            <p>A <a href="http://strix.co.in/" target="_blank" rel="noopener noreferrer" class="font-medium text-gray-300 hover:text-white transition-colors">Strix</a> Venture</p>
+        </div>
+    </footer>
+
+</body>
+</html>

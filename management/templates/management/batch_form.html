@@ -351,7 +351,9 @@
 </script>
 <script>
 var COURSE_CREATE_URL = '{% url "course_create_ajax" %}';
-var CSRF_TOKEN = '{{ csrf_token }}';
+function getCSRFToken() {
+    return '{{ csrf_token }}';
+}
 
 function openCourseModal() {
     document.getElementById('modalCourseName').value = '';
@@ -388,7 +390,7 @@ function submitCourseModal() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRFToken': CSRF_TOKEN
+            'X-CSRFToken': getCSRFToken()
         },
         body: JSON.stringify({
             course_name: name,
@@ -396,7 +398,12 @@ function submitCourseModal() {
             fee_period: feePeriod
         })
     })
-    .then(function(r) { return r.json().then(function(d) { return {ok: r.ok, data: d}; }); })
+    .then(function(r) {
+        if (!r.ok && r.status === 403) {
+            throw new Error('Permission denied. Please refresh the page and try again.');
+        }
+        return r.json().then(function(d) { return {ok: r.ok, data: d}; });
+    })
     .then(function(res) {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-plus"></i> Create Course';
@@ -429,10 +436,10 @@ function submitCourseModal() {
             errDiv.classList.remove('hidden');
         }
     })
-    .catch(function() {
+    .catch(function(err) {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-plus"></i> Create Course';
-        errDiv.textContent = 'Something went wrong. Please try again.';
+        errDiv.textContent = err.message || 'Something went wrong. Please refresh and try again.';
         errDiv.classList.remove('hidden');
     });
 }

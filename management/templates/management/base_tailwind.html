@@ -3,7 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>{% block title %}Maktab{% endblock %}</title>
+    <title>{% block title %}Maktab - Maktab Management Software for Islamic Education{% endblock %}</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="{% block meta_description %}Maktab is the best maktab management software for Islamic coaching centers, madrasah & educational institutions. Manage students, attendance, fees, staff & more.{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}maktab software, maktab management system, madrasah software, Islamic school management, madrasa management software, student management system, attendance software, fee management, Islamic education software, coaching center software, maktab app{% endblock %}">
+    <meta name="author" content="Strix">
+    <meta name="robots" content="{% block meta_robots %}noindex, nofollow{% endblock %}">
+    <link rel="canonical" href="{% block canonical_url %}{{ request.scheme }}://{{ request.get_host }}{{ request.path }}{% endblock %}">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}Maktab - Best Maktab Management Software{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Complete management software for Maktab, Madrasah & Islamic coaching centers. Students, attendance, fees, payroll & more.{% endblock %}">
+    <meta property="og:url" content="{{ request.scheme }}://{{ request.get_host }}{{ request.path }}">
+    <meta property="og:site_name" content="Maktab">
+    <meta property="og:locale" content="en_IN">
+
+    <!-- OG Image -->
+    {% load static %}
+    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'management/images/og-image.png' %}{% endblock %}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}Maktab - Best Maktab Management Software{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Complete management software for Maktab, Madrasah & Islamic coaching centers.{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'management/images/og-image.png' %}{% endblock %}">
+
+    <!-- Google Search Console Verification (replace content value with your verification code) -->
+    <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE_HERE"> -->
 
     <!-- PWA Meta Tags -->
     <meta name="application-name" content="Maktab">
@@ -17,7 +47,6 @@
     <meta name="format-detection" content="telephone=no">
 
     <!-- PWA Manifest -->
-    {% load static %}
     <link rel="manifest" href="{% static 'management/manifest.json' %}">
 
     <!-- iOS Icons -->
@@ -129,7 +158,7 @@
         }
         /* Urdu text styling */
         .urdu {
-            font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif;
+            font-family: 'Jameel Noori Nastaleeq Kasheeda', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif;
             direction: rtl;
             line-height: 2.2;
             font-size: 1.5em;
@@ -500,7 +529,7 @@
                     {{ request.user.username|slice:":1"|upper }}
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-gray-800 truncate">{{ request.user.username }}</p>
+                    <p class="text-sm font-semibold text-gray-800 truncate">{% if user_prefix %}{{ user_prefix }} {% endif %}{{ request.user.username }}</p>
                     <p class="text-[11px] text-gray-400 truncate">Maktab {{ request.user.organization.org_name|default:"Admin" }}</p>
                 </div>
                 <form action="{% url 'logout' %}" method="post">
@@ -525,7 +554,7 @@
             <!-- Right Actions -->
             <div class="flex items-center gap-4">
                 <!-- Organization name (desktop only) -->
-                <span class="hidden md:block text-xs text-white/70 font-medium">Maktab {{ request.user.organization.org_name|default:"" }}</span>
+                <span class="hidden md:block text-sm text-white font-bold tracking-wide">Maktab {{ request.user.organization.org_name|default:"" }}</span>
             </div>
         </header>
 

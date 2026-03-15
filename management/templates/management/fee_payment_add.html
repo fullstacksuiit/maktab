@@ -184,6 +184,7 @@
     var calcTotalEl = document.getElementById('calcTotal');
 
     var guardianDiscount = 0;
+    var fixedDiscount = 0;
     var MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
     // ─── Student → Batch auto-fetch ─────────────────────────────────────
@@ -195,6 +196,7 @@
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 guardianDiscount = parseFloat(data.guardian_discount) || 0;
+                fixedDiscount = parseFloat(data.discount_amount) || 0;
 
                 // Get TomSelect instance on batch field (if any)
                 var batchTS = batchEl && batchEl.tomselect;
@@ -272,16 +274,23 @@
             return;
         }
 
-        var fee = parseFloat(batchFees[batchId].fee);
+        var baseFee = parseFloat(batchFees[batchId].fee);
         var months = getMonthsBetween(fromVal, toVal);
-        var total = fee * months.length;
 
-        // Apply guardian discount
+        // Apply discount to per-month fee (fixed amount takes priority)
         var discountAmt = 0;
-        if (guardianDiscount > 0) {
-            discountAmt = total * guardianDiscount / 100;
-            total = total - discountAmt;
+        var discountLabel = '';
+        var fee = baseFee;
+        if (fixedDiscount > 0) {
+            fee = Math.max(baseFee - fixedDiscount, 0);
+            discountAmt = (baseFee - fee) * months.length;
+            discountLabel = 'Fixed discount (' + fixedDiscount.toFixed(0) + '/month)';
+        } else if (guardianDiscount > 0) {
+            fee = baseFee - (baseFee * guardianDiscount / 100);
+            discountAmt = (baseFee - fee) * months.length;
+            discountLabel = 'Discount (' + guardianDiscount + '%)';
         }
+        var total = fee * months.length;
 
         // Show preview
         preview.classList.remove('hidden');
@@ -294,14 +303,14 @@
 
         // Show discount info if applicable
         var discountInfo = document.getElementById('discountInfo');
-        if (guardianDiscount > 0) {
+        if (discountAmt > 0) {
             if (!discountInfo) {
                 discountInfo = document.createElement('div');
                 discountInfo.id = 'discountInfo';
                 discountInfo.className = 'flex items-center justify-between text-sm mt-1 text-green-600';
                 preview.appendChild(discountInfo);
             }
-            discountInfo.innerHTML = '<span><i class="fas fa-tag mr-1"></i>Guardian discount (' + guardianDiscount + '%)</span><span>-' + discountAmt.toFixed(2) + '</span>';
+            discountInfo.innerHTML = '<span><i class="fas fa-tag mr-1"></i>' + discountLabel + '</span><span>-' + discountAmt.toFixed(2) + '</span>';
         } else if (discountInfo) {
             discountInfo.remove();
         }

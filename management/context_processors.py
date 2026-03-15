@@ -29,6 +29,15 @@ def currency_symbol(request):
                     ).order_by('timestamp').last()
                     is_punched_in = bool(last_punch and last_punch.punch_type == 'in')
 
+                # Gender-based prefix
+                gender = request.user.gender
+                if gender == 'M':
+                    user_prefix = 'Hafiz'
+                elif gender == 'F':
+                    user_prefix = 'Muallima'
+                else:
+                    user_prefix = ''
+
                 request._cached_org_data = {
                     'currency_symbol': org.currency_symbol,
                     'org_latitude': org.latitude,
@@ -36,8 +45,9 @@ def currency_symbol(request):
                     'pending_application_count': pending_apps,
                     'pending_leave_count': pending_leaves,
                     'is_punched_in': is_punched_in,
+                    'user_prefix': user_prefix,
                 }
             else:
-                request._cached_org_data = {'currency_symbol': 'Rs.', 'org_latitude': None, 'org_longitude': None, 'pending_application_count': 0, 'pending_leave_count': 0, 'is_punched_in': False}
+                request._cached_org_data = {'currency_symbol': 'Rs.', 'org_latitude': None, 'org_longitude': None, 'pending_application_count': 0, 'pending_leave_count': 0, 'is_punched_in': False, 'user_prefix': ''}
         return request._cached_org_data
-    return {'currency_symbol': 'Rs.', 'org_latitude': None, 'org_longitude': None, 'pending_application_count': 0, 'pending_leave_count': 0, 'is_punched_in': False}
+    return {'currency_symbol': 'Rs.', 'org_latitude': None, 'org_longitude': None, 'pending_application_count': 0, 'pending_leave_count': 0, 'is_punched_in': False, 'user_prefix': ''}

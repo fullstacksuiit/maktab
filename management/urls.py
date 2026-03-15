@@ -27,11 +27,13 @@ urlpatterns = [
     # Student URLs
     path('students/', views.student_list, name='student_list'),
     path('students/add/', views.student_add, name='student_add'),
-    path('students/import/', views.import_students, name='import_students'),
-    path('students/import/template/', views.download_student_template, name='download_student_template'),
     path('students/<uuid:uuid>/', views.student_detail, name='student_detail'),
     path('students/edit/<uuid:uuid>/', views.student_edit, name='student_edit'),
     path('students/delete/<uuid:uuid>/', views.student_delete, name='student_delete'),
+    path('students/bulk-delete/', views.student_bulk_delete, name='student_bulk_delete'),
+    path('students/bulk-assign-batch/', views.student_bulk_assign_batch, name='student_bulk_assign_batch'),
+    path('students/export/', views.student_export_excel, name='student_export_excel'),
+    path('students/import/', views.student_import_excel, name='student_import_excel'),
     path('students/<uuid:uuid>/fees/', views.student_fee_history, name='student_fee_history'),
 
     # Behavior Notes URLs
@@ -145,9 +147,4 @@ urlpatterns = [
     path('expenses/edit/<int:pk>/', views.expense_edit, name='expense_edit'),
     path('expenses/delete/<int:pk>/', views.expense_delete, name='expense_delete'),
 
-    # Export URLs
-    path('export/students/', views.export_students_excel, name='export_students'),
-    path('export/staff/', views.export_staff_excel, name='export_staff'),
-    path('export/attendance/', views.export_attendance_excel, name='export_attendance'),
-    path('export/payments/', views.export_fee_payments_excel, name='export_fee_payments'),
 ]

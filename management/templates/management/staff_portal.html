@@ -4,7 +4,7 @@
 {% block content %}
 <!-- Welcome Banner -->
 <div class="bg-gradient-to-r from-primary via-secondary to-primary rounded-2xl p-6 sm:p-8 text-white shadow-lg mb-6">
-    <h1 class="text-2xl sm:text-3xl font-bold">Assalamu Alaikum, {{ staff.first_name }}!</h1>
+    <h1 class="text-2xl sm:text-3xl font-bold">Assalamu Alaikum, {% if user_prefix %}{{ user_prefix }} {% endif %}{{ staff.first_name }}!</h1>
     <p class="text-white/80 mt-1">Maktab {{ request.user.organization.org_name }} &middot; {{ today|date:"l, d F Y" }}</p>
 </div>
 
