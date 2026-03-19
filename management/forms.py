@@ -164,6 +164,17 @@ class BatchForm(forms.ModelForm):
         }
 
 
+class BatchChoiceField(forms.ModelMultipleChoiceField):
+    """Custom field that shows teacher names alongside batch info."""
+    def label_from_instance(self, obj):
+        teachers = obj.teachers.all()
+        label = f"{obj.course.course_code} - {obj.batch_name}"
+        if teachers:
+            teacher_names = ', '.join(f"{t.first_name} {t.last_name}" for t in teachers)
+            label += f" ({teacher_names})"
+        return label
+
+
 class StudentForm(forms.ModelForm):
     date_of_birth = forms.DateField(
         required=False,
@@ -171,6 +182,11 @@ class StudentForm(forms.ModelForm):
     )
     enrollment_date = forms.DateField(
         widget=styled_date_input(max_date=date.today())
+    )
+    batches = BatchChoiceField(
+        queryset=Batch.objects.none(),
+        required=False,
+        widget=searchable_select_multiple('Search batches...'),
     )
 
     class Meta:
@@ -195,7 +211,6 @@ class StudentForm(forms.ModelForm):
             'guardian_discount': styled_text_input('Discount % (e.g. 10)'),
             'discount_amount': styled_text_input('Fixed discount amount (e.g. 200)'),
             'opening_balance': styled_text_input('Previous pending dues (e.g. 500)'),
-            'batches': searchable_select_multiple('Search batches...'),
         }
 
     def clean_date_of_birth(self):

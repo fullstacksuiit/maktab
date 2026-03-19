@@ -433,7 +433,7 @@
 
             {% if request.user.can_create_edit %}
             <!-- Academics -->
-            <p class="px-3 pt-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Academics <span class="urdu normal-case">تعلیمات</span></p>
+            <p class="px-3 pt-4 pb-1 text-xs font-extrabold text-gray-500 uppercase tracking-widest">Academics <span class="urdu normal-case">تعلیمات</span></p>
             <a href="{% url 'student_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'student' in request.path %}active{% endif %}">
                 <i class="fas fa-user-graduate w-5 text-center text-sm"></i>
                 <span class="flex flex-col leading-tight"><span>Students</span><span class="text-sm text-gray-600 urdu">طلباء</span></span>
@@ -460,7 +460,7 @@
             {% endif %}
 
             <!-- Attendance -->
-            <p class="px-3 pt-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Attendance <span class="urdu normal-case">حاضری</span></p>
+            <p class="px-3 pt-4 pb-1 text-xs font-extrabold text-gray-500 uppercase tracking-widest">Attendance <span class="urdu normal-case">حاضری</span></p>
             <a href="{% url 'attendance_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'attendance' in request.path and 'staff-attendance' not in request.path %}active{% endif %}">
                 <i class="fas fa-clipboard-check w-5 text-center text-sm"></i>
                 <span class="flex flex-col leading-tight"><span>Student</span><span class="text-sm text-gray-600 urdu">طالب علم</span></span>
@@ -479,7 +479,7 @@
 
             {% if request.user.can_create_edit %}
             <!-- Finance -->
-            <p class="px-3 pt-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Finance <span class="urdu normal-case">مالیات</span></p>
+            <p class="px-3 pt-4 pb-1 text-xs font-extrabold text-gray-500 uppercase tracking-widest">Finance <span class="urdu normal-case">مالیات</span></p>
             <a href="{% url 'fee_payment_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'payment' in request.path %}active{% endif %}">
                 <i class="fas fa-money-bill-wave w-5 text-center text-sm"></i>
                 <span class="flex flex-col leading-tight"><span>Fees</span><span class="text-sm text-gray-600 urdu">فیس</span></span>
@@ -509,7 +509,7 @@
 
             {% if request.user.is_admin %}
             <!-- Admin -->
-            <p class="px-3 pt-4 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Admin <span class="urdu normal-case">انتظامیہ</span></p>
+            <p class="px-3 pt-4 pb-1 text-xs font-extrabold text-gray-500 uppercase tracking-widest">Admin <span class="urdu normal-case">انتظامیہ</span></p>
             <a href="{% url 'user_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'users' in request.path %}active{% endif %}">
                 <i class="fas fa-user-shield w-5 text-center text-sm"></i>
                 <span class="flex flex-col leading-tight"><span>Users</span><span class="text-sm text-gray-600 urdu">صارفین</span></span>

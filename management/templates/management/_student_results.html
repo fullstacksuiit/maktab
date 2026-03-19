@@ -76,7 +76,7 @@
                             {% if student.batches.all %}
                                 {% for batch in student.batches.all %}
                                     <span class="px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-xs font-medium border border-green-200" title="{{ batch.course.course_name }}">
-                                        {{ batch.course.course_code }} - {{ batch.batch_name }}
+                                        {{ batch.batch_code }} - {{ batch.batch_name }}
                                     </span>
                                 {% endfor %}
                             {% else %}
@@ -150,7 +150,7 @@
             <div class="flex flex-wrap gap-1 pl-[68px] mb-2">
                 {% for batch in student.batches.all %}
                 <span class="px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-[11px] font-medium border border-green-200">
-                    {{ batch.course.course_code }} - {{ batch.batch_name }}
+                    {{ batch.batch_code }} - {{ batch.batch_name }}
                 </span>
                 {% endfor %}
             </div>

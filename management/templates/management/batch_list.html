@@ -5,15 +5,31 @@
 {% block header_title %}Batches{% endblock %}
 
 {% block content %}
-<div class="mb-6 flex flex-col md:flex-row md:items-center justify-end gap-4 animate-[slideUp_0.4s_ease-out]">
+<div class="animate-[slideUp_0.4s_ease-out]">
+
+<!-- Top Bar: View Toggle + Search + Add -->
+<div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <!-- View Toggle -->
+    <div class="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+        <a href="{% url 'batch_list' %}?view=list"
+           class="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 {% if view_mode != 'teacher' %}bg-white text-primary shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
+            <i class="fas fa-list"></i> List View
+        </a>
+        <a href="{% url 'batch_list' %}?view=teacher"
+           class="px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 {% if view_mode == 'teacher' %}bg-white text-primary shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
+            <i class="fas fa-chalkboard-teacher"></i> By Teacher
+        </a>
+    </div>
+
     <div class="flex flex-col sm:flex-row gap-3">
+        {% if view_mode != 'teacher' %}
         <div class="relative">
             <input type="text" name="q" value="{{ search_query }}" placeholder="Search batches..."
                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary w-full sm:w-64 transition-shadow"
                    hx-get="{% url 'batch_list' %}"
                    hx-trigger="keyup changed delay:300ms, search"
                    hx-target="#batch-results"
-                   hx-include="#courseFilter, #statusFilter"
+                   hx-include="#courseFilter, #statusFilter, #teacherFilter"
                    hx-push-url="true"
                    hx-indicator="#search-spinner-batches">
             <span class="absolute left-3 top-2.5 text-gray-400">
@@ -23,19 +39,21 @@
                 <i class="fas fa-spinner fa-spin"></i>
             </span>
         </div>
+        {% endif %}
         <a href="{% url 'batch_add' %}" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 font-medium shadow-lg shadow-primary/30 transition-all hover:-translate-y-0.5 flex items-center gap-2">
             <i class="fas fa-plus"></i> Add Batch
         </a>
     </div>
 </div>
 
-<!-- Filters -->
+{% if view_mode != 'teacher' %}
+<!-- Filters (List View only) -->
 <div class="mb-4 flex flex-wrap gap-3">
     <select name="course" id="courseFilter" class="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
             hx-get="{% url 'batch_list' %}"
             hx-trigger="change"
             hx-target="#batch-results"
-            hx-include="[name='q'], #statusFilter"
+            hx-include="[name='q'], #statusFilter, #teacherFilter"
             hx-push-url="true"
             hx-indicator="#search-spinner-batches">
         <option value="">All Courses</option>
@@ -47,19 +65,37 @@
             hx-get="{% url 'batch_list' %}"
             hx-trigger="change"
             hx-target="#batch-results"
-            hx-include="[name='q'], #courseFilter"
+            hx-include="[name='q'], #courseFilter, #teacherFilter"
             hx-push-url="true"
             hx-indicator="#search-spinner-batches">
         <option value="">All Status</option>
         <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
         <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
     </select>
+    <select name="teacher" id="teacherFilter" class="px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+            hx-get="{% url 'batch_list' %}"
+            hx-trigger="change"
+            hx-target="#batch-results"
+            hx-include="[name='q'], #courseFilter, #statusFilter"
+            hx-push-url="true"
+            hx-indicator="#search-spinner-batches">
+        <option value="">All Teachers</option>
+        {% for teacher in teachers %}
+        <option value="{{ teacher.pk }}" {% if selected_teacher == teacher.pk|stringformat:"s" %}selected{% endif %}>{{ teacher.first_name }} {{ teacher.last_name }}</option>
+        {% endfor %}
+    </select>
 </div>
+{% endif %}
 
 <div id="batch-results">
-    {% include 'management/_batch_results.html' %}
+    {% if view_mode == 'teacher' %}
+        {% include 'management/_batch_teacher_view.html' %}
+    {% else %}
+        {% include 'management/_batch_results.html' %}
+    {% endif %}
+</div>
+
 </div>
 
 {% include 'management/components/delete_modal.html' %}
 {% endblock %}
-

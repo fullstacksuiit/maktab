@@ -544,7 +544,16 @@ def batch_list(request):
     elif status == 'inactive':
         batches_qs = batches_qs.filter(is_active=False)
 
+    # Filter by teacher
+    teacher_id = request.GET.get('teacher')
+    if teacher_id:
+        batches_qs = batches_qs.filter(teachers__pk=teacher_id)
+
     courses = Course.objects.filter(organization=org)
+    teachers = Staff.objects.filter(organization=org, staff_role='Teacher').order_by('first_name', 'last_name')
+
+    # View mode: 'list' (default) or 'teacher'
+    view_mode = request.GET.get('view', 'list')
 
     paginator = Paginator(batches_qs, 20)
     page_number = request.GET.get('page')
@@ -552,11 +561,33 @@ def batch_list(request):
     context = {
         'batches': batches,
         'courses': courses,
+        'teachers': teachers,
         'search_query': search_query,
         'selected_course': course_id,
         'selected_status': status,
+        'selected_teacher': teacher_id,
+        'view_mode': view_mode,
     }
+
+    if view_mode == 'teacher':
+        # Build teacher-wise batch data
+        teachers_with_batches = []
+        for teacher in teachers:
+            t_batches = batches_qs.filter(teachers=teacher).distinct()
+            teachers_with_batches.append({
+                'teacher': teacher,
+                'batches': t_batches,
+                'batch_count': t_batches.count(),
+                'total_students': sum(b.student_count for b in t_batches),
+            })
+        # Also get unassigned batches (no teachers)
+        unassigned = batches_qs.filter(teachers__isnull=True)
+        context['teachers_with_batches'] = teachers_with_batches
+        context['unassigned_batches'] = unassigned
+
     if request.headers.get('HX-Request'):
+        if view_mode == 'teacher':
+            return render(request, 'management/_batch_teacher_view.html', context)
         return render(request, 'management/_batch_results.html', context)
     return render(request, 'management/batch_list.html', context)
 
@@ -826,7 +857,7 @@ def student_list(request):
     applications = app_paginator.get_page(request.GET.get('page') if active_tab == 'applications' else 1)
 
     # Batches for bulk assign
-    batches = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+    batches = Batch.objects.filter(organization=org, is_active=True).select_related('course').prefetch_related('teachers')
 
     context = {
         'active_tab': active_tab,
@@ -854,7 +885,7 @@ def student_add(request):
     org = get_org(request)
     if request.method == 'POST':
         form = StudentForm(request.POST, request.FILES)
-        form.fields['batches'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+        form.fields['batches'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course').prefetch_related('teachers')
         if form.is_valid():
             student = form.save(commit=False)
             student.organization = org
@@ -866,7 +897,7 @@ def student_add(request):
             messages.error(request, 'Please correct the errors below.')
     else:
         form = StudentForm()
-        form.fields['batches'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+        form.fields['batches'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course').prefetch_related('teachers')
     return render(request, 'management/student_form.html', {'form': form, 'action': 'Add'})
 
 
@@ -877,7 +908,7 @@ def student_edit(request, uuid):
     student = get_object_or_404(Student, uuid=uuid, organization=org)
     if request.method == 'POST':
         form = StudentForm(request.POST, request.FILES, instance=student)
-        form.fields['batches'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+        form.fields['batches'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course').prefetch_related('teachers')
         if form.is_valid():
             form.save()
             messages.success(request, 'Student updated successfully!')
@@ -886,7 +917,7 @@ def student_edit(request, uuid):
             messages.error(request, 'Please correct the errors below.')
     else:
         form = StudentForm(instance=student)
-        form.fields['batches'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+        form.fields['batches'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course').prefetch_related('teachers')
     return render(request, 'management/student_form.html', {'form': form, 'action': 'Edit'})
 
 
@@ -1028,7 +1059,7 @@ def student_import_excel(request):
     import openpyxl
 
     org = get_org(request)
-    batches = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+    batches = Batch.objects.filter(organization=org, is_active=True).select_related('course').prefetch_related('teachers')
 
     if request.method == 'POST':
         excel_file = request.FILES.get('excel_file')
@@ -1593,7 +1624,7 @@ def attendance_list(request):
     if filter_date:
         attendances = attendances.filter(date=filter_date)
 
-    batches = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+    batches = Batch.objects.filter(organization=org, is_active=True).select_related('course').prefetch_related('teachers')
 
     paginator = Paginator(attendances, 50)
     page_number = request.GET.get('page')
@@ -1651,7 +1682,7 @@ def attendance_mark(request):
         return redirect('attendance_list')
 
     form = AttendanceFilterForm()
-    form.fields['batch'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+    form.fields['batch'].queryset = Batch.objects.filter(organization=org, is_active=True).select_related('course').prefetch_related('teachers')
 
     students_data = None
     selected_batch = None
@@ -2230,7 +2261,7 @@ def fee_payment_list(request):
 def fee_payment_add(request):
     org = get_org(request)
     # Single query for active batches - reused for form dropdown and JS fee data
-    active_batches = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+    active_batches = Batch.objects.filter(organization=org, is_active=True).select_related('course').prefetch_related('teachers')
 
     if request.method == 'POST':
         form = FeePaymentForm(request.POST)
@@ -2280,7 +2311,7 @@ def fee_payment_edit(request, pk):
     org = get_org(request)
     payment = get_object_or_404(FeePayment, pk=pk, organization=org)
     # Single query for active batches - reused for form dropdown and JS fee data
-    active_batches = Batch.objects.filter(organization=org, is_active=True).select_related('course')
+    active_batches = Batch.objects.filter(organization=org, is_active=True).select_related('course').prefetch_related('teachers')
 
     if request.method == 'POST':
         form = FeePaymentForm(request.POST, instance=payment)

@@ -103,8 +103,8 @@ CACHES = {
     }
 }
 
-# Cache sessions in memory instead of DB
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+# Store sessions in the database (default, persists across server restarts)
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
 
 # Password validation

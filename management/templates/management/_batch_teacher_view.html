@@ -1,0 +1,211 @@
+{% if teachers_with_batches %}
+<div class="space-y-6">
+    {% for item in teachers_with_batches %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <!-- Teacher Header (clickable) -->
+        <button type="button" onclick="toggleTeacherBatches('teacher-{{ item.teacher.pk }}')"
+                class="w-full px-6 py-5 flex items-center justify-between hover:bg-gray-50/80 transition-colors">
+            <div class="flex items-center gap-4">
+                {% if item.teacher.photo %}
+                <img src="{{ item.teacher.photo.url }}" alt="{{ item.teacher.first_name }}"
+                     class="w-14 h-14 rounded-full object-cover border-2 border-primary/20 shadow-sm">
+                {% else %}
+                <div class="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-lg font-bold shadow-sm">
+                    {{ item.teacher.first_name|first }}{{ item.teacher.last_name|first }}
+                </div>
+                {% endif %}
+                <div class="text-left">
+                    <h3 class="text-lg font-bold text-gray-800">{{ item.teacher.first_name }} {{ item.teacher.last_name }}</h3>
+                    <div class="flex flex-wrap items-center gap-3 mt-1 text-xs text-gray-500">
+                        {% if item.teacher.staff_id %}
+                        <span class="text-primary font-medium">{{ item.teacher.staff_id }}</span>
+                        {% endif %}
+                        <span><i class="fas fa-building mr-1 text-gray-400"></i>{{ item.teacher.department }}</span>
+                        {% if item.teacher.phone %}
+                        <span><i class="fas fa-phone mr-1 text-gray-400"></i>{{ item.teacher.phone }}</span>
+                        {% endif %}
+                        {% if item.teacher.email %}
+                        <span class="hidden sm:inline"><i class="fas fa-envelope mr-1 text-gray-400"></i>{{ item.teacher.email }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex gap-3 text-sm">
+                    <span class="px-3 py-1 rounded-lg bg-primary/10 text-primary font-semibold">
+                        <i class="fas fa-layer-group mr-1"></i>{{ item.batch_count }} Batch{{ item.batch_count|pluralize:"es" }}
+                    </span>
+                    <span class="px-3 py-1 rounded-lg bg-blue-50 text-blue-700 font-semibold hidden sm:inline-flex items-center">
+                        <i class="fas fa-users mr-1"></i>{{ item.total_students }} Student{{ item.total_students|pluralize }}
+                    </span>
+                </div>
+                <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200" id="icon-teacher-{{ item.teacher.pk }}"></i>
+            </div>
+        </button>
+
+        <!-- Batch List (hidden by default) -->
+        <div id="teacher-{{ item.teacher.pk }}" class="hidden border-t border-gray-100">
+            {% if item.batches %}
+            <div class="divide-y divide-gray-50">
+                {% for batch in item.batches %}
+                <div class="px-6 py-4 hover:bg-gray-50/50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div class="flex items-center gap-4 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 text-primary flex items-center justify-center text-sm font-bold shrink-0">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <a href="{% url 'batch_detail' batch.pk %}" class="font-semibold text-gray-800 hover:text-primary transition-colors">
+                                {{ batch.batch_name }}
+                            </a>
+                            <div class="flex flex-wrap items-center gap-2 mt-0.5 text-xs">
+                                <span class="text-primary font-medium">{{ batch.batch_code }}</span>
+                                <span class="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-medium border border-purple-200">{{ batch.course.course_code }}</span>
+                                <span class="text-gray-500">{{ batch.course.course_name }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 md:gap-4 flex-wrap md:flex-nowrap pl-14 md:pl-0">
+                        <!-- Schedule -->
+                        <div class="text-xs text-gray-500 min-w-[120px]">
+                            <div>{{ batch.get_days_display }}</div>
+                            {% if batch.start_time and batch.end_time %}
+                            <div class="font-medium text-gray-700">{{ batch.start_time|time:"g:i A" }} - {{ batch.end_time|time:"g:i A" }}</div>
+                            {% endif %}
+                        </div>
+                        <!-- Students -->
+                        <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 text-xs font-medium border border-blue-200 whitespace-nowrap">
+                            {{ batch.student_count }} Enrolled
+                        </span>
+                        <!-- Status -->
+                        {% if batch.is_active %}
+                        <span class="px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-xs font-medium border border-green-200">Active</span>
+                        {% else %}
+                        <span class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-xs font-medium border border-gray-200">Inactive</span>
+                        {% endif %}
+                        <!-- Actions -->
+                        <div class="flex items-center gap-1">
+                            <a href="{% url 'quick_attendance' batch.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="Take Attendance">
+                                <i class="fas fa-clipboard-check"></i>
+                            </a>
+                            <a href="{% url 'batch_edit' batch.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                                onclick="openDeleteModal('{% url 'batch_delete' batch.pk %}', '{{ batch.batch_name|escapejs }}')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="px-6 py-6 text-center text-gray-400 text-sm">
+                <i class="fas fa-inbox mr-1"></i> No batches assigned
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Unassigned Batches -->
+    {% if unassigned_batches %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <button type="button" onclick="toggleTeacherBatches('teacher-unassigned')"
+                class="w-full px-6 py-5 flex items-center justify-between hover:bg-gray-50/80 transition-colors">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-lg font-bold">
+                    <i class="fas fa-user-slash"></i>
+                </div>
+                <div class="text-left">
+                    <h3 class="text-lg font-bold text-gray-600">Unassigned Batches</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Batches with no teacher assigned</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="px-3 py-1 rounded-lg bg-gray-100 text-gray-600 font-semibold text-sm">
+                    <i class="fas fa-layer-group mr-1"></i>{{ unassigned_batches.count }} Batch{{ unassigned_batches.count|pluralize:"es" }}
+                </span>
+                <i class="fas fa-chevron-down text-gray-400 transition-transform duration-200" id="icon-teacher-unassigned"></i>
+            </div>
+        </button>
+        <div id="teacher-unassigned" class="hidden border-t border-gray-100">
+            <div class="divide-y divide-gray-50">
+                {% for batch in unassigned_batches %}
+                <div class="px-6 py-4 hover:bg-gray-50/50 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div class="flex items-center gap-4 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-gray-100 text-gray-400 flex items-center justify-center text-sm font-bold shrink-0">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <a href="{% url 'batch_detail' batch.pk %}" class="font-semibold text-gray-800 hover:text-primary transition-colors">
+                                {{ batch.batch_name }}
+                            </a>
+                            <div class="flex flex-wrap items-center gap-2 mt-0.5 text-xs">
+                                <span class="text-primary font-medium">{{ batch.batch_code }}</span>
+                                <span class="px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-medium border border-purple-200">{{ batch.course.course_code }}</span>
+                                <span class="text-gray-500">{{ batch.course.course_name }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 md:gap-4 flex-wrap md:flex-nowrap pl-14 md:pl-0">
+                        <div class="text-xs text-gray-500 min-w-[120px]">
+                            <div>{{ batch.get_days_display }}</div>
+                            {% if batch.start_time and batch.end_time %}
+                            <div class="font-medium text-gray-700">{{ batch.start_time|time:"g:i A" }} - {{ batch.end_time|time:"g:i A" }}</div>
+                            {% endif %}
+                        </div>
+                        <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 text-xs font-medium border border-blue-200 whitespace-nowrap">
+                            {{ batch.student_count }} Enrolled
+                        </span>
+                        {% if batch.is_active %}
+                        <span class="px-2 py-0.5 rounded-md bg-green-100 text-green-700 text-xs font-medium border border-green-200">Active</span>
+                        {% else %}
+                        <span class="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-xs font-medium border border-gray-200">Inactive</span>
+                        {% endif %}
+                        <div class="flex items-center gap-1">
+                            <a href="{% url 'quick_attendance' batch.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="Take Attendance">
+                                <i class="fas fa-clipboard-check"></i>
+                            </a>
+                            <a href="{% url 'batch_edit' batch.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
+                                onclick="openDeleteModal('{% url 'batch_delete' batch.pk %}', '{{ batch.batch_name|escapejs }}')" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% else %}
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="text-center py-12">
+        <div class="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4 text-amber-300">
+            <i class="fas fa-chalkboard-teacher text-4xl"></i>
+        </div>
+        <h3 class="text-xl font-bold text-gray-800 mb-1">No Teachers Found</h3>
+        <p class="text-gray-500 mb-6">Add teachers to your organization to see the teacher-wise batch view.</p>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function toggleTeacherBatches(id) {
+    var el = document.getElementById(id);
+    var icon = document.getElementById('icon-' + id);
+    if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        if (icon) icon.style.transform = 'rotate(180deg)';
+    } else {
+        el.classList.add('hidden');
+        if (icon) icon.style.transform = 'rotate(0deg)';
+    }
+}
+</script>
