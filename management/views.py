@@ -1009,7 +1009,7 @@ def student_export_excel(request):
 
     for row_num, student in enumerate(students, 2):
         batches_str = ', '.join(
-            f'{b.course.course_code} - {b.batch_name}' for b in student.batches.all()
+            b.batch_code for b in student.batches.all() if b.batch_code
         )
         # Get fee: use student's custom monthly_fee, fallback to first batch's course fee
         first_batch = student.batches.first()
@@ -1089,14 +1089,15 @@ def student_import_excel(request):
             # Build batch lookup with multiple keys for flexible matching
             batch_lookup = {}
             for b in batches:
-                # Primary key: "COURSE_CODE - BATCH_NAME"
-                batch_lookup[f'{b.course.course_code} - {b.batch_name}'.strip().lower()] = b
+                # Primary key: batch_code
+                if b.batch_code:
+                    batch_lookup[b.batch_code.strip().lower()] = b
                 # Also match by batch_name alone
                 batch_lookup[b.batch_name.strip().lower()] = b
+                # Also match by "COURSE_CODE - BATCH_NAME"
+                batch_lookup[f'{b.course.course_code} - {b.batch_name}'.strip().lower()] = b
                 # Also match by course_code alone
                 batch_lookup[b.course.course_code.strip().lower()] = b
-                # Also match by "COURSE_NAME - BATCH_NAME"
-                batch_lookup[f'{b.course.course_name} - {b.batch_name}'.strip().lower()] = b
 
             created_count = 0
             updated_count = 0
