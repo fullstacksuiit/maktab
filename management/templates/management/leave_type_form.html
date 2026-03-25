@@ -1,0 +1,60 @@
+{% extends "management/base_tailwind.html" %}
+{% block title %}{{ action }} Leave Type{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <a href="{% url 'leave_type_list' %}" class="text-sm text-gray-600 hover:text-primary mb-4 inline-block">
+        <i class="fas fa-arrow-left mr-1"></i> Back to Leave Types
+    </a>
+
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">{{ action }} Leave Type</h1>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <form method="post">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Leave Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<p class="text-sm text-red-600 mt-1">{{ form.name.errors.0 }}</p>{% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Code</label>
+                    {{ form.code }}
+                    <p class="text-xs text-gray-400 mt-1">Short code like CL, ML, UL</p>
+                    {% if form.code.errors %}<p class="text-sm text-red-600 mt-1">{{ form.code.errors.0 }}</p>{% endif %}
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Days Per Year</label>
+                        {{ form.days_per_year }}
+                        {% if form.days_per_year.errors %}<p class="text-sm text-red-600 mt-1">{{ form.days_per_year.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Period</label>
+                        {{ form.period }}
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    {{ form.is_paid }}
+                    <label for="id_is_paid" class="text-sm font-medium text-gray-700 cursor-pointer">Paid Leave</label>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Salary Deduction %</label>
+                    {{ form.deduction_percentage }}
+                    <p class="text-xs text-gray-400 mt-1">0 = fully paid, 100 = fully unpaid</p>
+                    {% if form.deduction_percentage.errors %}<p class="text-sm text-red-600 mt-1">{{ form.deduction_percentage.errors.0 }}</p>{% endif %}
+                </div>
+            </div>
+            <div class="flex items-center gap-3 mt-6">
+                <button type="submit" class="px-6 py-2.5 bg-primary text-white rounded-xl font-medium hover:bg-secondary transition-colors">
+                    {{ action }} Leave Type
+                </button>
+                <a href="{% url 'leave_type_list' %}" class="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

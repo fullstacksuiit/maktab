@@ -801,6 +801,35 @@ class LeaveRequestForm(forms.ModelForm):
         return cleaned_data
 
 
+class LeaveTypeForm(forms.ModelForm):
+    class Meta:
+        model = LeaveType
+        fields = ['name', 'code', 'days_per_year', 'period', 'is_paid', 'deduction_percentage']
+        widgets = {
+            'name': styled_text_input('e.g., Casual Leave'),
+            'code': styled_text_input('e.g., CL, ML, UL'),
+            'days_per_year': styled_number_input('Days allocated', step='1', min_val=0),
+            'period': styled_select(),
+            'is_paid': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary/50 cursor-pointer', 'id': 'id_is_paid'}),
+            'deduction_percentage': styled_number_input('0 = fully paid, 100 = fully unpaid', step='0.01', min_val=0),
+        }
+
+    def clean_deduction_percentage(self):
+        val = self.cleaned_data.get('deduction_percentage', 0)
+        if val < 0 or val > 100:
+            raise forms.ValidationError('Must be between 0 and 100.')
+        return val
+
+    def clean(self):
+        cleaned_data = super().clean()
+        is_paid = cleaned_data.get('is_paid')
+        deduction = cleaned_data.get('deduction_percentage', 0)
+        # Auto-sync: if not paid and deduction is 0, set to 100
+        if not is_paid and deduction == 0:
+            cleaned_data['deduction_percentage'] = 100
+        return cleaned_data
+
+
 class LeaveRejectForm(forms.Form):
     rejection_reason = forms.CharField(
         required=False,

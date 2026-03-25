@@ -140,6 +140,12 @@ urlpatterns = [
     path('salary-components/edit/<int:pk>/', views.salary_component_edit, name='salary_component_edit'),
     path('salary-components/delete/<int:pk>/', views.salary_component_delete, name='salary_component_delete'),
 
+    # Leave Type Management URLs
+    path('leave-types/', views.leave_type_list, name='leave_type_list'),
+    path('leave-types/add/', views.leave_type_add, name='leave_type_add'),
+    path('leave-types/edit/<int:pk>/', views.leave_type_edit, name='leave_type_edit'),
+    path('leave-types/delete/<int:pk>/', views.leave_type_delete, name='leave_type_delete'),
+
     # Accounts & Expenses URLs
     path('accounts/', views.accounts_overview, name='accounts_overview'),
     path('expenses/', views.expense_list, name='expense_list'),

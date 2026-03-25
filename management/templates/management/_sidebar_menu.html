@@ -90,6 +90,12 @@
         </a>
     </li>
     <li>
+        <a href="{% url 'leave_type_list' %}" class="{% if 'leave-type' in request.path %}active{% endif %}">
+            <i class="fas fa-calendar-minus"></i>
+            <span>Leave Types</span>
+        </a>
+    </li>
+    <li>
         <a href="{% url 'salary_component_list' %}" class="{% if 'salary-component' in request.path %}active{% endif %}">
             <i class="fas fa-sliders-h"></i>
             <span>Salary Components</span>

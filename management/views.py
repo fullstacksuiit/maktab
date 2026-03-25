@@ -26,7 +26,7 @@ logger = logging.getLogger('management')
 from .forms import (SignUpForm, LoginForm, CourseForm, BatchForm, StudentForm, StaffForm,
                     AttendanceFilterForm, StaffAttendanceFilterForm, FeePaymentForm, BehaviorNoteForm, SettingsForm, InviteUserForm, UserEditForm,
                     AdmissionApplicationForm, ApplicationRejectForm, EventForm,
-                    LeaveRequestForm, LeaveRejectForm,
+                    LeaveTypeForm, LeaveRequestForm, LeaveRejectForm,
                     SalaryComponentForm, PayrollComponentForm, ExpenseForm)
 from .models import (User, Organization, Course, Batch, Student, Staff, Attendance, StaffAttendance, FeePayment, BehaviorNote, AdmissionApplication, Event,
                      LeaveType, LeaveBalance, LeaveRequest, ensure_leave_balances,
@@ -977,17 +977,16 @@ def student_export_excel(request):
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
     org = get_org(request)
-    students = Student.objects.filter(organization=org).prefetch_related('batches__course').order_by('student_id')
+    students = Student.objects.filter(organization=org).prefetch_related('batches__course', 'fee_payments').order_by('student_id')
 
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = 'Students'
 
     headers = [
-        'Student ID', 'Full Name', 'Email', 'Phone', 'Date of Birth', 'Gender',
-        'Address', 'City', 'State', 'Pin Code', 'Is Orphan',
-        'Guardian Name', 'Guardian Phone', 'Guardian Discount (%)', 'Discount Amount (Fixed)',
-        'Opening Balance', 'Batches (Course Code - Batch Name)', 'Enrollment Date',
+        'Student ID', 'Full Name', 'Guardian Name', 'Contact 1', 'Contact 2',
+        'Address', 'City', 'Enrollment Date', 'Date of Birth', 'Gender',
+        'Email', 'Batch', 'fee', 'Last Paid',
     ]
 
     # Style header row
@@ -1008,31 +1007,36 @@ def student_export_excel(request):
         cell.alignment = header_alignment
         cell.border = thin_border
 
-    gender_map = {'M': 'Male', 'F': 'Female', 'O': 'Other'}
-
     for row_num, student in enumerate(students, 2):
         batches_str = ', '.join(
             f'{b.course.course_code} - {b.batch_name}' for b in student.batches.all()
         )
+        # Get fee: use student's custom monthly_fee, fallback to first batch's course fee
+        first_batch = student.batches.first()
+        if student.monthly_fee is not None:
+            fee_amount = float(student.monthly_fee)
+        elif first_batch:
+            fee_amount = float(first_batch.course.fees)
+        else:
+            fee_amount = ''
+        # Get last paid month
+        last_payment = student.fee_payments.filter(status='Approved').order_by('-fee_month_to').first()
+        last_paid = last_payment.fee_month_to.strftime('%B').lower() if last_payment and last_payment.fee_month_to else ''
         row_data = [
             student.student_id,
             student.full_name,
-            student.email,
+            student.guardian_name,
             student.phone,
-            student.date_of_birth.strftime('%Y-%m-%d') if student.date_of_birth else '',
-            gender_map.get(student.gender, student.gender),
+            student.guardian_phone,
             student.address,
             student.city,
-            student.state,
-            student.pin_code,
-            'Yes' if student.is_orphan else 'No',
-            student.guardian_name,
-            student.guardian_phone,
-            float(student.guardian_discount),
-            float(student.discount_amount),
-            float(student.opening_balance),
-            batches_str,
             student.enrollment_date.strftime('%Y-%m-%d') if student.enrollment_date else '',
+            student.date_of_birth.strftime('%Y-%m-%d') if student.date_of_birth else '',
+            student.gender,
+            student.email,
+            batches_str,
+            fee_amount,
+            last_paid,
         ]
         for col_num, value in enumerate(row_data, 1):
             cell = ws.cell(row=row_num, column=col_num, value=value)
@@ -1107,22 +1111,26 @@ def student_import_excel(request):
                 try:
                     student_id = str(row[0] or '').strip()
                     full_name = str(row[1] or '').strip()
-                    email = str(row[2] or '').strip()
+                    guardian_name = str(row[2] or '').strip()
                     phone = str(row[3] or '').strip()
-                    dob_raw = row[4]
-                    gender_raw = str(row[5] or '').strip().lower()
-                    address = str(row[6] or '').strip()
-                    city = str(row[7] or '').strip() or 'Rourkela'
-                    state = str(row[8] or '').strip() or 'Odisha'
-                    pin_code = str(row[9] or '').strip() or '769001'
-                    is_orphan_raw = str(row[10] or '').strip().lower()
-                    guardian_name = str(row[11] or '').strip()
-                    guardian_phone = str(row[12] or '').strip()
-                    guardian_discount = row[13] or 0
-                    discount_amount_raw = row[14] or 0
-                    opening_balance_raw = row[15] or 0
-                    batches_raw = str(row[16] or '').strip()
-                    enrollment_raw = row[17] if len(row) > 17 else None
+                    guardian_phone = str(row[4] or '').strip()
+                    address = str(row[5] or '').strip()
+                    city = str(row[6] or '').strip() or 'Rourkela'
+                    enrollment_raw = row[7]
+                    dob_raw = row[8]
+                    gender_raw = str(row[9] or '').strip().lower()
+                    email = str(row[10] or '').strip()
+                    batches_raw = str(row[11] or '').strip()
+                    fee_raw = row[12] if len(row) > 12 else None
+                    # Column 13 (Last Paid) is export-only, skip it
+
+                    # Parse monthly fee
+                    monthly_fee = None
+                    if fee_raw is not None and str(fee_raw).strip():
+                        try:
+                            monthly_fee = float(fee_raw)
+                        except (ValueError, TypeError):
+                            monthly_fee = None
 
                     if not full_name:
                         errors.append(f'Row {row_idx}: Full Name is required.')
@@ -1130,7 +1138,7 @@ def student_import_excel(request):
                         continue
 
                     if not phone:
-                        errors.append(f'Row {row_idx}: Phone is required.')
+                        errors.append(f'Row {row_idx}: Contact 1 is required.')
                         skipped_count += 1
                         continue
 
@@ -1165,27 +1173,6 @@ def student_import_excel(request):
                     if not enrollment_date:
                         enrollment_date = date.today()
 
-                    # Parse is_orphan
-                    is_orphan = is_orphan_raw in ('yes', 'true', '1')
-
-                    # Parse guardian discount
-                    try:
-                        guardian_discount = float(guardian_discount)
-                    except (ValueError, TypeError):
-                        guardian_discount = 0
-
-                    # Parse discount amount
-                    try:
-                        discount_amount = float(discount_amount_raw)
-                    except (ValueError, TypeError):
-                        discount_amount = 0
-
-                    # Parse opening balance
-                    try:
-                        opening_balance = float(opening_balance_raw)
-                    except (ValueError, TypeError):
-                        opening_balance = 0
-
                     # Update existing student or create new one
                     existing = None
                     if student_id:
@@ -1193,21 +1180,17 @@ def student_import_excel(request):
 
                     if existing:
                         existing.full_name = full_name
-                        existing.email = email
+                        existing.guardian_name = guardian_name
                         existing.phone = phone
-                        existing.date_of_birth = dob
-                        existing.gender = gender
+                        existing.guardian_phone = guardian_phone
                         existing.address = address
                         existing.city = city
-                        existing.state = state
-                        existing.pin_code = pin_code
-                        existing.is_orphan = is_orphan
-                        existing.guardian_name = guardian_name
-                        existing.guardian_phone = guardian_phone
-                        existing.guardian_discount = guardian_discount
-                        existing.discount_amount = discount_amount
-                        existing.opening_balance = opening_balance
+                        existing.email = email
+                        existing.date_of_birth = dob
+                        existing.gender = gender
                         existing.enrollment_date = enrollment_date
+                        if monthly_fee is not None:
+                            existing.monthly_fee = monthly_fee
                         existing.save()
                         student = existing
 
@@ -1228,21 +1211,16 @@ def student_import_excel(request):
                         student = Student(
                             student_id=student_id,
                             full_name=full_name,
-                            email=email,
+                            guardian_name=guardian_name,
                             phone=phone,
-                            date_of_birth=dob,
-                            gender=gender,
+                            guardian_phone=guardian_phone,
                             address=address,
                             city=city,
-                            state=state,
-                            pin_code=pin_code,
-                            is_orphan=is_orphan,
-                            guardian_name=guardian_name,
-                            guardian_phone=guardian_phone,
-                            guardian_discount=guardian_discount,
-                            discount_amount=discount_amount,
-                            opening_balance=opening_balance,
+                            email=email,
+                            date_of_birth=dob,
+                            gender=gender,
                             enrollment_date=enrollment_date,
+                            monthly_fee=monthly_fee,
                             organization=org,
                         )
                         student.save()
@@ -3694,6 +3672,69 @@ def staff_change_password(request):
         form = PasswordChangeForm(request.user)
 
     return render(request, 'management/staff_change_password.html', {'form': form})
+
+
+# ─── Leave Type Management Views ──────────────────────────────────────────────
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def leave_type_list(request):
+    """List all leave types for the organization."""
+    org = get_org(request)
+    leave_types = LeaveType.objects.filter(organization=org)
+    return render(request, 'management/leave_type_list.html', {'leave_types': leave_types})
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def leave_type_add(request):
+    """Add a new leave type."""
+    org = get_org(request)
+    if request.method == 'POST':
+        form = LeaveTypeForm(request.POST)
+        if form.is_valid():
+            leave_type = form.save(commit=False)
+            leave_type.organization = org
+            leave_type.save()
+            messages.success(request, f'Leave type "{leave_type.name}" created successfully!')
+            return redirect('leave_type_list')
+    else:
+        form = LeaveTypeForm()
+    return render(request, 'management/leave_type_form.html', {'form': form, 'action': 'Add'})
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def leave_type_edit(request, pk):
+    """Edit a leave type."""
+    org = get_org(request)
+    leave_type = get_object_or_404(LeaveType, pk=pk, organization=org)
+    if request.method == 'POST':
+        form = LeaveTypeForm(request.POST, instance=leave_type)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Leave type "{leave_type.name}" updated successfully!')
+            return redirect('leave_type_list')
+    else:
+        form = LeaveTypeForm(instance=leave_type)
+    return render(request, 'management/leave_type_form.html', {'form': form, 'action': 'Edit'})
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def leave_type_delete(request, pk):
+    """Delete a leave type."""
+    org = get_org(request)
+    leave_type = get_object_or_404(LeaveType, pk=pk, organization=org)
+    name = leave_type.name
+    # Check if there are any leave requests using this type
+    if LeaveRequest.objects.filter(leave_type=leave_type).exists():
+        messages.error(request, f'Cannot delete "{name}" — it has leave requests associated with it.')
+        return redirect('leave_type_list')
+    leave_type.delete()
+    messages.success(request, f'Leave type "{name}" deleted successfully!')
+    return redirect('leave_type_list')
 
 
 # ─── Admin Payroll Management Views ────────────────────────────────────────────

@@ -304,6 +304,7 @@ class Student(models.Model):
     guardian_discount = models.DecimalField(max_digits=5, decimal_places=2, default=0, verbose_name="Discount (%)")
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Discount Amount (Fixed)")
     opening_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Opening Balance", help_text="Previous pending dues carried forward")
+    monthly_fee = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Monthly Fee", help_text="Custom fee for this student. If blank, uses course fee.")
     batches = models.ManyToManyField('Batch', related_name='students', verbose_name="Enrolled Batches", blank=True)
     enrollment_date = models.DateField(verbose_name="Enrollment Date")
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='students')
@@ -817,6 +818,11 @@ class LeaveType(models.Model):
     days_per_year = models.PositiveIntegerField(default=0, verbose_name="Default Days")
     period = models.CharField(max_length=10, choices=PERIOD_CHOICES, default='yearly', verbose_name="Period")
     is_paid = models.BooleanField(default=True, verbose_name="Is Paid")
+    deduction_percentage = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0,
+        verbose_name="Salary Deduction %",
+        help_text="Percentage of daily salary to deduct per leave day. 0 = fully paid, 100 = fully unpaid."
+    )
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='leave_types')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -908,14 +914,14 @@ class LeaveRequest(models.Model):
 def create_default_leave_types(organization):
     """Create default leave types for a new organization."""
     defaults = [
-        ('Casual Leave', 'CL', 12, True),
-        ('Medical Leave', 'ML', 12, True),
-        ('Unpaid Leave', 'UL', 0, False),
+        ('Casual Leave', 'CL', 12, True, 0),
+        ('Medical Leave', 'ML', 12, True, 0),
+        ('Unpaid Leave', 'UL', 0, False, 100),
     ]
-    for name, code, days, is_paid in defaults:
+    for name, code, days, is_paid, deduction in defaults:
         LeaveType.objects.get_or_create(
             organization=organization, code=code,
-            defaults={'name': name, 'days_per_year': days, 'is_paid': is_paid}
+            defaults={'name': name, 'days_per_year': days, 'is_paid': is_paid, 'deduction_percentage': deduction}
         )
 
 
