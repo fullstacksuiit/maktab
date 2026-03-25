@@ -44,7 +44,7 @@
                         </div>
                     </td>
                     <td class="px-6 py-4 text-gray-600">
-                        {{ u.email|default:"-" }}
+                        {% if u.email %}<a href="mailto:{{ u.email }}" class="hover:text-primary transition-colors">{{ u.email }}</a>{% else %}-{% endif %}
                     </td>
                     <td class="px-6 py-4">
                         {% if u.role == 'admin' %}
@@ -104,7 +104,7 @@
                         <h4 class="font-semibold text-gray-800 text-sm">{{ u.username }}</h4>
                         <p class="text-xs text-gray-500 truncate">
                             {% if u.first_name or u.last_name %}{{ u.first_name }} {{ u.last_name }} &middot; {% endif %}
-                            {{ u.email|default:"-" }}
+                            {% if u.email %}<a href="mailto:{{ u.email }}" class="hover:text-gray-600 transition-colors">{{ u.email }}</a>{% else %}-{% endif %}
                         </p>
                     </div>
                 </div>

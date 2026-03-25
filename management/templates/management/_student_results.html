@@ -66,7 +66,7 @@
                         </div>
                     </td>
                     <td class="px-6 py-4 text-gray-600">
-                        {{ student.email }}
+                        {% if student.email %}<a href="mailto:{{ student.email }}" class="hover:text-primary transition-colors">{{ student.email }}</a>{% endif %}
                     </td>
                     <td class="px-6 py-4 text-gray-600">
                         <a href="tel:{{ student.phone }}" class="hover:text-primary transition-colors">{{ student.phone }}</a>
@@ -144,7 +144,7 @@
             </div>
             <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500 pl-[68px] mb-2">
                 {% if student.phone %}<span><i class="fas fa-phone mr-1 text-gray-400"></i><a href="tel:{{ student.phone }}" class="hover:text-primary transition-colors">{{ student.phone }}</a></span>{% endif %}
-                {% if student.email %}<span class="truncate"><i class="fas fa-envelope mr-1 text-gray-400"></i>{{ student.email }}</span>{% endif %}
+                {% if student.email %}<span class="truncate"><i class="fas fa-envelope mr-1 text-gray-400"></i><a href="mailto:{{ student.email }}" class="hover:text-gray-600 transition-colors">{{ student.email }}</a></span>{% endif %}
             </div>
             {% if student.batches.all %}
             <div class="flex flex-wrap gap-1 pl-[68px] mb-2">

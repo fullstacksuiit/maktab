@@ -80,7 +80,7 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Email</p>
-                                <p class="text-sm font-semibold text-gray-800 truncate">{% if student.email %}{{ student.email }}{% else %}<span class="text-gray-300 font-normal">Not provided</span>{% endif %}</p>
+                                <p class="text-sm font-semibold text-gray-800 truncate">{% if student.email %}<a href="mailto:{{ student.email }}" class="hover:text-primary transition-colors">{{ student.email }}</a>{% else %}<span class="text-gray-300 font-normal">Not provided</span>{% endif %}</p>
                             </div>
                         </div>
 

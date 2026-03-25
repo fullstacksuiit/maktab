@@ -35,7 +35,7 @@
                         </div>
                     </td>
                     <td class="px-6 py-4 text-gray-600"><a href="tel:{{ app.phone }}" class="hover:text-primary transition-colors">{{ app.phone }}</a></td>
-                    <td class="px-6 py-4 text-gray-600 hidden md:table-cell">{{ app.email|default:"-" }}</td>
+                    <td class="px-6 py-4 text-gray-600 hidden md:table-cell">{% if app.email %}<a href="mailto:{{ app.email }}" class="hover:text-primary transition-colors">{{ app.email }}</a>{% else %}-{% endif %}</td>
                     <td class="px-6 py-4 text-gray-600">{{ app.get_gender_display }}</td>
                     <td class="px-6 py-4">
                         {% if app.status == 'pending' %}
@@ -81,7 +81,7 @@
                 {% endif %}
             </div>
             <div class="flex items-center gap-3 text-xs text-gray-400 pl-[52px]">
-                {% if app.email %}<span class="truncate"><i class="fas fa-envelope mr-1"></i>{{ app.email }}</span>{% endif %}
+                {% if app.email %}<span class="truncate"><i class="fas fa-envelope mr-1"></i><a href="mailto:{{ app.email }}" class="hover:text-gray-600 transition-colors">{{ app.email }}</a></span>{% endif %}
                 <span><i class="fas fa-calendar mr-1"></i>{{ app.created_at|date:"d M Y" }}</span>
             </div>
         </a>

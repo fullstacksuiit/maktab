@@ -70,7 +70,7 @@
                         </div>
                     </td>
                     <td class="px-6 py-4 text-gray-600">
-                        {{ staff.email }}
+                        <a href="mailto:{{ staff.email }}" class="hover:text-primary transition-colors">{{ staff.email }}</a>
                     </td>
                     <td class="px-6 py-4">
                         {% if staff.staff_role == 'Teacher' %}
@@ -132,7 +132,7 @@
                 {% endif %}
             </div>
             <div class="flex items-center justify-between pl-[52px]">
-                <span class="text-xs text-gray-400 truncate"><i class="fas fa-envelope mr-1"></i>{{ staff.email }}</span>
+                <span class="text-xs text-gray-400 truncate"><i class="fas fa-envelope mr-1"></i><a href="mailto:{{ staff.email }}" class="hover:text-gray-600 transition-colors">{{ staff.email }}</a></span>
                 <div class="flex items-center gap-1 shrink-0">
                     <a href="{% url 'staff_detail' staff.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="View"><i class="fas fa-eye"></i></a>
                     <a href="{% url 'staff_edit' staff.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
