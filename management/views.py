@@ -1319,7 +1319,7 @@ def student_detail(request, uuid):
         paid_count = sum(1 for m in months if m['status'] == 'paid')
 
         # Apply student discount to monthly fee
-        base_fee = batch.course.fees or 0
+        base_fee = student.monthly_fee if student.monthly_fee is not None else (batch.course.fees or 0)
         if student.is_orphan:
             monthly_fee = 0
         elif student.discount_amount > 0:
@@ -2446,7 +2446,7 @@ def api_student_batches(request):
         batches.append({
             'id': batch.pk,
             'label': f"{batch.batch_code} - {batch.batch_name} ({batch.course.course_name})",
-            'fee': str(batch.course.fees),
+            'fee': str(student.monthly_fee if student.monthly_fee is not None else batch.course.fees),
             'fee_period': batch.course.fee_period,
             'course_name': f"{batch.course.course_code} - {batch.course.course_name}",
         })
@@ -3098,7 +3098,7 @@ def parent_pay_upi(request):
                 'student': student,
                 'batch': batch,
                 'course': batch.course,
-                'fees': batch.course.fees,
+                'fees': student.monthly_fee if student.monthly_fee is not None else batch.course.fees,
                 'fee_period': batch.course.get_fee_period_display(),
             })
 
@@ -3141,7 +3141,7 @@ def parent_pay_upi(request):
                 messages.error(request, 'Student is not enrolled in this batch.')
                 return redirect('parent_pay_upi')
 
-            per_month_fee = selected_batch.course.fees
+            per_month_fee = selected_student.monthly_fee if selected_student.monthly_fee is not None else selected_batch.course.fees
             num_months = len(months)
             total_amount = per_month_fee * num_months
 
