@@ -1021,7 +1021,7 @@ def student_export_excel(request):
             fee_amount = ''
         # Get last paid month
         last_payment = student.fee_payments.filter(status='Approved').order_by('-fee_month_to').first()
-        last_paid = last_payment.fee_month_to.strftime('%B').lower() if last_payment and last_payment.fee_month_to else ''
+        last_paid = last_payment.fee_month_to.strftime('%B %Y').lower() if last_payment and last_payment.fee_month_to else ''
         row_data = [
             student.student_id,
             student.full_name,
@@ -1123,7 +1123,7 @@ def student_import_excel(request):
                     email = str(row[10] or '').strip()
                     batches_raw = str(row[11] or '').strip()
                     fee_raw = row[12] if len(row) > 12 else None
-                    # Column 13 (Last Paid) is export-only, skip it
+                    last_paid_raw = row[13] if len(row) > 13 else None
 
                     # Parse monthly fee
                     monthly_fee = None
@@ -1132,6 +1132,20 @@ def student_import_excel(request):
                             monthly_fee = float(fee_raw)
                         except (ValueError, TypeError):
                             monthly_fee = None
+
+                    # Parse last paid month
+                    last_paid_month = None
+                    if last_paid_raw is not None and str(last_paid_raw).strip():
+                        lp_str = str(last_paid_raw).strip()
+                        for fmt in ('%B %Y', '%b %Y', '%B', '%b'):
+                            try:
+                                parsed = datetime.strptime(lp_str, fmt)
+                                if '%Y' not in fmt:
+                                    parsed = parsed.replace(year=date.today().year)
+                                last_paid_month = parsed.date().replace(day=1)
+                                break
+                            except ValueError:
+                                continue
 
                     if not full_name:
                         errors.append(f'Row {row_idx}: Full Name is required.')
@@ -1207,6 +1221,26 @@ def student_import_excel(request):
                             else:
                                 errors.append(f'Row {row_idx}: Batch "{batches_raw}" not found, batches unchanged.')
 
+                        # Create fee payments from enrollment to last_paid_month
+                        if last_paid_month:
+                            enrollment_start = (student.enrollment_date or date.today()).replace(day=1)
+                            if last_paid_month >= enrollment_start:
+                                for batch in student.batches.select_related('course').all():
+                                    if not FeePayment.objects.filter(student=student, batch=batch, status='Approved', organization=org).exists():
+                                        fee = float(student.monthly_fee if student.monthly_fee is not None else batch.course.fees or 0)
+                                        months_count = (last_paid_month.year - enrollment_start.year) * 12 + (last_paid_month.month - enrollment_start.month) + 1
+                                        FeePayment.objects.create(
+                                            student=student, batch=batch,
+                                            amount=fee * months_count,
+                                            fee_month_from=enrollment_start,
+                                            fee_month_to=last_paid_month,
+                                            payment_date=date.today(),
+                                            payment_method='Cash',
+                                            status='Approved',
+                                            notes='Imported from Excel',
+                                            organization=org,
+                                        )
+
                         updated_count += 1
                     else:
                         student = Student(
@@ -1232,6 +1266,25 @@ def student_import_excel(request):
                                 batch_key = batch_entry.strip().lower()
                                 if batch_key in batch_lookup:
                                     student.batches.add(batch_lookup[batch_key])
+
+                        # Create fee payments from enrollment to last_paid_month
+                        if last_paid_month:
+                            enrollment_start = (student.enrollment_date or date.today()).replace(day=1)
+                            if last_paid_month >= enrollment_start:
+                                for batch in student.batches.select_related('course').all():
+                                    fee = float(student.monthly_fee if student.monthly_fee is not None else batch.course.fees or 0)
+                                    months_count = (last_paid_month.year - enrollment_start.year) * 12 + (last_paid_month.month - enrollment_start.month) + 1
+                                    FeePayment.objects.create(
+                                        student=student, batch=batch,
+                                        amount=fee * months_count,
+                                        fee_month_from=enrollment_start,
+                                        fee_month_to=last_paid_month,
+                                        payment_date=date.today(),
+                                        payment_method='Cash',
+                                        status='Approved',
+                                        notes='Imported from Excel',
+                                        organization=org,
+                                    )
 
                         created_count += 1
 
