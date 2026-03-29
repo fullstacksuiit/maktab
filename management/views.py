@@ -986,7 +986,7 @@ def student_export_excel(request):
     headers = [
         'Student ID', 'Full Name', 'Guardian Name', 'Contact 1', 'Contact 2',
         'Address', 'City', 'Enrollment Date', 'Date of Birth', 'Gender',
-        'Email', 'Batch', 'fee', 'Last Paid',
+        'Email', 'Batch', 'Discount', 'Last Paid',
     ]
 
     # Style header row
@@ -1011,14 +1011,7 @@ def student_export_excel(request):
         batches_str = ', '.join(
             b.batch_code for b in student.batches.all() if b.batch_code
         )
-        # Get fee: use student's custom monthly_fee, fallback to first batch's course fee
-        first_batch = student.batches.first()
-        if student.monthly_fee is not None:
-            fee_amount = float(student.monthly_fee)
-        elif first_batch:
-            fee_amount = float(first_batch.course.fees)
-        else:
-            fee_amount = ''
+        discount = float(student.discount_value) if student.discount_value else ''
         # Get last paid month
         last_payment = student.fee_payments.filter(status='Approved').order_by('-fee_month_to').first()
         last_paid = last_payment.fee_month_to.strftime('%B %Y').lower() if last_payment and last_payment.fee_month_to else ''
@@ -1035,7 +1028,7 @@ def student_export_excel(request):
             student.gender,
             student.email,
             batches_str,
-            fee_amount,
+            discount,
             last_paid,
         ]
         for col_num, value in enumerate(row_data, 1):
@@ -1122,16 +1115,16 @@ def student_import_excel(request):
                     gender_raw = str(row[9] or '').strip().lower()
                     email = str(row[10] or '').strip()
                     batches_raw = str(row[11] or '').strip()
-                    fee_raw = row[12] if len(row) > 12 else None
+                    discount_raw = row[12] if len(row) > 12 else None
                     last_paid_raw = row[13] if len(row) > 13 else None
 
-                    # Parse monthly fee
-                    monthly_fee = None
-                    if fee_raw is not None and str(fee_raw).strip():
+                    # Parse discount (fixed amount)
+                    discount_value = 0
+                    if discount_raw is not None and str(discount_raw).strip():
                         try:
-                            monthly_fee = float(fee_raw)
+                            discount_value = float(discount_raw)
                         except (ValueError, TypeError):
-                            monthly_fee = None
+                            discount_value = 0
 
                     # Parse last paid month
                     last_paid_month = None
@@ -1204,8 +1197,9 @@ def student_import_excel(request):
                         existing.date_of_birth = dob
                         existing.gender = gender
                         existing.enrollment_date = enrollment_date
-                        if monthly_fee is not None:
-                            existing.monthly_fee = monthly_fee
+                        if discount_value > 0:
+                            existing.discount_type = 'fixed'
+                            existing.discount_value = discount_value
                         existing.save()
                         student = existing
 
@@ -1227,7 +1221,7 @@ def student_import_excel(request):
                             if last_paid_month >= enrollment_start:
                                 for batch in student.batches.select_related('course').all():
                                     if not FeePayment.objects.filter(student=student, batch=batch, status='Approved', organization=org).exists():
-                                        fee = float(student.monthly_fee if student.monthly_fee is not None else batch.course.fees or 0)
+                                        fee = float(batch.course.fees or 0)
                                         months_count = (last_paid_month.year - enrollment_start.year) * 12 + (last_paid_month.month - enrollment_start.month) + 1
                                         FeePayment.objects.create(
                                             student=student, batch=batch,
@@ -1255,7 +1249,8 @@ def student_import_excel(request):
                             date_of_birth=dob,
                             gender=gender,
                             enrollment_date=enrollment_date,
-                            monthly_fee=monthly_fee,
+                            discount_type='fixed' if discount_value > 0 else '',
+                            discount_value=discount_value,
                             organization=org,
                         )
                         student.save()
@@ -1272,7 +1267,7 @@ def student_import_excel(request):
                             enrollment_start = (student.enrollment_date or date.today()).replace(day=1)
                             if last_paid_month >= enrollment_start:
                                 for batch in student.batches.select_related('course').all():
-                                    fee = float(student.monthly_fee if student.monthly_fee is not None else batch.course.fees or 0)
+                                    fee = float(batch.course.fees or 0)
                                     months_count = (last_paid_month.year - enrollment_start.year) * 12 + (last_paid_month.month - enrollment_start.month) + 1
                                     FeePayment.objects.create(
                                         student=student, batch=batch,
@@ -1330,7 +1325,7 @@ def student_detail(request, uuid):
         student=student, organization=org
     ).select_related('noted_by')
 
-    total_fees = student.get_total_fees()
+    total_fees = student.get_effective_fee()
     total_paid = student.get_total_paid()
 
     # Build month-wise dues status per batch
@@ -1372,13 +1367,14 @@ def student_detail(request, uuid):
         paid_count = sum(1 for m in months if m['status'] == 'paid')
 
         # Apply student discount to monthly fee
-        base_fee = student.monthly_fee if student.monthly_fee is not None else (batch.course.fees or 0)
+        base_fee = batch.course.fees or 0
         if student.is_orphan:
             monthly_fee = 0
-        elif student.discount_amount > 0:
-            monthly_fee = max(base_fee - student.discount_amount, 0)
-        elif student.guardian_discount > 0:
-            monthly_fee = base_fee - (base_fee * student.guardian_discount / 100)
+        elif student.discount_value and student.discount_value > 0:
+            if student.discount_type == 'percentage':
+                monthly_fee = base_fee - (base_fee * student.discount_value / 100)
+            else:
+                monthly_fee = max(base_fee - student.discount_value, 0)
         else:
             monthly_fee = base_fee
 
@@ -1422,7 +1418,7 @@ def student_fee_history(request, uuid):
     student = get_object_or_404(Student.objects.prefetch_related('batches__course'), uuid=uuid, organization=org)
     payments = FeePayment.objects.filter(student=student, organization=org).select_related('batch__course')
 
-    total_fees = student.get_total_fees()
+    total_fees = student.get_effective_fee()
     total_paid = student.get_total_paid()
 
     context = {
@@ -2395,7 +2391,7 @@ def print_receipt(request, pk):
     org = get_org(request)
     payment = get_object_or_404(FeePayment.objects.select_related('student', 'batch__course'), pk=pk, organization=org)
     student = payment.student
-    total_fees = student.get_total_fees()
+    total_fees = student.get_effective_fee()
     total_paid = student.get_total_paid()
     pending_fees = student.get_pending_fees()
 
@@ -2488,26 +2484,26 @@ def api_student_batches(request):
     org = get_org(request)
     student_id = request.GET.get('student_id', '')
     if not student_id:
-        return JsonResponse({'batches': [], 'guardian_discount': 0})
+        return JsonResponse({'batches': [], 'discount_type': '', 'discount_value': '0'})
     try:
         student = Student.objects.get(pk=student_id, organization=org)
     except Student.DoesNotExist:
-        return JsonResponse({'batches': [], 'guardian_discount': 0})
+        return JsonResponse({'batches': [], 'discount_type': '', 'discount_value': '0'})
 
     batches = []
     for batch in student.batches.filter(is_active=True).select_related('course'):
         batches.append({
             'id': batch.pk,
             'label': f"{batch.batch_code} - {batch.batch_name} ({batch.course.course_name})",
-            'fee': str(student.monthly_fee if student.monthly_fee is not None else batch.course.fees),
+            'fee': str(batch.course.fees),
             'fee_period': batch.course.fee_period,
             'course_name': f"{batch.course.course_code} - {batch.course.course_name}",
         })
 
     return JsonResponse({
         'batches': batches,
-        'guardian_discount': str(student.guardian_discount) if student.guardian_discount > 0 else '0',
-        'discount_amount': str(student.discount_amount) if student.discount_amount > 0 else '0',
+        'discount_type': student.discount_type or '',
+        'discount_value': str(student.discount_value) if student.discount_value > 0 else '0',
     })
 
 
@@ -3151,7 +3147,7 @@ def parent_pay_upi(request):
                 'student': student,
                 'batch': batch,
                 'course': batch.course,
-                'fees': student.monthly_fee if student.monthly_fee is not None else batch.course.fees,
+                'fees': batch.course.fees,
                 'fee_period': batch.course.get_fee_period_display(),
             })
 
@@ -3194,7 +3190,7 @@ def parent_pay_upi(request):
                 messages.error(request, 'Student is not enrolled in this batch.')
                 return redirect('parent_pay_upi')
 
-            per_month_fee = selected_student.monthly_fee if selected_student.monthly_fee is not None else selected_batch.course.fees
+            per_month_fee = selected_batch.course.fees
             num_months = len(months)
             total_amount = per_month_fee * num_months
 
