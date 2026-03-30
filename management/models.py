@@ -301,10 +301,13 @@ class Student(models.Model):
     is_orphan = models.BooleanField(default=False, verbose_name="Orphan")
     guardian_name = models.CharField(max_length=100, blank=True, default='', verbose_name="Guardian Name")
     guardian_phone = models.CharField(max_length=20, blank=True, default='', verbose_name="Guardian Phone")
-    guardian_discount = models.DecimalField(max_digits=5, decimal_places=2, default=0, verbose_name="Discount (%)")
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Discount Amount (Fixed)")
+    DISCOUNT_TYPE_CHOICES = [
+        ('percentage', 'Percentage'),
+        ('fixed', 'Fixed Amount'),
+    ]
+    discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES, default='fixed', blank=True, verbose_name="Discount Type")
+    discount_value = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Discount Value")
     opening_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Opening Balance", help_text="Previous pending dues carried forward")
-    monthly_fee = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Monthly Fee", help_text="Custom fee for this student. If blank, uses course fee.")
     batches = models.ManyToManyField('Batch', related_name='students', verbose_name="Enrolled Batches", blank=True)
     enrollment_date = models.DateField(verbose_name="Enrollment Date")
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='students')
@@ -364,17 +367,16 @@ class Student(models.Model):
         else:
             super().save(*args, **kwargs)
 
-    def get_total_fees(self):
+    def get_effective_fee(self):
         if self.is_orphan:
             return 0
         total = self.batches.aggregate(total=Sum('course__fees'))['total'] or 0
-        # Fixed discount amount takes priority over percentage
-        if self.discount_amount > 0:
-            total = max(total - self.discount_amount, 0)
-        elif self.guardian_discount > 0:
-            discount = total * self.guardian_discount / 100
-            total = total - discount
-        return total
+        if self.discount_value and self.discount_value > 0:
+            if self.discount_type == 'percentage':
+                total -= total * self.discount_value / 100
+            else:
+                total -= self.discount_value
+        return max(total, 0)
 
     def get_enrolled_batches_list(self):
         if self.batches.exists():
@@ -386,7 +388,7 @@ class Student(models.Model):
         return total or 0
 
     def get_pending_fees(self):
-        return self.get_total_fees() + self.opening_balance - self.get_total_paid()
+        return self.get_effective_fee() + self.opening_balance - self.get_total_paid()
 
     def get_attendance_percentage(self):
         result = self.attendances.aggregate(

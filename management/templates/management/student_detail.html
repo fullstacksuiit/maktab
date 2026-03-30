@@ -145,10 +145,12 @@
                                 {% if student.guardian_phone %}
                                     <p class="text-xs text-gray-500"><i class="fas fa-phone text-[10px] mr-1"></i><a href="tel:{{ student.guardian_phone }}" class="hover:text-primary transition-colors">{{ student.guardian_phone }}</a></p>
                                 {% endif %}
-                                {% if student.discount_amount > 0 %}
-                                    <p class="text-xs text-green-600"><i class="fas fa-tag text-[10px] mr-1"></i>{{ currency_symbol }} {{ student.discount_amount }} fixed discount</p>
-                                {% elif student.guardian_discount > 0 %}
-                                    <p class="text-xs text-green-600"><i class="fas fa-percentage text-[10px] mr-1"></i>{{ student.guardian_discount }}% fee discount</p>
+                                {% if student.discount_value > 0 %}
+                                    {% if student.discount_type == 'percentage' %}
+                                        <p class="text-xs text-green-600"><i class="fas fa-percentage text-[10px] mr-1"></i>{{ student.discount_value }}% fee discount</p>
+                                    {% else %}
+                                        <p class="text-xs text-green-600"><i class="fas fa-tag text-[10px] mr-1"></i>{{ currency_symbol }} {{ student.discount_value }} fixed discount</p>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </div>
@@ -360,7 +362,7 @@
                                 <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center mx-auto mb-1.5 sm:mb-2 text-sm shadow-md group-hover:scale-110 transition-transform">
                                     <i class="fas fa-file-invoice-dollar"></i>
                                 </div>
-                                <h3 class="text-lg sm:text-2xl font-bold text-primary">{{ currency_symbol }} {{ student.get_total_fees }}</h3>
+                                <h3 class="text-lg sm:text-2xl font-bold text-primary">{{ currency_symbol }} {{ student.get_effective_fee }}</h3>
                                 <p class="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">Total Fees</p>
                             </div>
                             <div class="bg-green-50 p-3 sm:p-4 rounded-xl border border-green-100 text-center hover:shadow-md hover:shadow-green-500/10 transition-all duration-300 group">

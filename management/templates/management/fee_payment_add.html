@@ -183,8 +183,8 @@
     var perMonthFeeEl = document.getElementById('perMonthFee');
     var calcTotalEl = document.getElementById('calcTotal');
 
-    var guardianDiscount = 0;
-    var fixedDiscount = 0;
+    var discountType = '';
+    var discountValue = 0;
     var MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
     // ─── Student → Batch auto-fetch ─────────────────────────────────────
@@ -195,8 +195,8 @@
         fetch('{% url "api_student_batches" %}?student_id=' + studentId)
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                guardianDiscount = parseFloat(data.guardian_discount) || 0;
-                fixedDiscount = parseFloat(data.discount_amount) || 0;
+                discountType = data.discount_type || '';
+                discountValue = parseFloat(data.discount_value) || 0;
 
                 // Get TomSelect instance on batch field (if any)
                 var batchTS = batchEl && batchEl.tomselect;
@@ -281,14 +281,15 @@
         var discountAmt = 0;
         var discountLabel = '';
         var fee = baseFee;
-        if (fixedDiscount > 0) {
-            fee = Math.max(baseFee - fixedDiscount, 0);
+        if (discountValue > 0) {
+            if (discountType === 'percentage') {
+                fee = baseFee - (baseFee * discountValue / 100);
+                discountLabel = 'Discount (' + discountValue + '%)';
+            } else {
+                fee = Math.max(baseFee - discountValue, 0);
+                discountLabel = 'Fixed discount (' + discountValue.toFixed(0) + '/month)';
+            }
             discountAmt = (baseFee - fee) * months.length;
-            discountLabel = 'Fixed discount (' + fixedDiscount.toFixed(0) + '/month)';
-        } else if (guardianDiscount > 0) {
-            fee = baseFee - (baseFee * guardianDiscount / 100);
-            discountAmt = (baseFee - fee) * months.length;
-            discountLabel = 'Discount (' + guardianDiscount + '%)';
         }
         var total = fee * months.length;
 

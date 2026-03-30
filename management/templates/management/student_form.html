@@ -273,28 +273,27 @@
                                 {% endif %}
                             </div>
                             <div>
-                                <label for="{{ form.guardian_discount.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
-                                    Fee Discount (%)
+                                <label for="{{ form.discount_type.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Discount Type
                                 </label>
-                                {{ form.guardian_discount }}
-                                {% if form.guardian_discount.errors %}
+                                {{ form.discount_type }}
+                                {% if form.discount_type.errors %}
                                     <div class="text-red-500 text-xs mt-1">
-                                        {% for error in form.guardian_discount.errors %}<p>{{ error }}</p>{% endfor %}
+                                        {% for error in form.discount_type.errors %}<p>{{ error }}</p>{% endfor %}
                                     </div>
                                 {% endif %}
-                                <p class="text-gray-400 text-xs mt-1">Percentage discount on total fees</p>
                             </div>
                             <div>
-                                <label for="{{ form.discount_amount.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
-                                    Fee Discount (Fixed Amount)
+                                <label for="{{ form.discount_value.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Discount Value
                                 </label>
-                                {{ form.discount_amount }}
-                                {% if form.discount_amount.errors %}
+                                {{ form.discount_value }}
+                                {% if form.discount_value.errors %}
                                     <div class="text-red-500 text-xs mt-1">
-                                        {% for error in form.discount_amount.errors %}<p>{{ error }}</p>{% endfor %}
+                                        {% for error in form.discount_value.errors %}<p>{{ error }}</p>{% endfor %}
                                     </div>
                                 {% endif %}
-                                <p class="text-gray-400 text-xs mt-1">Fixed amount deducted from total fees. If set, this overrides the % discount.</p>
+                                <p class="text-gray-400 text-xs mt-1">Enter percentage (e.g. 10) or fixed amount (e.g. 200) based on discount type</p>
                             </div>
                             <div>
                                 <label for="{{ form.opening_balance.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-2">
