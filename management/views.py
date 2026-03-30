@@ -1219,9 +1219,19 @@ def student_import_excel(request):
                         if last_paid_month:
                             enrollment_start = (student.enrollment_date or date.today()).replace(day=1)
                             if last_paid_month >= enrollment_start:
-                                for batch in student.batches.select_related('course').all():
+                                batches_qs = student.batches.select_related('course').all()
+                                num_batches = batches_qs.count()
+                                for batch in batches_qs:
                                     if not FeePayment.objects.filter(student=student, batch=batch, status='Approved', organization=org).exists():
                                         fee = float(batch.course.fees or 0)
+                                        if student.is_orphan:
+                                            fee = 0
+                                        elif student.discount_value and student.discount_value > 0 and num_batches > 0:
+                                            if student.discount_type == 'percentage':
+                                                fee -= fee * float(student.discount_value) / 100
+                                            else:
+                                                fee -= float(student.discount_value) / num_batches
+                                            fee = max(fee, 0)
                                         months_count = (last_paid_month.year - enrollment_start.year) * 12 + (last_paid_month.month - enrollment_start.month) + 1
                                         FeePayment.objects.create(
                                             student=student, batch=batch,
@@ -1266,8 +1276,18 @@ def student_import_excel(request):
                         if last_paid_month:
                             enrollment_start = (student.enrollment_date or date.today()).replace(day=1)
                             if last_paid_month >= enrollment_start:
-                                for batch in student.batches.select_related('course').all():
+                                batches_qs = student.batches.select_related('course').all()
+                                num_batches = batches_qs.count()
+                                for batch in batches_qs:
                                     fee = float(batch.course.fees or 0)
+                                    if student.is_orphan:
+                                        fee = 0
+                                    elif student.discount_value and student.discount_value > 0 and num_batches > 0:
+                                        if student.discount_type == 'percentage':
+                                            fee -= fee * float(student.discount_value) / 100
+                                        else:
+                                            fee -= float(student.discount_value) / num_batches
+                                        fee = max(fee, 0)
                                     months_count = (last_paid_month.year - enrollment_start.year) * 12 + (last_paid_month.month - enrollment_start.month) + 1
                                     FeePayment.objects.create(
                                         student=student, batch=batch,
