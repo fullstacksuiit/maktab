@@ -3571,6 +3571,11 @@ def staff_portal(request):
         staff=staff, organization=org, status__in=['processed', 'paid']
     ).order_by('-year', '-month').first()
 
+    # Teaching batches assigned to this staff member
+    teaching_batches = staff.teaching_batches.filter(
+        organization=org, is_active=True
+    ).select_related('course').prefetch_related('students')
+
     context = {
         'staff': staff,
         'is_punched_in': is_punched_in,
@@ -3581,6 +3586,7 @@ def staff_portal(request):
         'leave_balances': leave_balances,
         'pending_leaves': pending_leaves,
         'latest_payroll': latest_payroll,
+        'teaching_batches': teaching_batches,
         'today': today,
     }
     return render(request, 'management/staff_portal.html', context)
