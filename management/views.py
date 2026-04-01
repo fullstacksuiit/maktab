@@ -2553,7 +2553,7 @@ def settings_view(request):
 def user_list(request):
     """List all users in the organization."""
     org = get_org(request)
-    users = User.objects.filter(organization=org).order_by('-date_joined')
+    users = User.objects.filter(organization=org, is_active=True).order_by('-date_joined')
     return render(request, 'management/user_list.html', {'users': users})
 
 
@@ -2614,8 +2614,9 @@ def user_delete(request, pk):
         return redirect('user_list')
 
     username = user.username
-    user.delete()
-    messages.success(request, f'User "{username}" deleted successfully!')
+    user.is_active = False
+    user.save(update_fields=['is_active'])
+    messages.success(request, f'User "{username}" deactivated successfully!')
     return redirect('user_list')
 
 

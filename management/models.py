@@ -3,8 +3,55 @@ from django.db.models import Sum, Count, Q
 from django.contrib.auth.models import AbstractUser
 from django.db.utils import IntegrityError
 from django.utils.text import slugify
+from django.utils import timezone
 import uuid
 import time
+
+
+# ---------------------------------------------------------------------------
+# Soft Delete infrastructure
+# ---------------------------------------------------------------------------
+
+class SoftDeleteQuerySet(models.QuerySet):
+    def delete(self):
+        return self.update(is_deleted=True, deleted_at=timezone.now())
+
+    def hard_delete(self):
+        return super().delete()
+
+
+class SoftDeleteManager(models.Manager):
+    def get_queryset(self):
+        return SoftDeleteQuerySet(self.model, using=self._db).filter(is_deleted=False)
+
+
+class AllObjectsManager(models.Manager):
+    def get_queryset(self):
+        return SoftDeleteQuerySet(self.model, using=self._db)
+
+
+class SoftDeleteModel(models.Model):
+    is_deleted = models.BooleanField(default=False, db_index=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    objects = SoftDeleteManager()
+    all_objects = AllObjectsManager()
+
+    class Meta:
+        abstract = True
+
+    def delete(self, using=None, keep_parents=False):
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save(update_fields=['is_deleted', 'deleted_at'])
+
+    def hard_delete(self, using=None, keep_parents=False):
+        super().delete(using=using, keep_parents=keep_parents)
+
+    def restore(self):
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save(update_fields=['is_deleted', 'deleted_at'])
 
 
 class Organization(models.Model):
@@ -136,7 +183,7 @@ class User(AbstractUser):
         return self.role in ['admin', 'manager']
 
 
-class Course(models.Model):
+class Course(SoftDeleteModel):
     FEE_PERIOD_CHOICES = [
         ('monthly', 'Monthly'),
         ('quarterly', 'Quarterly'),
@@ -167,7 +214,7 @@ class Course(models.Model):
             models.Index(fields=['fee_period']),
         ]
         constraints = [
-            models.UniqueConstraint(fields=['organization', 'course_code'], name='unique_course_code_per_org'),
+            models.UniqueConstraint(fields=['organization', 'course_code'], name='unique_course_code_per_org', condition=Q(is_deleted=False)),
         ]
 
     @property
@@ -184,7 +231,7 @@ class Course(models.Model):
         if not self.course_code:
             for attempt in range(5):
                 with transaction.atomic():
-                    last_course = Course.objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
+                    last_course = Course.all_objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
                     if last_course and last_course.course_code.startswith('CRS'):
                         try:
                             last_number = int(last_course.course_code[3:])
@@ -206,7 +253,7 @@ class Course(models.Model):
             super().save(*args, **kwargs)
 
 
-class Batch(models.Model):
+class Batch(SoftDeleteModel):
     DAYS_CHOICES = [
         ('weekdays', 'Weekdays (Mon-Fri)'),
         ('weekend', 'Weekend (Sat-Sun)'),
@@ -238,7 +285,7 @@ class Batch(models.Model):
             models.Index(fields=['is_active']),
         ]
         constraints = [
-            models.UniqueConstraint(fields=['organization', 'batch_code'], name='unique_batch_code_per_org'),
+            models.UniqueConstraint(fields=['organization', 'batch_code'], name='unique_batch_code_per_org', condition=Q(is_deleted=False)),
         ]
 
     def __str__(self):
@@ -248,7 +295,7 @@ class Batch(models.Model):
         if not self.batch_code:
             for attempt in range(5):
                 with transaction.atomic():
-                    last_batch = Batch.objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
+                    last_batch = Batch.all_objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
                     if last_batch and last_batch.batch_code.startswith('BTH'):
                         try:
                             last_number = int(last_batch.batch_code[3:])
@@ -279,7 +326,7 @@ class Batch(models.Model):
         return f"{self.get_days_display()} {time_str}".strip()
 
 
-class Student(models.Model):
+class Student(SoftDeleteModel):
     GENDER_CHOICES = [
         ('M', 'Male'),
         ('F', 'Female'),
@@ -325,7 +372,7 @@ class Student(models.Model):
             models.Index(fields=['organization', 'phone']),
         ]
         constraints = [
-            models.UniqueConstraint(fields=['organization', 'student_id'], name='unique_student_id_per_org'),
+            models.UniqueConstraint(fields=['organization', 'student_id'], name='unique_student_id_per_org', condition=Q(is_deleted=False)),
         ]
 
     @property
@@ -346,7 +393,7 @@ class Student(models.Model):
         if not self.student_id:
             for attempt in range(5):
                 with transaction.atomic():
-                    last_student = Student.objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
+                    last_student = Student.all_objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
                     if last_student and last_student.student_id.startswith('STU'):
                         try:
                             last_number = int(last_student.student_id[3:])
@@ -399,8 +446,26 @@ class Student(models.Model):
             return 0
         return round((result['present'] / result['total']) * 100, 1)
 
+    def delete(self, using=None, keep_parents=False):
+        phone = self.phone
+        org = self.organization
+        super().delete(using=using, keep_parents=keep_parents)
+        # Parent account cleanup (replaces post_delete signal for soft deletes)
+        if phone:
+            from .utils import normalize_phone
+            normalized = normalize_phone(phone)
+            if normalized:
+                remaining = Student.objects.filter(
+                    organization=org, phone=phone,
+                ).exists()
+                if not remaining:
+                    uname = f'{normalized}_{org.id}'
+                    User.objects.filter(
+                        username=uname, role='parent', organization=org,
+                    ).update(is_active=False)
 
-class Staff(models.Model):
+
+class Staff(SoftDeleteModel):
     GENDER_CHOICES = [
         ('M', 'Male'),
         ('F', 'Female'),
@@ -445,7 +510,7 @@ class Staff(models.Model):
             models.Index(fields=['department']),
         ]
         constraints = [
-            models.UniqueConstraint(fields=['organization', 'staff_id'], name='unique_staff_id_per_org'),
+            models.UniqueConstraint(fields=['organization', 'staff_id'], name='unique_staff_id_per_org', condition=Q(is_deleted=False)),
         ]
 
     @property
@@ -474,7 +539,7 @@ class Staff(models.Model):
         if not self.staff_id:
             for attempt in range(5):
                 with transaction.atomic():
-                    last_staff = Staff.objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
+                    last_staff = Staff.all_objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
                     if last_staff and last_staff.staff_id.startswith('STF'):
                         try:
                             last_number = int(last_staff.staff_id[3:])
@@ -525,7 +590,7 @@ class Attendance(models.Model):
         return f"{self.student} - {self.batch} - {self.date} - {self.status}"
 
 
-class BehaviorNote(models.Model):
+class BehaviorNote(SoftDeleteModel):
     CATEGORY_CHOICES = [
         ('Homework', 'Homework'),
         ('Discipline', 'Discipline'),
@@ -592,7 +657,7 @@ class StaffAttendance(models.Model):
         return f"{self.staff} - {self.date} - {self.status}"
 
 
-class FeePayment(models.Model):
+class FeePayment(SoftDeleteModel):
     PAYMENT_METHOD_CHOICES = [
         ('Cash', 'Cash'),
         ('Bank Transfer', 'Bank Transfer'),
@@ -631,7 +696,7 @@ class FeePayment(models.Model):
             models.Index(fields=['student', 'status']),
         ]
         constraints = [
-            models.UniqueConstraint(fields=['organization', 'receipt_number'], name='unique_receipt_number_per_org'),
+            models.UniqueConstraint(fields=['organization', 'receipt_number'], name='unique_receipt_number_per_org', condition=Q(is_deleted=False)),
         ]
 
     @property
@@ -671,7 +736,7 @@ class FeePayment(models.Model):
         if not self.receipt_number:
             for attempt in range(5):
                 with transaction.atomic():
-                    last_payment = FeePayment.objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
+                    last_payment = FeePayment.all_objects.filter(organization=self.organization).select_for_update().order_by('-id').first()
                     if last_payment and last_payment.receipt_number.startswith('RCP'):
                         try:
                             last_number = int(last_payment.receipt_number[3:])
@@ -748,7 +813,7 @@ class AdmissionApplication(models.Model):
         return f"{self.first_name} {self.last_name} ({self.get_status_display()})"
 
 
-class Event(models.Model):
+class Event(SoftDeleteModel):
     EVENT_TYPE_CHOICES = [
         ('holiday', 'Holiday'),
         ('exam', 'Exam'),
@@ -809,7 +874,7 @@ class Event(models.Model):
             raise ValidationError({'end_date': 'End date cannot be before start date.'})
 
 
-class LeaveType(models.Model):
+class LeaveType(SoftDeleteModel):
     PERIOD_CHOICES = [
         ('monthly', 'Monthly'),
         ('yearly', 'Yearly'),
@@ -831,7 +896,7 @@ class LeaveType(models.Model):
     class Meta:
         ordering = ['name']
         constraints = [
-            models.UniqueConstraint(fields=['organization', 'code'], name='unique_leave_type_code_per_org'),
+            models.UniqueConstraint(fields=['organization', 'code'], name='unique_leave_type_code_per_org', condition=Q(is_deleted=False)),
         ]
 
     @property
@@ -962,7 +1027,7 @@ class PunchRecord(models.Model):
         return f"{self.staff} - {self.get_punch_type_display()} at {self.timestamp}"
 
 
-class SalaryComponent(models.Model):
+class SalaryComponent(SoftDeleteModel):
     COMPONENT_TYPE_CHOICES = [
         ('earning', 'Earning / Allowance'),
         ('deduction', 'Deduction'),
@@ -981,7 +1046,7 @@ class SalaryComponent(models.Model):
     class Meta:
         ordering = ['component_type', 'name']
         constraints = [
-            models.UniqueConstraint(fields=['organization', 'code'], name='unique_salary_component_code_per_org'),
+            models.UniqueConstraint(fields=['organization', 'code'], name='unique_salary_component_code_per_org', condition=Q(is_deleted=False)),
         ]
 
     def __str__(self):
@@ -1115,7 +1180,7 @@ def create_default_salary_components(organization):
         )
 
 
-class Expense(models.Model):
+class Expense(SoftDeleteModel):
     CATEGORY_CHOICES = [
         ('rent', 'Rent'),
         ('utilities', 'Utilities'),
