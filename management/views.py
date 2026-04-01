@@ -697,8 +697,14 @@ DAYS_MAP = {
     'mwf': [0, 2, 4],
     'tts': [1, 3, 5],
     'daily': [0, 1, 2, 3, 4, 5, 6],
-    'custom': [0, 1, 2, 3, 4, 5, 6],
 }
+
+
+def get_batch_days(batch):
+    """Return list of day indices for a batch, handling custom_days."""
+    if batch.days == 'custom' and batch.custom_days:
+        return batch.get_custom_days_indices()
+    return DAYS_MAP.get(batch.days, [])
 
 REVERSE_DAYS_MAP = {
     (0, 1, 2, 3, 4): 'weekdays',
@@ -731,7 +737,7 @@ def batch_timetable(request):
 
     batch_data = []
     for b in batches:
-        days = DAYS_MAP.get(b.days, [])
+        days = get_batch_days(b)
         teachers = ', '.join([f"{t.first_name} {t.last_name}".strip() for t in b.teachers.all()])
         batch_data.append({
             'id': b.pk,
@@ -789,7 +795,7 @@ def batch_schedule_update(request):
         return JsonResponse({'error': 'Start time must be before end time'}, status=400)
 
     # Determine the new days value
-    old_days_list = DAYS_MAP.get(batch.days, [])
+    old_days_list = get_batch_days(batch)
     if new_day in old_days_list:
         # Day hasn't changed, just update times
         new_days_list = old_days_list
@@ -804,6 +810,11 @@ def batch_schedule_update(request):
     batch.start_time = start_time
     batch.end_time = end_time
     batch.days = new_days_value
+    if new_days_value == 'custom':
+        INDEX_TO_CODE = {v: k for k, v in Batch.DAY_CODE_TO_INDEX.items()}
+        batch.custom_days = ','.join(INDEX_TO_CODE[i] for i in sorted(new_days_list))
+    else:
+        batch.custom_days = ''
     batch.save()
 
     return JsonResponse({
@@ -835,6 +846,16 @@ def student_list(request):
             Q(email__icontains=student_search) |
             Q(phone__icontains=student_search)
         )
+    # Filter by course
+    selected_course = request.GET.get('course', '') if active_tab == 'students' else ''
+    if selected_course:
+        students_qs = students_qs.filter(batches__course_id=selected_course).distinct()
+    # Filter by batch
+    selected_batch = request.GET.get('batch', '') if active_tab == 'students' else ''
+    if selected_batch:
+        students_qs = students_qs.filter(batches__pk=selected_batch).distinct()
+    # Courses for filter dropdown
+    courses = Course.objects.filter(organization=org)
     paginator = Paginator(students_qs, 20)
     students = paginator.get_page(request.GET.get('page') if active_tab == 'students' else 1)
 
@@ -863,6 +884,9 @@ def student_list(request):
         'active_tab': active_tab,
         'students': students,
         'search_query': student_search if active_tab == 'students' else app_search,
+        'courses': courses,
+        'selected_course': selected_course,
+        'selected_batch': selected_batch,
         'batches': batches,
         # Application context
         'applications': applications,
@@ -1697,8 +1721,9 @@ def attendance_mark(request):
         batch = get_object_or_404(Batch, pk=batch_id, organization=org)
 
         students = list(batch.students.filter(organization=org))
+        # Use all_objects to find both active and soft-deleted records
         existing = {
-            a.student_id: a for a in Attendance.objects.filter(
+            a.student_id: a for a in Attendance.all_objects.filter(
                 date=attendance_date, batch=batch, organization=org,
                 student__in=students
             )
@@ -1713,6 +1738,8 @@ def attendance_mark(request):
                 att.status = status
                 att.marked_by = request.user
                 att.notes = notes
+                att.is_deleted = False
+                att.deleted_at = None
                 to_update.append(att)
             else:
                 to_create.append(Attendance(
@@ -1723,7 +1750,7 @@ def attendance_mark(request):
             if to_create:
                 Attendance.objects.bulk_create(to_create)
             if to_update:
-                Attendance.objects.bulk_update(to_update, ['status', 'marked_by', 'notes'])
+                Attendance.objects.bulk_update(to_update, ['status', 'marked_by', 'notes', 'is_deleted', 'deleted_at'])
         marked_count = len(students)
 
         messages.success(request, f'Attendance marked for {marked_count} students!')
@@ -1823,16 +1850,21 @@ def toggle_attendance(request):
         batch = get_object_or_404(Batch, pk=batch_id, organization=org)
 
         if new_status in ['Present', 'Absent', 'Late', 'Excused']:
-            attendance, created = Attendance.objects.update_or_create(
-                date=attendance_date,
-                student=student,
-                batch=batch,
-                organization=org,
-                defaults={
-                    'status': new_status,
-                    'marked_by': request.user,
-                }
-            )
+            # Check all_objects first to restore soft-deleted records instead of creating duplicates
+            try:
+                attendance = Attendance.all_objects.get(
+                    date=attendance_date, student=student, batch=batch, organization=org
+                )
+                attendance.status = new_status
+                attendance.marked_by = request.user
+                attendance.is_deleted = False
+                attendance.deleted_at = None
+                attendance.save()
+            except Attendance.DoesNotExist:
+                attendance = Attendance.objects.create(
+                    date=attendance_date, student=student, batch=batch,
+                    organization=org, status=new_status, marked_by=request.user,
+                )
             return JsonResponse({
                 'success': True,
                 'status': new_status,
@@ -1870,7 +1902,7 @@ def mark_all_present(request):
         batch = get_object_or_404(Batch, pk=batch_id, organization=org)
         students = list(batch.students.filter(organization=org))
         existing = {
-            a.student_id: a for a in Attendance.objects.filter(
+            a.student_id: a for a in Attendance.all_objects.filter(
                 date=attendance_date, batch=batch, organization=org,
                 student__in=students
             )
@@ -1882,6 +1914,8 @@ def mark_all_present(request):
                 att = existing[student.pk]
                 att.status = 'Present'
                 att.marked_by = request.user
+                att.is_deleted = False
+                att.deleted_at = None
                 to_update.append(att)
             else:
                 to_create.append(Attendance(
@@ -1892,7 +1926,7 @@ def mark_all_present(request):
             if to_create:
                 Attendance.objects.bulk_create(to_create)
             if to_update:
-                Attendance.objects.bulk_update(to_update, ['status', 'marked_by'])
+                Attendance.objects.bulk_update(to_update, ['status', 'marked_by', 'is_deleted', 'deleted_at'])
         count = len(students)
 
         return JsonResponse({
@@ -1918,7 +1952,7 @@ def mark_all_absent(request):
         batch = get_object_or_404(Batch, pk=batch_id, organization=org)
         students = list(batch.students.filter(organization=org))
         existing = {
-            a.student_id: a for a in Attendance.objects.filter(
+            a.student_id: a for a in Attendance.all_objects.filter(
                 date=attendance_date, batch=batch, organization=org,
                 student__in=students
             )
@@ -1930,6 +1964,8 @@ def mark_all_absent(request):
                 att = existing[student.pk]
                 att.status = 'Absent'
                 att.marked_by = request.user
+                att.is_deleted = False
+                att.deleted_at = None
                 to_update.append(att)
             else:
                 to_create.append(Attendance(
@@ -1940,7 +1976,7 @@ def mark_all_absent(request):
             if to_create:
                 Attendance.objects.bulk_create(to_create)
             if to_update:
-                Attendance.objects.bulk_update(to_update, ['status', 'marked_by'])
+                Attendance.objects.bulk_update(to_update, ['status', 'marked_by', 'is_deleted', 'deleted_at'])
         count = len(students)
 
         return JsonResponse({
@@ -3043,11 +3079,14 @@ def parent_dashboard(request):
     # Extract phone from org-scoped username (format: phone_orgId)
     parent_phone = user.username.rsplit('_', 1)[0] if '_' in user.username else user.username
 
-    # First pass: find matching student IDs (phones stored raw, username contains normalized phone)
-    all_students = Student.objects.filter(organization=org).only('id', 'phone')
-    matched_ids = [s.id for s in all_students if normalize_phone(s.phone) == parent_phone]
+    # Narrow candidates at DB level using phone suffix, then exact-match in Python.
+    # This avoids loading all students in the org — typically returns 1-2 rows.
+    suffix = parent_phone[-5:] if len(parent_phone) >= 5 else parent_phone
+    candidates = Student.objects.filter(
+        organization=org, phone__contains=suffix
+    ).only('id', 'phone')
+    matched_ids = [s.id for s in candidates if normalize_phone(s.phone) == parent_phone]
 
-    # Second pass: load matched students with all related data in bulk
     matched_students = Student.objects.filter(
         id__in=matched_ids
     ).prefetch_related(
@@ -3668,6 +3707,47 @@ def staff_my_attendance(request):
         'years': list(range(today.year - 2, today.year + 1)),
     }
     return render(request, 'management/staff_my_attendance.html', context)
+
+
+@login_required(login_url='login')
+@staff_role_required
+def staff_my_students_attendance(request):
+    """Staff views attendance history for students in their teaching batches."""
+    staff = request.user.staff_profile
+    org = request.user.organization
+
+    teaching_batches = Batch.objects.filter(
+        organization=org, is_active=True, teachers=staff
+    ).select_related('course')
+
+    attendances = Attendance.objects.filter(
+        organization=org, batch__in=teaching_batches
+    ).select_related('student', 'batch__course', 'marked_by').order_by('-date', 'batch', 'student__full_name')
+
+    # Filters
+    batch_id = request.GET.get('batch')
+    filter_date = request.GET.get('date')
+    status = request.GET.get('status')
+
+    if batch_id:
+        attendances = attendances.filter(batch_id=batch_id)
+    if filter_date:
+        attendances = attendances.filter(date=filter_date)
+    if status:
+        attendances = attendances.filter(status=status)
+
+    paginator = Paginator(attendances, 50)
+    page_number = request.GET.get('page')
+    page = paginator.get_page(page_number)
+
+    context = {
+        'attendances': page,
+        'teaching_batches': teaching_batches,
+        'selected_batch': batch_id,
+        'selected_date': filter_date,
+        'selected_status': status,
+    }
+    return render(request, 'management/staff_my_students_attendance.html', context)
 
 
 @login_required(login_url='login')
@@ -4331,3 +4411,345 @@ def expense_delete(request, pk):
     expense.delete()
     messages.success(request, f'Expense "{title}" deleted.')
     return redirect('expense_list')
+
+
+# ─── Reports ────────────────────────────────────────────────────────────────
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def reports_dashboard(request):
+    return render(request, 'management/reports_dashboard.html')
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def attendance_report(request):
+    org = get_org(request)
+    today = date.today()
+
+    batch_id = request.GET.get('batch', '')
+    date_from = request.GET.get('from', '')
+    date_to = request.GET.get('to', '')
+
+    try:
+        start_date = datetime.strptime(date_from, '%Y-%m-%d').date() if date_from else today.replace(day=1)
+    except ValueError:
+        start_date = today.replace(day=1)
+    try:
+        end_date = datetime.strptime(date_to, '%Y-%m-%d').date() if date_to else today
+    except ValueError:
+        end_date = today
+
+    batches = Batch.objects.filter(organization=org, is_active=True).select_related('course').order_by('batch_name')
+    qs = Attendance.objects.filter(organization=org, date__gte=start_date, date__lte=end_date)
+
+    selected_batch = None
+    if batch_id:
+        try:
+            selected_batch = Batch.objects.get(pk=batch_id, organization=org)
+            qs = qs.filter(batch=selected_batch)
+        except Batch.DoesNotExist:
+            pass
+
+    # Summary stats
+    summary = qs.aggregate(
+        total=Count('id'),
+        present=Count('id', filter=Q(status='Present')),
+        absent=Count('id', filter=Q(status='Absent')),
+        late=Count('id', filter=Q(status='Late')),
+        excused=Count('id', filter=Q(status='Excused')),
+    )
+    total = summary['total'] or 1
+
+    # Per-student breakdown
+    student_stats = qs.values(
+        'student__student_id', 'student__full_name'
+    ).annotate(
+        total=Count('id'),
+        present=Count('id', filter=Q(status='Present')),
+        absent=Count('id', filter=Q(status='Absent')),
+        late=Count('id', filter=Q(status='Late')),
+    ).order_by('student__student_id')
+
+    for s in student_stats:
+        s['attendance_pct'] = round((s['present'] + s['late']) / s['total'] * 100, 1) if s['total'] else 0
+
+    # Per-batch breakdown (when no specific batch selected)
+    batch_stats = []
+    if not selected_batch:
+        batch_stats = qs.values(
+            'batch__batch_code', 'batch__batch_name', 'batch__course__course_name'
+        ).annotate(
+            total=Count('id'),
+            present=Count('id', filter=Q(status='Present')),
+            absent=Count('id', filter=Q(status='Absent')),
+            late=Count('id', filter=Q(status='Late')),
+        ).order_by('batch__batch_code')
+        for b in batch_stats:
+            b['attendance_pct'] = round((b['present'] + b['late']) / b['total'] * 100, 1) if b['total'] else 0
+
+    # Export to Excel
+    if request.GET.get('export') == 'excel':
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Attendance Report'
+
+        header_font = Font(name='Calibri', bold=True, color='FFFFFF', size=11)
+        header_fill = PatternFill(start_color='0D6B4E', end_color='0D6B4E', fill_type='solid')
+        thin_border = Border(
+            left=Side(style='thin', color='D1D5DB'), right=Side(style='thin', color='D1D5DB'),
+            top=Side(style='thin', color='D1D5DB'), bottom=Side(style='thin', color='D1D5DB'),
+        )
+
+        headers = ['Student ID', 'Student Name', 'Total Days', 'Present', 'Absent', 'Late', 'Attendance %']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            cell.border = thin_border
+
+        for row, s in enumerate(student_stats, 2):
+            row_data = [
+                s['student__student_id'], s['student__full_name'],
+                s['total'], s['present'], s['absent'], s['late'], s['attendance_pct'],
+            ]
+            for col, val in enumerate(row_data, 1):
+                cell = ws.cell(row=row, column=col, value=val)
+                cell.border = thin_border
+                cell.alignment = Alignment(vertical='center')
+
+        for col in ws.columns:
+            max_len = max((len(str(c.value or '')) for c in col), default=0)
+            ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 40)
+
+        batch_label = selected_batch.batch_code if selected_batch else 'all'
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.xml')
+        response['Content-Disposition'] = f'attachment; filename="attendance_{batch_label}_{start_date}_{end_date}.xlsx"'
+        wb.save(response)
+        return response
+
+    context = {
+        'batches': batches,
+        'selected_batch': selected_batch,
+        'date_from': start_date.strftime('%Y-%m-%d'),
+        'date_to': end_date.strftime('%Y-%m-%d'),
+        'summary': summary,
+        'total': total,
+        'student_stats': student_stats,
+        'batch_stats': batch_stats,
+    }
+    return render(request, 'management/report_attendance.html', context)
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def fee_collection_report(request):
+    org = get_org(request)
+    today = date.today()
+
+    date_from = request.GET.get('from', '')
+    date_to = request.GET.get('to', '')
+    batch_id = request.GET.get('batch', '')
+
+    try:
+        start_date = datetime.strptime(date_from, '%Y-%m-%d').date() if date_from else today.replace(day=1)
+    except ValueError:
+        start_date = today.replace(day=1)
+    try:
+        end_date = datetime.strptime(date_to, '%Y-%m-%d').date() if date_to else today
+    except ValueError:
+        end_date = today
+
+    batches = Batch.objects.filter(organization=org, is_active=True).select_related('course').order_by('batch_name')
+
+    qs = FeePayment.objects.filter(
+        organization=org, status='Approved',
+        payment_date__gte=start_date, payment_date__lte=end_date,
+    )
+    selected_batch = None
+    if batch_id:
+        try:
+            selected_batch = Batch.objects.get(pk=batch_id, organization=org)
+            qs = qs.filter(batch=selected_batch)
+        except Batch.DoesNotExist:
+            pass
+
+    total_collected = qs.aggregate(total=Sum('amount'))['total'] or 0
+
+    # By payment method
+    by_method = qs.values('payment_method').annotate(
+        total=Sum('amount'), count=Count('id')
+    ).order_by('payment_method')
+
+    # By batch
+    by_batch = qs.values(
+        'batch__batch_code', 'batch__batch_name', 'batch__course__course_name'
+    ).annotate(
+        total=Sum('amount'), count=Count('id')
+    ).order_by('-total')
+
+    # Daily breakdown for the period
+    daily = qs.values('payment_date').annotate(
+        total=Sum('amount'), count=Count('id')
+    ).order_by('payment_date')
+
+    # Export
+    if request.GET.get('export') == 'excel':
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Fee Collection'
+
+        header_font = Font(name='Calibri', bold=True, color='FFFFFF', size=11)
+        header_fill = PatternFill(start_color='0D6B4E', end_color='0D6B4E', fill_type='solid')
+        thin_border = Border(
+            left=Side(style='thin', color='D1D5DB'), right=Side(style='thin', color='D1D5DB'),
+            top=Side(style='thin', color='D1D5DB'), bottom=Side(style='thin', color='D1D5DB'),
+        )
+
+        headers = ['Date', 'Receipts', 'Amount Collected']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            cell.border = thin_border
+
+        for row, d in enumerate(daily, 2):
+            row_data = [d['payment_date'].strftime('%d %b %Y'), d['count'], float(d['total'])]
+            for col, val in enumerate(row_data, 1):
+                cell = ws.cell(row=row, column=col, value=val)
+                cell.border = thin_border
+                cell.alignment = Alignment(vertical='center')
+
+        # Summary sheet
+        ws2 = wb.create_sheet('By Payment Method')
+        headers2 = ['Payment Method', 'Receipts', 'Amount']
+        for col, header in enumerate(headers2, 1):
+            cell = ws2.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            cell.border = thin_border
+        for row, m in enumerate(by_method, 2):
+            for col, val in enumerate([m['payment_method'], m['count'], float(m['total'])], 1):
+                cell = ws2.cell(row=row, column=col, value=val)
+                cell.border = thin_border
+
+        for sheet in [ws, ws2]:
+            for col in sheet.columns:
+                max_len = max((len(str(c.value or '')) for c in col), default=0)
+                sheet.column_dimensions[col[0].column_letter].width = min(max_len + 4, 40)
+
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.xml')
+        response['Content-Disposition'] = f'attachment; filename="fee_collection_{start_date}_{end_date}.xlsx"'
+        wb.save(response)
+        return response
+
+    context = {
+        'batches': batches,
+        'selected_batch': selected_batch,
+        'date_from': start_date.strftime('%Y-%m-%d'),
+        'date_to': end_date.strftime('%Y-%m-%d'),
+        'total_collected': total_collected,
+        'by_method': by_method,
+        'by_batch': by_batch,
+        'daily': daily,
+    }
+    return render(request, 'management/report_fee_collection.html', context)
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def arrears_report(request):
+    org = get_org(request)
+    batch_id = request.GET.get('batch', '')
+
+    batches = Batch.objects.filter(organization=org, is_active=True).select_related('course').order_by('batch_name')
+
+    students = Student.objects.filter(organization=org).prefetch_related('batches__course', 'fee_payments')
+
+    selected_batch = None
+    if batch_id:
+        try:
+            selected_batch = Batch.objects.get(pk=batch_id, organization=org)
+            students = students.filter(batches=selected_batch)
+        except Batch.DoesNotExist:
+            pass
+
+    # Build arrears list
+    arrears = []
+    for student in students:
+        pending = student.get_pending_fees()
+        if pending > 0:
+            last_payment = student.fee_payments.filter(status='Approved').order_by('-payment_date').first()
+            arrears.append({
+                'student': student,
+                'effective_fee': student.get_effective_fee(),
+                'total_paid': student.get_total_paid(),
+                'pending': pending,
+                'last_payment_date': last_payment.payment_date if last_payment else None,
+            })
+
+    arrears.sort(key=lambda x: x['pending'], reverse=True)
+    total_arrears = sum(a['pending'] for a in arrears)
+
+    # Export
+    if request.GET.get('export') == 'excel':
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Outstanding Fees'
+
+        header_font = Font(name='Calibri', bold=True, color='FFFFFF', size=11)
+        header_fill = PatternFill(start_color='0D6B4E', end_color='0D6B4E', fill_type='solid')
+        thin_border = Border(
+            left=Side(style='thin', color='D1D5DB'), right=Side(style='thin', color='D1D5DB'),
+            top=Side(style='thin', color='D1D5DB'), bottom=Side(style='thin', color='D1D5DB'),
+        )
+
+        headers = ['Student ID', 'Name', 'Batches', 'Monthly Fee', 'Total Paid', 'Outstanding', 'Last Payment']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            cell.border = thin_border
+
+        for row, a in enumerate(arrears, 2):
+            batch_names = ', '.join(b.batch_code for b in a['student'].batches.all())
+            row_data = [
+                a['student'].student_id, a['student'].full_name, batch_names,
+                float(a['effective_fee']), float(a['total_paid']), float(a['pending']),
+                a['last_payment_date'].strftime('%d %b %Y') if a['last_payment_date'] else 'Never',
+            ]
+            for col, val in enumerate(row_data, 1):
+                cell = ws.cell(row=row, column=col, value=val)
+                cell.border = thin_border
+                cell.alignment = Alignment(vertical='center')
+
+        for col in ws.columns:
+            max_len = max((len(str(c.value or '')) for c in col), default=0)
+            ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 40)
+
+        batch_label = selected_batch.batch_code if selected_batch else 'all'
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.xml')
+        response['Content-Disposition'] = f'attachment; filename="arrears_{batch_label}_{date.today()}.xlsx"'
+        wb.save(response)
+        return response
+
+    context = {
+        'batches': batches,
+        'selected_batch': selected_batch,
+        'arrears': arrears,
+        'total_arrears': total_arrears,
+    }
+    return render(request, 'management/report_arrears.html', context)

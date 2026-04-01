@@ -1,0 +1,132 @@
+{% extends 'management/base_tailwind.html' %}
+
+{% block title %}Outstanding Fees - Maktab{% endblock %}
+{% block header_title %}Outstanding Fees Report{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-[slideUp_0.4s_ease-out]">
+
+    <!-- Filters -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6">
+        <form method="get" class="flex flex-col sm:flex-row items-end gap-3">
+            <div class="flex-1 w-full sm:w-auto min-w-[200px]">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Batch</label>
+                <select name="batch" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                    <option value="">All Batches</option>
+                    {% for b in batches %}
+                    <option value="{{ b.pk }}" {% if selected_batch and selected_batch.pk == b.pk %}selected{% endif %}>
+                        {{ b.batch_code }} - {{ b.batch_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="px-5 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 font-medium transition-colors flex items-center gap-2">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                <a href="{% url 'arrears_report' %}" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 font-medium transition-colors">
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Summary + Export -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex-1">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Outstanding</p>
+                    <p class="text-3xl font-bold text-red-500 mt-1">{{ currency_symbol }} {{ total_arrears|floatformat:2 }}</p>
+                    <p class="text-xs text-gray-400 mt-1">{{ arrears|length }} student{{ arrears|length|pluralize }}</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-500">
+                    <i class="fas fa-exclamation-triangle text-xl"></i>
+                </div>
+            </div>
+        </div>
+        {% if arrears %}
+        <a href="?{{ request.GET.urlencode }}&export=excel"
+           class="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 font-medium transition-colors flex items-center gap-2 text-sm">
+            <i class="fas fa-file-excel"></i> Export Excel
+        </a>
+        {% endif %}
+    </div>
+
+    {% if arrears %}
+    <!-- Arrears Table -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-primary to-secondary px-6 py-4">
+            <h3 class="text-white font-semibold flex items-center gap-2">
+                <i class="fas fa-user-graduate"></i> Students with Pending Fees
+            </h3>
+        </div>
+
+        <!-- Desktop -->
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wider">
+                        <th class="px-6 py-3">Student</th>
+                        <th class="px-4 py-3">Batches</th>
+                        <th class="px-4 py-3 text-right">Monthly Fee</th>
+                        <th class="px-4 py-3 text-right">Total Paid</th>
+                        <th class="px-4 py-3 text-right">Outstanding</th>
+                        <th class="px-4 py-3">Last Payment</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for a in arrears %}
+                    <tr class="hover:bg-gray-50/50">
+                        <td class="px-6 py-3">
+                            <a href="{% url 'student_detail' a.student.uuid %}" class="font-medium text-primary hover:underline">{{ a.student.full_name }}</a>
+                            <span class="text-gray-400 text-xs ml-1">{{ a.student.student_id }}</span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-600 text-xs">
+                            {% for b in a.student.batches.all %}
+                            <span class="inline-block bg-gray-100 rounded px-1.5 py-0.5 mr-1 mb-1">{{ b.batch_code }}</span>
+                            {% endfor %}
+                        </td>
+                        <td class="px-4 py-3 text-right text-gray-600">{{ currency_symbol }} {{ a.effective_fee|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right text-green-600 font-medium">{{ currency_symbol }} {{ a.total_paid|floatformat:2 }}</td>
+                        <td class="px-4 py-3 text-right">
+                            <span class="font-bold text-red-600">{{ currency_symbol }} {{ a.pending|floatformat:2 }}</span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-500 text-xs">
+                            {% if a.last_payment_date %}
+                            {{ a.last_payment_date|date:"d M Y" }}
+                            {% else %}
+                            <span class="text-red-400">Never</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile -->
+        <div class="md:hidden divide-y divide-gray-100">
+            {% for a in arrears %}
+            <div class="p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <a href="{% url 'student_detail' a.student.uuid %}" class="font-medium text-primary hover:underline">{{ a.student.full_name }}</a>
+                    <span class="font-bold text-red-600">{{ currency_symbol }} {{ a.pending|floatformat:2 }}</span>
+                </div>
+                <div class="text-xs text-gray-500 flex flex-wrap gap-3">
+                    <span>Fee: {{ currency_symbol }} {{ a.effective_fee|floatformat:2 }}</span>
+                    <span>Paid: {{ currency_symbol }} {{ a.total_paid|floatformat:2 }}</span>
+                    <span>Last: {% if a.last_payment_date %}{{ a.last_payment_date|date:"d M Y" }}{% else %}Never{% endif %}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">
+        <i class="fas fa-check-circle text-3xl mb-3 text-green-400"></i>
+        <p class="text-green-600">No outstanding fees! All students are up to date.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

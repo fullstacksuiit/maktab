@@ -422,9 +422,13 @@
                 <i class="fas fa-user w-5 text-center text-sm"></i>
                 <span class="flex flex-col leading-tight"><span>My Profile</span><span class="text-sm text-gray-600 urdu">میری پروفائل</span></span>
             </a>
-            <a href="{% url 'staff_my_attendance' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'my/attendance' in request.path %}active{% endif %}">
+            <a href="{% url 'staff_my_attendance' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if request.path == '/my/attendance/' %}active{% endif %}">
                 <i class="fas fa-clipboard-check w-5 text-center text-sm"></i>
                 <span class="flex flex-col leading-tight"><span>My Attendance</span><span class="text-sm text-gray-600 urdu">میری حاضری</span></span>
+            </a>
+            <a href="{% url 'staff_my_students_attendance' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'students-attendance' in request.path %}active{% endif %}">
+                <i class="fas fa-user-graduate w-5 text-center text-sm"></i>
+                <span class="flex flex-col leading-tight"><span>Student Attendance</span><span class="text-sm text-gray-600 urdu">طلباء کی حاضری</span></span>
             </a>
             <a href="{% url 'staff_leave_list' %}" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 transition-all font-medium {% if 'staff-leave' in request.path %}active{% endif %}">
                 <i class="fas fa-calendar-minus w-5 text-center text-sm"></i>

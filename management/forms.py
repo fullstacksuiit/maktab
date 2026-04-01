@@ -148,9 +148,20 @@ class CourseForm(forms.ModelForm):
 
 
 class BatchForm(forms.ModelForm):
+    CUSTOM_DAY_CHOICES = [
+        ('mon', 'Mon'), ('tue', 'Tue'), ('wed', 'Wed'), ('thu', 'Thu'),
+        ('fri', 'Fri'), ('sat', 'Sat'), ('sun', 'Sun'),
+    ]
+
+    custom_days = forms.MultipleChoiceField(
+        choices=CUSTOM_DAY_CHOICES,
+        required=False,
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'custom-day-checkbox'}),
+    )
+
     class Meta:
         model = Batch
-        fields = ['batch_name', 'batch_code', 'course', 'teachers', 'start_time', 'end_time', 'days', 'max_capacity', 'is_active']
+        fields = ['batch_name', 'batch_code', 'course', 'teachers', 'start_time', 'end_time', 'days', 'custom_days', 'max_capacity', 'is_active']
         widgets = {
             'batch_name': styled_text_input('e.g., Morning Batch, Weekend Batch'),
             'batch_code': styled_text_input('Auto-generated if left blank'),
@@ -162,6 +173,23 @@ class BatchForm(forms.ModelForm):
             'teachers': searchable_select_multiple('Search teachers...'),
             'is_active': forms.CheckboxInput(attrs={'class': 'w-5 h-5 text-primary focus:ring-primary border-gray-300 rounded'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk and self.instance.custom_days:
+            self.initial['custom_days'] = self.instance.get_custom_days_list()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('days') == 'custom':
+            custom = cleaned_data.get('custom_days')
+            if not custom:
+                self.add_error('custom_days', 'Select at least one day when using Custom.')
+            else:
+                cleaned_data['custom_days'] = ','.join(custom)
+        else:
+            cleaned_data['custom_days'] = ''
+        return cleaned_data
 
 
 class BatchChoiceField(forms.ModelMultipleChoiceField):

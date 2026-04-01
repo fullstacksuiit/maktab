@@ -562,12 +562,10 @@
                                         <a href="{% url 'behavior_note_edit' note.pk %}" class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition-colors">
                                             <i class="fas fa-pencil-alt text-[10px]"></i>
                                         </a>
-                                        <form method="post" action="{% url 'behavior_note_delete' note.pk %}" onsubmit="return confirm('Delete this behavior note?');" class="inline">
-                                            {% csrf_token %}
-                                            <button type="submit" class="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors">
-                                                <i class="fas fa-trash-alt text-[10px]"></i>
-                                            </button>
-                                        </form>
+                                        <button type="button" class="w-7 h-7 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors"
+                                                onclick="openDeleteModal('{% url 'behavior_note_delete' note.pk %}', '{{ note.title|escapejs }}')">
+                                            <i class="fas fa-trash-alt text-[10px]"></i>
+                                        </button>
                                     </div>
                                 </div>
                                 <p class="text-xs font-semibold text-gray-800">{{ note.title }}</p>
@@ -621,12 +619,10 @@
                                                 <a href="{% url 'behavior_note_edit' note.pk %}" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition-colors" title="Edit">
                                                     <i class="fas fa-pencil-alt text-xs"></i>
                                                 </a>
-                                                <form method="post" action="{% url 'behavior_note_delete' note.pk %}" onsubmit="return confirm('Delete this behavior note?');">
-                                                    {% csrf_token %}
-                                                    <button type="submit" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors" title="Delete">
-                                                        <i class="fas fa-trash-alt text-xs"></i>
-                                                    </button>
-                                                </form>
+                                                <button type="button" class="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center hover:bg-red-100 transition-colors" title="Delete"
+                                                        onclick="openDeleteModal('{% url 'behavior_note_delete' note.pk %}', '{{ note.title|escapejs }}')">
+                                                    <i class="fas fa-trash-alt text-xs"></i>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -672,4 +668,6 @@
         document.getElementById('content-' + tabId).classList.add('block');
     }
 </script>
+
+{% include 'management/components/delete_modal.html' %}
 {% endblock %}

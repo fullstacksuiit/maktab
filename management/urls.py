@@ -1,10 +1,29 @@
 from django.urls import path
+from django.contrib.auth import views as auth_views
 from . import views
 
 urlpatterns = [
     path('signup/', views.signup_view, name='signup'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
+
+    # Password Reset
+    path('password-reset/', auth_views.PasswordResetView.as_view(
+        template_name='management/password_reset.html',
+        email_template_name='management/password_reset_email.html',
+        subject_template_name='management/password_reset_subject.txt',
+        success_url='/password-reset/done/',
+    ), name='password_reset'),
+    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(
+        template_name='management/password_reset_done.html',
+    ), name='password_reset_done'),
+    path('password-reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
+        template_name='management/password_reset_confirm.html',
+        success_url='/password-reset/complete/',
+    ), name='password_reset_confirm'),
+    path('password-reset/complete/', auth_views.PasswordResetCompleteView.as_view(
+        template_name='management/password_reset_complete.html',
+    ), name='password_reset_complete'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
 
     # Course URLs
@@ -120,6 +139,7 @@ urlpatterns = [
     path('my/', views.staff_portal, name='staff_portal'),
     path('my/profile/', views.staff_my_profile, name='staff_my_profile'),
     path('my/attendance/', views.staff_my_attendance, name='staff_my_attendance'),
+    path('my/students-attendance/', views.staff_my_students_attendance, name='staff_my_students_attendance'),
     path('my/punch/', views.staff_punch, name='staff_punch'),
     path('my/salary/', views.staff_my_salary, name='staff_my_salary'),
     path('my/salary/<int:pk>/', views.staff_my_payslip, name='staff_my_payslip'),
@@ -145,6 +165,12 @@ urlpatterns = [
     path('leave-types/add/', views.leave_type_add, name='leave_type_add'),
     path('leave-types/edit/<int:pk>/', views.leave_type_edit, name='leave_type_edit'),
     path('leave-types/delete/<int:pk>/', views.leave_type_delete, name='leave_type_delete'),
+
+    # Reports URLs
+    path('reports/', views.reports_dashboard, name='reports_dashboard'),
+    path('reports/attendance/', views.attendance_report, name='attendance_report'),
+    path('reports/fee-collection/', views.fee_collection_report, name='fee_collection_report'),
+    path('reports/arrears/', views.arrears_report, name='arrears_report'),
 
     # Accounts & Expenses URLs
     path('accounts/', views.accounts_overview, name='accounts_overview'),

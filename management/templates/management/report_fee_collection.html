@@ -1,0 +1,156 @@
+{% extends 'management/base_tailwind.html' %}
+
+{% block title %}Fee Collection Report - Maktab{% endblock %}
+{% block header_title %}Fee Collection Report{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-[slideUp_0.4s_ease-out]">
+
+    <!-- Filters -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6">
+        <form method="get" class="flex flex-col sm:flex-row items-end gap-3 flex-wrap">
+            <div class="flex-1 w-full sm:w-auto min-w-[160px]">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Batch</label>
+                <select name="batch" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                    <option value="">All Batches</option>
+                    {% for b in batches %}
+                    <option value="{{ b.pk }}" {% if selected_batch and selected_batch.pk == b.pk %}selected{% endif %}>
+                        {{ b.batch_code }} - {{ b.batch_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex-1 w-full sm:w-auto">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">From</label>
+                <input type="date" name="from" value="{{ date_from }}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+            </div>
+            <div class="flex-1 w-full sm:w-auto">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">To</label>
+                <input type="date" name="to" value="{{ date_to }}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="px-5 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 font-medium transition-colors flex items-center gap-2">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                <a href="{% url 'fee_collection_report' %}" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 font-medium transition-colors">
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Export + Total -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex-1">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Collected</p>
+                    <p class="text-3xl font-bold text-green-600 mt-1">{{ currency_symbol }} {{ total_collected|floatformat:2 }}</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
+                    <i class="fas fa-rupee-sign text-xl"></i>
+                </div>
+            </div>
+        </div>
+        <a href="?{{ request.GET.urlencode }}&export=excel"
+           class="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 font-medium transition-colors flex items-center gap-2 text-sm">
+            <i class="fas fa-file-excel"></i> Export Excel
+        </a>
+    </div>
+
+    <!-- By Payment Method -->
+    {% if by_method %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-primary to-secondary px-6 py-4">
+            <h3 class="text-white font-semibold flex items-center gap-2">
+                <i class="fas fa-credit-card"></i> By Payment Method
+            </h3>
+        </div>
+        <div class="p-4">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {% for m in by_method %}
+                <div class="text-center p-3 rounded-xl bg-gray-50">
+                    <p class="text-xs text-gray-500 mb-1">{{ m.payment_method }}</p>
+                    <p class="text-lg font-bold text-gray-900">{{ currency_symbol }} {{ m.total|floatformat:2 }}</p>
+                    <p class="text-xs text-gray-400">{{ m.count }} receipt{{ m.count|pluralize }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- By Batch -->
+    {% if by_batch %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-primary to-secondary px-6 py-4">
+            <h3 class="text-white font-semibold flex items-center gap-2">
+                <i class="fas fa-layer-group"></i> By Batch
+            </h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wider">
+                        <th class="px-6 py-3">Batch</th>
+                        <th class="px-4 py-3">Course</th>
+                        <th class="px-4 py-3 text-center">Receipts</th>
+                        <th class="px-4 py-3 text-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for b in by_batch %}
+                    <tr class="hover:bg-gray-50/50">
+                        <td class="px-6 py-3 font-medium text-gray-900">{{ b.batch__batch_code }} <span class="text-gray-500 font-normal">{{ b.batch__batch_name }}</span></td>
+                        <td class="px-4 py-3 text-gray-600">{{ b.batch__course__course_name|default:"—" }}</td>
+                        <td class="px-4 py-3 text-center">{{ b.count }}</td>
+                        <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ currency_symbol }} {{ b.total|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Daily Breakdown -->
+    {% if daily %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-primary to-secondary px-6 py-4">
+            <h3 class="text-white font-semibold flex items-center gap-2">
+                <i class="fas fa-calendar-day"></i> Daily Breakdown
+            </h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wider">
+                        <th class="px-6 py-3">Date</th>
+                        <th class="px-4 py-3 text-center">Receipts</th>
+                        <th class="px-4 py-3 text-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for d in daily %}
+                    <tr class="hover:bg-gray-50/50">
+                        <td class="px-6 py-3 font-medium text-gray-900">{{ d.payment_date|date:"d M Y, D" }}</td>
+                        <td class="px-4 py-3 text-center">{{ d.count }}</td>
+                        <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ currency_symbol }} {{ d.total|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not by_method and not daily %}
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center text-gray-400">
+        <i class="fas fa-rupee-sign text-3xl mb-3"></i>
+        <p>No approved payments found for the selected filters.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

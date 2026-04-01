@@ -1,0 +1,40 @@
+{% extends 'management/base_tailwind.html' %}
+
+{% block title %}Reports - Maktab{% endblock %}
+{% block header_title %}Reports{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-[slideUp_0.4s_ease-out]">
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        <!-- Attendance Report -->
+        <a href="{% url 'attendance_report' %}" class="group bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-primary/30 transition-all">
+            <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform">
+                <i class="fas fa-clipboard-check text-xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-1">Attendance Report</h3>
+            <p class="text-sm text-gray-500">View attendance summary by batch, per-student breakdown, and export to Excel.</p>
+        </a>
+
+        <!-- Fee Collection Report -->
+        <a href="{% url 'fee_collection_report' %}" class="group bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-primary/30 transition-all">
+            <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-600 mb-4 group-hover:scale-110 transition-transform">
+                <i class="fas fa-rupee-sign text-xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-1">Fee Collection</h3>
+            <p class="text-sm text-gray-500">Monthly fee collection breakdown by payment method, batch, and daily trends.</p>
+        </a>
+
+        <!-- Arrears Report -->
+        <a href="{% url 'arrears_report' %}" class="group bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-primary/30 transition-all">
+            <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-500 mb-4 group-hover:scale-110 transition-transform">
+                <i class="fas fa-exclamation-triangle text-xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-1">Outstanding Fees</h3>
+            <p class="text-sm text-gray-500">Students with pending fees sorted by amount due, with batch-level filtering.</p>
+        </a>
+
+    </div>
+</div>
+{% endblock %}

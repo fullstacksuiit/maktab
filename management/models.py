@@ -263,12 +263,17 @@ class Batch(SoftDeleteModel):
         ('custom', 'Custom'),
     ]
 
+    DAY_CODE_TO_INDEX = {'mon': 0, 'tue': 1, 'wed': 2, 'thu': 3, 'fri': 4, 'sat': 5, 'sun': 6}
+    DAY_CODE_TO_LABEL = {'mon': 'Mon', 'tue': 'Tue', 'wed': 'Wed', 'thu': 'Thu', 'fri': 'Fri', 'sat': 'Sat', 'sun': 'Sun'}
+
     batch_code = models.CharField(max_length=50, blank=True, verbose_name="Batch Code")
     batch_name = models.CharField(max_length=255, verbose_name="Batch Name")
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='batches', verbose_name="Course")
     start_time = models.TimeField(verbose_name="Start Time", null=True, blank=True)
     end_time = models.TimeField(verbose_name="End Time", null=True, blank=True)
     days = models.CharField(max_length=20, choices=DAYS_CHOICES, default='weekdays', verbose_name="Days")
+    custom_days = models.CharField(max_length=50, blank=True, default='', verbose_name="Custom Days",
+                                   help_text="Comma-separated day codes: mon,tue,wed,thu,fri,sat,sun")
     max_capacity = models.PositiveIntegerField(null=True, blank=True, verbose_name="Max Capacity")
     is_active = models.BooleanField(default=True, verbose_name="Is Active")
     teachers = models.ManyToManyField('Staff', blank=True, related_name='teaching_batches', verbose_name="Teachers")
@@ -318,6 +323,22 @@ class Batch(SoftDeleteModel):
 
     def get_student_count(self):
         return self.students.count()
+
+    def get_custom_days_list(self):
+        """Returns list of day codes from custom_days field, e.g. ['mon', 'thu', 'sat']."""
+        if not self.custom_days:
+            return []
+        return [d.strip() for d in self.custom_days.split(',') if d.strip() in self.DAY_CODE_TO_INDEX]
+
+    def get_custom_days_indices(self):
+        """Returns sorted list of day indices (0=Mon, 6=Sun) from custom_days."""
+        return sorted(self.DAY_CODE_TO_INDEX[d] for d in self.get_custom_days_list())
+
+    def get_days_display(self):
+        if self.days == 'custom' and self.custom_days:
+            labels = [self.DAY_CODE_TO_LABEL[d] for d in self.get_custom_days_list()]
+            return ', '.join(labels)
+        return dict(self.DAYS_CHOICES).get(self.days, self.days)
 
     def get_schedule_display(self):
         time_str = ""
@@ -561,7 +582,7 @@ class Staff(SoftDeleteModel):
             super().save(*args, **kwargs)
 
 
-class Attendance(models.Model):
+class Attendance(SoftDeleteModel):
     STATUS_CHOICES = [
         ('Present', 'Present'),
         ('Absent', 'Absent'),

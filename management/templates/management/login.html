@@ -253,7 +253,11 @@
                 </div>
             </form>
 
-            <div class="mt-8 text-center login-fade-in" style="animation-delay: 0.6s">
+            <div class="mt-6 text-center login-fade-in" style="animation-delay: 0.55s">
+                <a href="{% url 'password_reset' %}" class="text-sm font-semibold text-primary hover:text-secondary transition-colors">Forgot password?</a>
+            </div>
+
+            <div class="mt-4 text-center login-fade-in" style="animation-delay: 0.6s">
                 <p class="text-sm text-gray-400">Don't have an account? <a href="{% url 'signup' %}" class="font-semibold text-primary hover:text-secondary transition-colors">Create account</a></p>
             </div>
 

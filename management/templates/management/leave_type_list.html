@@ -50,13 +50,10 @@
                             <a href="{% url 'leave_type_edit' lt.pk %}" class="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs hover:bg-blue-200 transition-colors">
                                 Edit
                             </a>
-                            <form method="post" action="{% url 'leave_type_delete' lt.pk %}" class="inline">
-                                {% csrf_token %}
-                                <button type="submit" class="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs hover:bg-red-200 transition-colors"
-                                        onclick="return confirm('Delete this leave type?')">
-                                    Delete
-                                </button>
-                            </form>
+                            <button type="button" class="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs hover:bg-red-200 transition-colors"
+                                    onclick="openDeleteModal('{% url 'leave_type_delete' lt.pk %}', '{{ lt.name|escapejs }}')">
+                                Delete
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -99,13 +96,10 @@
                     <a href="{% url 'leave_type_edit' lt.pk %}" class="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs hover:bg-blue-200 transition-colors">
                         Edit
                     </a>
-                    <form method="post" action="{% url 'leave_type_delete' lt.pk %}" class="inline">
-                        {% csrf_token %}
-                        <button type="submit" class="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs hover:bg-red-200 transition-colors"
-                                onclick="return confirm('Delete this leave type?')">
-                            Delete
-                        </button>
-                    </form>
+                    <button type="button" class="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-xs hover:bg-red-200 transition-colors"
+                            onclick="openDeleteModal('{% url 'leave_type_delete' lt.pk %}', '{{ lt.name|escapejs }}')">
+                        Delete
+                    </button>
                 </div>
             </div>
         </div>
@@ -117,4 +111,6 @@
         {% endfor %}
     </div>
 </div>
+
+{% include 'management/components/delete_modal.html' %}
 {% endblock %}
