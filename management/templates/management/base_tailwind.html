@@ -94,8 +94,26 @@
             }
         }
     </script>
-    <!-- Fonts - swap ensures text is visible while font loads -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Fonts - Poppins from CDN, Noto Nastaliq Urdu served locally -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Noto Nastaliq Urdu';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: url("{% static 'management/fonts/NotoNastaliqUrdu-arabic.woff2' %}") format('woff2'),
+                 url("{% static 'management/fonts/NotoNastaliqUrdu-Regular.ttf' %}") format('truetype');
+        }
+        @font-face {
+            font-family: 'Noto Nastaliq Urdu';
+            font-style: normal;
+            font-weight: 700;
+            font-display: swap;
+            src: url("{% static 'management/fonts/NotoNastaliqUrdu-arabic.woff2' %}") format('woff2'),
+                 url("{% static 'management/fonts/NotoNastaliqUrdu-Bold.ttf' %}") format('truetype');
+        }
+    </style>
     <!-- Font Awesome - load async to not block rendering -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"></noscript>
