@@ -103,7 +103,7 @@
 <body>
 
     <div class="btn-bar no-print">
-        <a href="javascript:window.history.back()">&#8592; Back</a>
+        <a href="javascript:void(0)" onclick="if(window.history.length>1){window.history.back()}else{window.close()}">&#8592; Back</a>
         <button class="btn-print" onclick="window.print()">&#9113; Print</button>
     </div>
 
