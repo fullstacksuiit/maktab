@@ -72,6 +72,7 @@ urlpatterns = [
     path('attendance/mark/', views.attendance_mark, name='attendance_mark'),
     path('attendance/quick/<int:batch_id>/', views.quick_attendance, name='quick_attendance'),
     path('attendance/toggle/', views.toggle_attendance, name='toggle_attendance'),
+    path('attendance/batch/<int:batch_id>/detail/', views.batch_attendance_detail, name='batch_attendance_detail'),
     path('attendance/mark-all-present/', views.mark_all_present, name='mark_all_present'),
     path('attendance/mark-all-absent/', views.mark_all_absent, name='mark_all_absent'),
 

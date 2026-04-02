@@ -225,28 +225,40 @@
                 <div class="p-3 sm:p-4">
                     <div class="space-y-2">
                         {% for batch in batch_attendance_today %}
-                        <div class="flex items-center gap-3 p-2.5 sm:p-3 rounded-xl border {% if batch.today_marked == 0 %}border-orange-200 bg-orange-50/50{% elif batch.today_present == batch.today_marked %}border-green-200 bg-green-50/50{% else %}border-gray-100 bg-gray-50/50{% endif %} transition-all">
-                            <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold text-[10px] sm:text-xs shadow-sm">
-                                {{ batch.course.course_code|slice:":2"|upper }}
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xs sm:text-sm font-semibold text-gray-800 truncate">{{ batch.batch_name }}</p>
-                                <p class="text-[10px] sm:text-xs text-gray-500">{{ batch.course.course_name }} - {{ batch.student_count }} students</p>
-                                {% if batch.teachers.all %}<p class="text-[10px] sm:text-xs text-primary/70 truncate"><i class="fas fa-chalkboard-teacher text-[8px]"></i> {% for t in batch.teachers.all %}{{ t.first_name }} {{ t.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
-                            </div>
-                            <div class="text-right">
-                                {% if batch.today_marked == 0 %}
-                                <a href="{% url 'quick_attendance' batch.pk %}" class="inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded-lg hover:bg-orange-200 transition-colors">
-                                    <i class="fas fa-clock text-[8px]"></i> Not Marked
-                                </a>
-                                {% else %}
-                                <div class="flex items-center gap-1.5">
-                                    <span class="text-xs sm:text-sm font-bold {% if batch.today_present == batch.today_marked %}text-green-600{% else %}text-gray-700{% endif %}">{{ batch.today_present }}/{{ batch.today_marked }}</span>
-                                    <span class="text-[10px] sm:text-xs font-bold {% if batch.today_present == batch.today_marked %}text-green-500 bg-green-100{% else %}text-blue-500 bg-blue-100{% endif %} px-1.5 py-0.5 rounded">
-                                        {% widthratio batch.today_present batch.today_marked 100 %}%
-                                    </span>
+                        <div class="batch-attendance-item">
+                            <div class="flex items-center gap-3 p-2.5 sm:p-3 rounded-xl border cursor-pointer select-none {% if batch.today_marked == 0 %}border-orange-200 bg-orange-50/50{% elif batch.today_present == batch.today_marked %}border-green-200 bg-green-50/50{% else %}border-gray-100 bg-gray-50/50{% endif %} transition-all hover:shadow-md"
+                                 onclick="toggleBatchDetail(this, {{ batch.pk }})">
+                                <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-bold text-[10px] sm:text-xs shadow-sm">
+                                    {{ batch.course.course_code|slice:":2"|upper }}
                                 </div>
-                                {% endif %}
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs sm:text-sm font-semibold text-gray-800 truncate">{{ batch.batch_name }}</p>
+                                    <p class="text-[10px] sm:text-xs text-gray-500">{{ batch.course.course_name }} - {{ batch.student_count }} students</p>
+                                    {% if batch.teachers.all %}<p class="text-[10px] sm:text-xs text-primary/70 truncate"><i class="fas fa-chalkboard-teacher text-[8px]"></i> {% for t in batch.teachers.all %}{{ t.first_name }} {{ t.last_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="text-right">
+                                        {% if batch.today_marked == 0 %}
+                                        <a href="{% url 'quick_attendance' batch.pk %}" class="inline-flex items-center gap-1 text-[10px] sm:text-xs font-bold text-orange-600 bg-orange-100 px-2 py-1 rounded-lg hover:bg-orange-200 transition-colors" onclick="event.stopPropagation()">
+                                            <i class="fas fa-clock text-[8px]"></i> Not Marked
+                                        </a>
+                                        {% else %}
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="text-xs sm:text-sm font-bold {% if batch.today_present == batch.today_marked %}text-green-600{% else %}text-gray-700{% endif %}">{{ batch.today_present }}/{{ batch.today_marked }}</span>
+                                            <span class="text-[10px] sm:text-xs font-bold {% if batch.today_present == batch.today_marked %}text-green-500 bg-green-100{% else %}text-blue-500 bg-blue-100{% endif %} px-1.5 py-0.5 rounded">
+                                                {% widthratio batch.today_present batch.today_marked 100 %}%
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <i class="fas fa-chevron-down text-gray-400 text-xs transition-transform batch-chevron"></i>
+                                </div>
+                            </div>
+                            <!-- Expandable Detail Panel -->
+                            <div class="batch-detail-panel hidden mt-1 ml-2 mr-2 mb-1 rounded-xl border border-gray-200 bg-white overflow-hidden" data-batch-id="{{ batch.pk }}">
+                                <div class="p-3 text-center text-xs text-gray-400">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading...
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
@@ -715,6 +727,79 @@
         } catch(e) {}
     }, 60000);
 })();
+</script>
+
+<script>
+function toggleBatchDetail(header, batchId) {
+    const item = header.closest('.batch-attendance-item');
+    const panel = item.querySelector('.batch-detail-panel');
+    const chevron = header.querySelector('.batch-chevron');
+    const isOpen = !panel.classList.contains('hidden');
+
+    // Close all other open panels
+    document.querySelectorAll('.batch-detail-panel:not(.hidden)').forEach(p => {
+        if (p !== panel) {
+            p.classList.add('hidden');
+            p.closest('.batch-attendance-item').querySelector('.batch-chevron').classList.remove('rotate-180');
+        }
+    });
+
+    if (isOpen) {
+        panel.classList.add('hidden');
+        chevron.classList.remove('rotate-180');
+        return;
+    }
+
+    panel.classList.remove('hidden');
+    chevron.classList.add('rotate-180');
+
+    // Load data if not already loaded
+    if (panel.dataset.loaded) return;
+
+    fetch(`/attendance/batch/${batchId}/detail/`)
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) { panel.innerHTML = '<div class="p-3 text-xs text-red-500">Error loading</div>'; return; }
+            panel.dataset.loaded = '1';
+
+            if (data.students.length === 0) {
+                panel.innerHTML = '<div class="p-3 text-center text-xs text-gray-400">No students enrolled</div>';
+                return;
+            }
+
+            const statusConfig = {
+                'Present': { bg: 'bg-green-100', text: 'text-green-700', icon: 'fa-check-circle' },
+                'Absent':  { bg: 'bg-red-100', text: 'text-red-700', icon: 'fa-times-circle' },
+                'Late':    { bg: 'bg-yellow-100', text: 'text-yellow-700', icon: 'fa-clock' },
+                'Excused': { bg: 'bg-blue-100', text: 'text-blue-700', icon: 'fa-info-circle' },
+                'Unmarked':{ bg: 'bg-gray-100', text: 'text-gray-500', icon: 'fa-minus-circle' },
+            };
+
+            let html = '<div class="divide-y divide-gray-100">';
+            data.students.forEach(s => {
+                const cfg = statusConfig[s.status] || statusConfig['Unmarked'];
+                const lateInfo = (s.status === 'Late' && s.minutes_late) ? `<span class="text-[10px] text-yellow-600 ml-1">(${s.minutes_late} min)</span>` : '';
+                html += `
+                    <div class="flex items-center gap-3 px-3 py-2">
+                        <div class="w-7 h-7 rounded-full ${cfg.bg} ${cfg.text} flex items-center justify-center text-xs font-bold">
+                            ${s.name.charAt(0)}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-medium text-gray-800 truncate">${s.name}</p>
+                            <p class="text-[10px] text-gray-400">${s.student_id}</p>
+                        </div>
+                        <span class="inline-flex items-center gap-1 text-[10px] font-semibold ${cfg.bg} ${cfg.text} px-2 py-0.5 rounded-full">
+                            <i class="fas ${cfg.icon}"></i> ${s.status}${lateInfo}
+                        </span>
+                    </div>`;
+            });
+            html += '</div>';
+            panel.innerHTML = html;
+        })
+        .catch(() => {
+            panel.innerHTML = '<div class="p-3 text-xs text-red-500">Failed to load details</div>';
+        });
+}
 </script>
 {% endblock %}
 

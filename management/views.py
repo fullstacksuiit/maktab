@@ -1896,6 +1896,33 @@ def toggle_attendance(request):
 
 @login_required(login_url='login')
 @internal_user_required
+def batch_attendance_detail(request, batch_id):
+    """AJAX endpoint returning student-level attendance for a batch on a given date."""
+    org = get_org(request)
+    batch = get_object_or_404(Batch, pk=batch_id, organization=org)
+    attendance_date = request.GET.get('date', str(date.today()))
+
+    students = batch.students.filter(organization=org).order_by('full_name')
+    attendance_map = {
+        a.student_id: a
+        for a in Attendance.objects.filter(batch=batch, date=attendance_date, organization=org)
+    }
+
+    students_list = []
+    for s in students:
+        att = attendance_map.get(s.pk)
+        students_list.append({
+            'name': s.full_name,
+            'student_id': s.student_id,
+            'status': att.status if att else 'Unmarked',
+            'minutes_late': att.minutes_late if att and att.status == 'Late' else None,
+        })
+
+    return JsonResponse({'success': True, 'students': students_list})
+
+
+@login_required(login_url='login')
+@internal_user_required
 @require_POST
 def mark_all_present(request):
     """AJAX endpoint to mark all students present for a batch on a date"""
