@@ -7,7 +7,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #000; background: #eee; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #000; background: #eee; -webkit-print-color-adjust: exact; }
         .no-print-wrap { display: flex; justify-content: center; padding: 20px; }
         .receipt { width: 210mm; max-width: 100%; background: #fff; padding: 8mm 10mm; border: 1px solid #ccc; }
         table { width: 100%; border-collapse: collapse; }
@@ -21,7 +21,7 @@
         .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 6px; }
         .header .ur-name { font-family: 'Jameel Noori Nastaleeq Kasheeda', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size: 22px; font-weight: 700; direction: rtl; margin-bottom: 2px; line-height: 1.6; }
         .header .en-name { font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2px; }
-        .header p { font-size: 10px; color: #333; }
+        .header p { font-size: 11px; color: #000; }
 
         .receipt-title-wrap { text-align: center; margin: 6px 0 8px; }
         .receipt-title { font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; border: 1.5px solid #000; display: inline-block; padding: 3px 20px; }
@@ -30,60 +30,60 @@
         /* Meta row */
         .meta-row { margin-bottom: 8px; }
         .meta-row td { padding: 3px 0; vertical-align: top; }
-        .meta-row .label { font-size: 9px; text-transform: uppercase; color: #555; letter-spacing: 0.5px; }
-        .meta-row .label-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: 11px; color: #555; direction: rtl; }
-        .meta-row .value { font-weight: bold; font-size: 12px; }
+        .meta-row .label { font-size: 10px; text-transform: uppercase; color: #000; letter-spacing: 0.5px; font-weight: bold; }
+        .meta-row .label-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: 12px; color: #000; direction: rtl; }
+        .meta-row .value { font-weight: bold; font-size: 13px; }
 
         /* Student box */
         .student-box { border: 1px solid #000; padding: 6px 8px; margin-bottom: 8px; }
-        .student-box .label { font-size: 9px; text-transform: uppercase; color: #555; letter-spacing: 0.5px; }
-        .student-box .label-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: 11px; color: #555; direction: rtl; }
-        .student-box .name { font-size: 14px; font-weight: bold; }
-        .student-box .sid { font-size: 10px; color: #333; }
+        .student-box .label { font-size: 10px; text-transform: uppercase; color: #000; letter-spacing: 0.5px; font-weight: bold; }
+        .student-box .label-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: 12px; color: #000; direction: rtl; }
+        .student-box .name { font-size: 15px; font-weight: bold; }
+        .student-box .sid { font-size: 11px; color: #000; font-weight: 600; }
 
         /* Section headers */
         .section-hdr { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #000; padding-bottom: 2px; margin: 8px 0 4px; display: flex; justify-content: space-between; align-items: baseline; }
         .section-hdr .ur-side { font-family: 'Noto Nastaliq Urdu', serif; font-size: 12px; text-transform: none; letter-spacing: 0; direction: rtl; }
 
         /* Detail table */
-        .dtl-table td { padding: 3px 0; border-bottom: 1px dotted #aaa; font-size: 11px; }
+        .dtl-table td { padding: 3px 0; border-bottom: 1px solid #999; font-size: 12px; font-weight: 600; }
         .dtl-table td:first-child { width: 40%; }
         .dtl-table td:last-child { text-align: right; }
         .dtl-table tr:last-child td { border-bottom: none; }
-        .dtl-table .td-label-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: 10px; color: #555; direction: rtl; display: block; }
+        .dtl-table .td-label-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: 11px; color: #000; direction: rtl; display: block; }
 
         /* Breakdown table */
         .bkdn-table { border: 1px solid #000; margin-bottom: 8px; }
-        .bkdn-table th { background: #f0f0f0; font-size: 9px; text-transform: uppercase; padding: 3px 6px; border-bottom: 1px solid #000; text-align: left; }
+        .bkdn-table th { background: #f0f0f0; font-size: 10px; text-transform: uppercase; padding: 4px 6px; border-bottom: 2px solid #000; text-align: left; font-weight: bold; }
         .bkdn-table th:last-child { text-align: right; }
-        .bkdn-table td { padding: 2px 6px; border-bottom: 1px dotted #ccc; font-size: 11px; }
+        .bkdn-table td { padding: 3px 6px; border-bottom: 1px solid #ccc; font-size: 12px; font-weight: 600; }
         .bkdn-table td:last-child { text-align: right; }
         .bkdn-table tr:last-child td { border-bottom: none; }
 
         /* Total box */
         .total-box { border: 2px solid #000; padding: 6px 10px; margin: 8px 0; }
-        .total-box table td { font-size: 14px; font-weight: bold; padding: 0; }
-        .total-box table td:last-child { text-align: right; font-size: 16px; }
-        .total-box .ur-label { font-family: 'Noto Nastaliq Urdu', serif; font-size: 13px; direction: rtl; display: block; font-weight: normal; color: #333; }
+        .total-box table td { font-size: 15px; font-weight: bold; padding: 0; }
+        .total-box table td:last-child { text-align: right; font-size: 18px; }
+        .total-box .ur-label { font-family: 'Noto Nastaliq Urdu', serif; font-size: 14px; direction: rtl; display: block; font-weight: 600; color: #000; }
 
         /* Summary */
-        .summary-table td { padding: 2px 0; font-size: 10px; }
+        .summary-table td { padding: 3px 0; font-size: 12px; font-weight: 600; }
         .summary-table td:last-child { text-align: right; }
-        .summary-table .divider td { border-top: 1px dashed #999; padding-top: 3px; font-weight: bold; font-size: 11px; }
+        .summary-table .divider td { border-top: 2px solid #000; padding-top: 4px; font-weight: bold; font-size: 13px; }
 
         /* Notes */
-        .notes-box { border: 1px dashed #999; padding: 4px 6px; margin: 6px 0; font-size: 10px; }
-        .notes-box .label { font-size: 9px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+        .notes-box { border: 1px solid #000; padding: 5px 8px; margin: 6px 0; font-size: 11px; }
+        .notes-box .label { font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
 
         /* Bank details */
-        .bank-box { border: 1px solid #aaa; padding: 5px 8px; margin: 6px 0; font-size: 10px; }
-        .bank-box .label { font-size: 8px; text-transform: uppercase; color: #666; }
+        .bank-box { border: 1px solid #000; padding: 5px 8px; margin: 6px 0; font-size: 11px; }
+        .bank-box .label { font-size: 9px; text-transform: uppercase; color: #000; font-weight: bold; }
         .bank-box .val { font-weight: bold; font-family: 'Courier New', monospace; }
 
         /* Footer */
         .footer { margin-top: 14px; }
         .sig-line { width: 150px; border-bottom: 1px solid #000; margin-bottom: 3px; }
-        .footer-note { text-align: center; font-size: 9px; color: #555; border-top: 1px dashed #aaa; padding-top: 4px; margin-top: 10px; }
+        .footer-note { text-align: center; font-size: 10px; color: #000; border-top: 1px solid #000; padding-top: 4px; margin-top: 10px; }
         .footer-note .ur-inline { font-size: 12px; }
 
         /* Buttons */
@@ -279,19 +279,20 @@
             <table>
                 <tr>
                     <td style="vertical-align:bottom">
-                        <div style="font-size:9px; color:#666;">System Generated</div>
-                        <div style="font-size:9px; color:#666;">{{ payment.created_at|date:"d/m/Y h:i A" }}</div>
+                        <div style="font-size:10px; color:#000;">System Generated</div>
+                        <div style="font-size:10px; color:#000;">{{ payment.created_at|date:"d/m/Y h:i A" }}</div>
                     </td>
                     <td style="text-align:right">
                         <div style="font-size:11px; font-weight:bold; margin-bottom:4px;">{% if user_prefix %}{{ user_prefix }} {% endif %}{{ user.get_full_name|default:user.username }}</div>
                         <div class="sig-line" style="margin-left:auto"></div>
-                        <div style="font-size:9px; text-transform:uppercase; letter-spacing:1px; color:#555;">Authorized Signature / <span class="ur-inline" style="letter-spacing:0; text-transform:none;">مجاز دستخط</span></div>
+                        <div style="font-size:10px; text-transform:uppercase; letter-spacing:1px; color:#000; font-weight:600;">Authorized Signature / <span class="ur-inline" style="letter-spacing:0; text-transform:none;">مجاز دستخط</span></div>
                     </td>
                 </tr>
             </table>
             <div class="footer-note">
                 <span class="ur-inline">ادائیگی کا شکریہ!</span> &bull; Thank you for your payment!<br>
                 <span class="ur-inline">یہ کمپیوٹر سے تیار کردہ رسید ہے</span> &bull; This is a computer generated receipt.
+                <div style="margin-top:6px; border-top:1px dotted #999; padding-top:5px; font-size:9px; letter-spacing:1px;">Maktab Management System | A Strix Venture</div>
             </div>
         </div>
 
