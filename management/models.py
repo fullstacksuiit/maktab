@@ -456,7 +456,33 @@ class Student(SoftDeleteModel):
         return total or 0
 
     def get_pending_fees(self):
-        return self.get_effective_fee() + self.opening_balance - self.get_total_paid()
+        from datetime import date
+        import math
+
+        effective_fee = self.get_effective_fee()
+        if effective_fee == 0:
+            return self.opening_balance - self.get_total_paid()
+
+        today = date.today()
+        months_elapsed = (today.year - self.enrollment_date.year) * 12 + (today.month - self.enrollment_date.month)
+        months_elapsed = max(months_elapsed, 0)
+
+        # Determine fee period from enrolled batches
+        fee_periods = set(
+            b.course.fee_period for b in self.batches.select_related('course').all()
+        )
+        if len(fee_periods) == 1:
+            period = fee_periods.pop()
+            if period == 'quarterly':
+                periods = math.ceil(months_elapsed / 3)
+            elif period == 'yearly':
+                periods = math.ceil(months_elapsed / 12)
+            else:
+                periods = months_elapsed
+        else:
+            periods = months_elapsed  # mixed or no batches — default to monthly
+
+        return effective_fee * periods + self.opening_balance - self.get_total_paid()
 
     def get_attendance_percentage(self):
         result = self.attendances.aggregate(
