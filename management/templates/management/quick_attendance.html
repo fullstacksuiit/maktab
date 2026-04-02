@@ -149,6 +149,21 @@
                     </button>
                 </div>
             </div>
+
+            <!-- Minutes Late Input (shown only when Late) -->
+            <div class="late-minutes-row px-4 pb-3 {% if item.status != 'Late' %}hidden{% endif %}">
+                <div class="flex items-center gap-2 bg-yellow-50 border border-yellow-200 rounded-xl px-3 py-2">
+                    <i class="fas fa-clock text-yellow-500 text-sm"></i>
+                    <span class="text-sm text-yellow-700 font-medium">Late by</span>
+                    <input type="number" min="1" max="999" placeholder="0"
+                           class="minutes-late-input w-16 text-center bg-white border border-yellow-300 rounded-lg px-2 py-1 text-sm font-bold text-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                           value="{{ item.minutes_late|default:'' }}"
+                           onclick="event.stopPropagation()"
+                           onchange="event.stopPropagation(); saveMinutesLate({{ item.student.pk }}, this.value)"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">
+                    <span class="text-sm text-yellow-700">min</span>
+                </div>
+            </div>
         </div>
         {% endfor %}
     </div>
@@ -219,6 +234,18 @@ function showToast(message, success = true) {
     setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 1500);
 }
 
+// Show/hide minutes late input
+function toggleLateInput(row, status) {
+    const lateRow = row.querySelector('.late-minutes-row');
+    if (status === 'Late') {
+        lateRow.classList.remove('hidden');
+        setTimeout(() => lateRow.querySelector('.minutes-late-input').focus(), 100);
+    } else {
+        lateRow.classList.add('hidden');
+        lateRow.querySelector('.minutes-late-input').value = '';
+    }
+}
+
 // Update row visual state
 function updateRowState(row, status) {
     const avatar = row.querySelector('.avatar');
@@ -271,6 +298,33 @@ function updateRowState(row, status) {
 
     row.dataset.status = status;
     updateCounts();
+    toggleLateInput(row, status);
+}
+
+// Save minutes late for a student
+async function saveMinutesLate(studentId, minutes) {
+    const row = document.querySelector(`[data-student-id="${studentId}"]`);
+    try {
+        const response = await fetch('{% url "toggle_attendance" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({
+                student_id: studentId,
+                batch_id: batchId,
+                date: attendanceDate,
+                status: 'Late',
+                minutes_late: minutes ? parseInt(minutes) : null
+            })
+        });
+        const data = await response.json();
+        if (data.success) {
+            showToast(minutes ? `Late by ${minutes} min` : 'Late');
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        showToast('Error saving', false);
+    }
 }
 
 // Mark single student
@@ -285,6 +339,9 @@ async function markStudent(studentId, status) {
     updateRowState(row, newStatus === 'none' ? '' : newStatus);
 
     try {
+        const minutesInput = row.querySelector('.minutes-late-input');
+        const minutesLate = (newStatus === 'Late' && minutesInput.value) ? parseInt(minutesInput.value) : null;
+
         const response = await fetch('{% url "toggle_attendance" %}', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
@@ -292,7 +349,8 @@ async function markStudent(studentId, status) {
                 student_id: studentId,
                 batch_id: batchId,
                 date: attendanceDate,
-                status: newStatus === 'none' ? null : newStatus
+                status: newStatus === 'none' ? null : newStatus,
+                minutes_late: minutesLate
             })
         });
 

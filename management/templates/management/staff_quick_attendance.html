@@ -21,15 +21,19 @@
 
                 <!-- Live Stats -->
                 <div class="flex gap-2 shrink-0">
-                    <div class="bg-green-500 rounded-xl px-3 py-2 text-center min-w-[56px]">
+                    <div class="bg-green-500 rounded-xl px-3 py-2 text-center min-w-[50px]">
                         <div id="presentCount" class="text-xl font-bold">{{ present_count }}</div>
                         <div class="text-[10px] text-white/80 uppercase tracking-wide">Present</div>
                     </div>
-                    <div class="bg-red-500 rounded-xl px-3 py-2 text-center min-w-[56px]">
+                    <div class="bg-red-500 rounded-xl px-3 py-2 text-center min-w-[50px]">
                         <div id="absentCount" class="text-xl font-bold">{{ absent_count }}</div>
                         <div class="text-[10px] text-white/80 uppercase tracking-wide">Absent</div>
                     </div>
-                    <div class="bg-white/20 rounded-xl px-3 py-2 text-center min-w-[56px]">
+                    <div class="bg-yellow-500 rounded-xl px-3 py-2 text-center min-w-[50px]">
+                        <div id="lateCount" class="text-xl font-bold">{{ late_count }}</div>
+                        <div class="text-[10px] text-white/80 uppercase tracking-wide">Late</div>
+                    </div>
+                    <div class="bg-white/20 rounded-xl px-3 py-2 text-center min-w-[50px]">
                         <div id="totalHours" class="text-xl font-bold">0</div>
                         <div class="text-[10px] text-white/80 uppercase tracking-wide">Hours</div>
                     </div>
@@ -66,6 +70,8 @@
                         border-green-400 bg-green-50
                     {% elif item.status == 'Absent' %}
                         border-red-400 bg-red-50
+                    {% elif item.status == 'Late' %}
+                        border-yellow-400 bg-yellow-50
                     {% else %}
                         border-gray-200
                     {% endif %}"
@@ -82,6 +88,8 @@
                                     bg-green-500 text-white
                                 {% elif item.status == 'Absent' %}
                                     bg-red-500 text-white
+                                {% elif item.status == 'Late' %}
+                                    bg-yellow-500 text-white
                                 {% else %}
                                     bg-gradient-to-br from-primary to-secondary text-white
                                 {% endif %}">
@@ -92,6 +100,8 @@
                                     bg-green-600 text-white
                                 {% elif item.status == 'Absent' %}
                                     bg-red-600 text-white
+                                {% elif item.status == 'Late' %}
+                                    bg-yellow-600 text-white
                                 {% else %}
                                     bg-gray-400 text-white
                                 {% endif %}">
@@ -99,6 +109,8 @@
                             <i class="fas fa-check"></i>
                         {% elif item.status == 'Absent' %}
                             <i class="fas fa-times"></i>
+                        {% elif item.status == 'Late' %}
+                            <i class="fas fa-clock"></i>
                         {% else %}
                             <i class="fas fa-minus"></i>
                         {% endif %}
@@ -155,6 +167,15 @@
                                    {% endif %}"
                             onclick="event.stopPropagation(); markStaff({{ item.staff.pk }}, 'Absent')">
                         <i class="fas fa-times"></i>
+                    </button>
+                    <button class="late-btn w-11 h-11 rounded-xl flex items-center justify-center text-base transition-all active:scale-90
+                                   {% if item.status == 'Late' %}
+                                       bg-yellow-500 text-white shadow-lg shadow-yellow-500/30
+                                   {% else %}
+                                       bg-yellow-100 text-yellow-600 hover:bg-yellow-500 hover:text-white
+                                   {% endif %}"
+                            onclick="event.stopPropagation(); markStaff({{ item.staff.pk }}, 'Late')">
+                        <i class="fas fa-clock"></i>
                     </button>
                 </div>
             </div>
@@ -216,10 +237,11 @@ let hoursTimers = {};
 // Update counts and totals
 function updateCounts() {
     const rows = document.querySelectorAll('.staff-row');
-    let present = 0, absent = 0, totalHours = 0, totalEarnings = 0;
+    let present = 0, absent = 0, late = 0, totalHours = 0, totalEarnings = 0;
     rows.forEach(row => {
         if (row.dataset.status === 'Present') present++;
         else if (row.dataset.status === 'Absent') absent++;
+        else if (row.dataset.status === 'Late') late++;
 
         const hoursInput = row.querySelector('.hours-input');
         const hours = parseFloat(hoursInput.value) || 0;
@@ -229,6 +251,7 @@ function updateCounts() {
     });
     document.getElementById('presentCount').textContent = present;
     document.getElementById('absentCount').textContent = absent;
+    document.getElementById('lateCount').textContent = late;
     document.getElementById('totalHours').textContent = totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
     document.getElementById('footerTotalHours').textContent = totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
     document.getElementById('footerEarnings').textContent = totalEarnings.toFixed(2);
@@ -253,12 +276,14 @@ function updateRowState(row, status) {
     const statusIcon = row.querySelector('.status-icon');
     const presentBtn = row.querySelector('.present-btn');
     const absentBtn = row.querySelector('.absent-btn');
+    const lateBtn = row.querySelector('.late-btn');
 
-    row.classList.remove('border-green-400', 'bg-green-50', 'border-red-400', 'bg-red-50', 'border-gray-200');
-    avatar.classList.remove('bg-green-500', 'bg-red-500', 'bg-gradient-to-br', 'from-primary', 'to-secondary');
-    statusIcon.classList.remove('bg-green-600', 'bg-red-600', 'bg-gray-400');
+    row.classList.remove('border-green-400', 'bg-green-50', 'border-red-400', 'bg-red-50', 'border-yellow-400', 'bg-yellow-50', 'border-gray-200');
+    avatar.classList.remove('bg-green-500', 'bg-red-500', 'bg-yellow-500', 'bg-gradient-to-br', 'from-primary', 'to-secondary');
+    statusIcon.classList.remove('bg-green-600', 'bg-red-600', 'bg-yellow-600', 'bg-gray-400');
     presentBtn.classList.remove('bg-green-500', 'text-white', 'shadow-lg', 'shadow-green-500/30', 'bg-green-100', 'text-green-600');
     absentBtn.classList.remove('bg-red-500', 'text-white', 'shadow-lg', 'shadow-red-500/30', 'bg-red-100', 'text-red-600');
+    lateBtn.classList.remove('bg-yellow-500', 'text-white', 'shadow-lg', 'shadow-yellow-500/30', 'bg-yellow-100', 'text-yellow-600');
 
     if (status === 'Present') {
         row.classList.add('border-green-400', 'bg-green-50');
@@ -267,6 +292,7 @@ function updateRowState(row, status) {
         statusIcon.innerHTML = '<i class="fas fa-check"></i>';
         presentBtn.classList.add('bg-green-500', 'text-white', 'shadow-lg', 'shadow-green-500/30');
         absentBtn.classList.add('bg-red-100', 'text-red-600');
+        lateBtn.classList.add('bg-yellow-100', 'text-yellow-600');
     } else if (status === 'Absent') {
         row.classList.add('border-red-400', 'bg-red-50');
         avatar.classList.add('bg-red-500', 'text-white');
@@ -274,6 +300,15 @@ function updateRowState(row, status) {
         statusIcon.innerHTML = '<i class="fas fa-times"></i>';
         presentBtn.classList.add('bg-green-100', 'text-green-600');
         absentBtn.classList.add('bg-red-500', 'text-white', 'shadow-lg', 'shadow-red-500/30');
+        lateBtn.classList.add('bg-yellow-100', 'text-yellow-600');
+    } else if (status === 'Late') {
+        row.classList.add('border-yellow-400', 'bg-yellow-50');
+        avatar.classList.add('bg-yellow-500', 'text-white');
+        statusIcon.classList.add('bg-yellow-600', 'text-white');
+        statusIcon.innerHTML = '<i class="fas fa-clock"></i>';
+        presentBtn.classList.add('bg-green-100', 'text-green-600');
+        absentBtn.classList.add('bg-red-100', 'text-red-600');
+        lateBtn.classList.add('bg-yellow-500', 'text-white', 'shadow-lg', 'shadow-yellow-500/30');
     } else {
         row.classList.add('border-gray-200');
         avatar.classList.add('bg-gradient-to-br', 'from-primary', 'to-secondary', 'text-white');
@@ -281,6 +316,7 @@ function updateRowState(row, status) {
         statusIcon.innerHTML = '<i class="fas fa-minus"></i>';
         presentBtn.classList.add('bg-green-100', 'text-green-600');
         absentBtn.classList.add('bg-red-100', 'text-red-600');
+        lateBtn.classList.add('bg-yellow-100', 'text-yellow-600');
     }
 
     row.dataset.status = status;
@@ -292,7 +328,8 @@ function toggleStaffRow(staffId) {
     const row = document.querySelector(`[data-staff-id="${staffId}"]`);
     const currentStatus = row.dataset.status;
     let newStatus = 'Present';
-    if (currentStatus === 'Present') newStatus = 'Absent';
+    if (currentStatus === 'Present') newStatus = 'Late';
+    else if (currentStatus === 'Late') newStatus = 'Absent';
     else if (currentStatus === 'Absent') newStatus = 'none';
     markStaff(staffId, newStatus === 'none' ? currentStatus : newStatus);
 }

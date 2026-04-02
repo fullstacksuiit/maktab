@@ -620,6 +620,7 @@ class Attendance(SoftDeleteModel):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendances')
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name='attendances', verbose_name="Batch", null=True, blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Present', verbose_name="Status")
+    minutes_late = models.PositiveIntegerField(blank=True, null=True, verbose_name="Minutes Late")
     marked_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='marked_attendances', verbose_name="Marked By")
     notes = models.TextField(blank=True, null=True, verbose_name="Notes")
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='attendances')

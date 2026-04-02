@@ -1811,14 +1811,16 @@ def quick_attendance(request, batch_id):
     existing = Attendance.objects.filter(
         batch=batch, date=attendance_date, organization=org
     )
-    attendance_map = {a.student_id: a.status for a in existing}
+    attendance_map = {a.student_id: a for a in existing}
 
     # Prepare students with their attendance status
     students_data = []
     for student in students:
+        att = attendance_map.get(student.pk)
         students_data.append({
             'student': student,
-            'status': attendance_map.get(student.pk, None),  # None means not marked
+            'status': att.status if att else None,
+            'minutes_late': att.minutes_late if att else None,
         })
 
     context = {
@@ -1828,6 +1830,7 @@ def quick_attendance(request, batch_id):
         'today': str(today),
         'present_count': sum(1 for s in students_data if s['status'] == 'Present'),
         'absent_count': sum(1 for s in students_data if s['status'] == 'Absent'),
+        'late_count': sum(1 for s in students_data if s['status'] == 'Late'),
         'total_count': len(students_data),
     }
     return render(request, 'management/quick_attendance.html', context)
@@ -1845,6 +1848,7 @@ def toggle_attendance(request):
         batch_id = data.get('batch_id')
         attendance_date = data.get('date')
         new_status = data.get('status')  # Present, Absent, or None (to delete)
+        minutes_late = data.get('minutes_late')
 
         student = get_object_or_404(Student, pk=student_id, organization=org)
         batch = get_object_or_404(Batch, pk=batch_id, organization=org)
@@ -1856,6 +1860,7 @@ def toggle_attendance(request):
                     date=attendance_date, student=student, batch=batch, organization=org
                 )
                 attendance.status = new_status
+                attendance.minutes_late = int(minutes_late) if new_status == 'Late' and minutes_late else None
                 attendance.marked_by = request.user
                 attendance.is_deleted = False
                 attendance.deleted_at = None
@@ -1864,6 +1869,7 @@ def toggle_attendance(request):
                 attendance = Attendance.objects.create(
                     date=attendance_date, student=student, batch=batch,
                     organization=org, status=new_status, marked_by=request.user,
+                    minutes_late=int(minutes_late) if new_status == 'Late' and minutes_late else None,
                 )
             return JsonResponse({
                 'success': True,
@@ -2148,6 +2154,7 @@ def staff_quick_attendance(request):
         'today': str(today),
         'present_count': sum(1 for s in staff_data if s['status'] == 'Present'),
         'absent_count': sum(1 for s in staff_data if s['status'] == 'Absent'),
+        'late_count': sum(1 for s in staff_data if s['status'] == 'Late'),
         'total_count': len(staff_data),
     }
     return render(request, 'management/staff_quick_attendance.html', context)
