@@ -19,7 +19,7 @@ def capture_old_phone(sender, instance, **kwargs):
     """Capture the student's old phone before save to detect changes."""
     if instance.pk:
         try:
-            old = Student.objects.get(pk=instance.pk)
+            old = Student.all_objects.get(pk=instance.pk)
             instance._old_phone = old.phone
         except Student.DoesNotExist:
             instance._old_phone = None

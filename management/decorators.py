@@ -79,7 +79,7 @@ def staff_role_required(view_func):
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('login')
-        if request.user.role != 'staff' or not hasattr(request.user, 'staff_profile') or not request.user.staff_profile:
+        if request.user.role != 'staff' or not hasattr(request.user, 'staff_profile') or not request.user.staff_profile or request.user.staff_profile.is_deleted:
             messages.error(request, 'This page is for staff accounts only.')
             return redirect('dashboard')
         return view_func(request, *args, **kwargs)

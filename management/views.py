@@ -13,6 +13,7 @@ from django.core.paginator import Paginator
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from datetime import date, datetime, timedelta
+from decimal import Decimal, InvalidOperation
 from django.utils import timezone
 import calendar as cal_module
 from django.conf import settings
@@ -300,11 +301,12 @@ def dashboard_view(request):
 
     # --- NEW: Monthly revenue comparison ---
     this_month_start = today.replace(day=1)
+    next_month_start = (this_month_start + timedelta(days=32)).replace(day=1)
     last_month_end = this_month_start - timedelta(days=1)
     last_month_start = last_month_end.replace(day=1)
 
     month_revenue = FeePayment.objects.filter(
-        organization=org, payment_date__gte=this_month_start
+        organization=org, payment_date__gte=this_month_start, payment_date__lt=next_month_start
     ).aggregate(total=Sum('amount'))['total'] or 0
 
     last_month_revenue = FeePayment.objects.filter(
@@ -313,7 +315,7 @@ def dashboard_view(request):
 
     # --- NEW: This month's enrollments ---
     month_enrollments = Student.objects.filter(
-        organization=org, enrollment_date__gte=this_month_start
+        organization=org, enrollment_date__gte=this_month_start, enrollment_date__lt=next_month_start
     ).count()
 
     last_month_enrollments = Student.objects.filter(
@@ -3724,11 +3726,19 @@ def parent_confirm_payment(request):
 
     student_pk = request.POST.get('student_pk')
     batch_pk = request.POST.get('batch_pk')
-    amount = request.POST.get('amount')
+    amount_str = request.POST.get('amount')
     months_raw = request.POST.getlist('months_raw')
 
-    if not (student_pk and batch_pk and amount and months_raw):
+    if not (student_pk and batch_pk and amount_str and months_raw):
         messages.error(request, 'Missing payment details. Please try again.')
+        return redirect('parent_pay_upi')
+
+    try:
+        amount = Decimal(amount_str)
+        if amount <= 0:
+            raise ValueError
+    except (InvalidOperation, ValueError):
+        messages.error(request, 'Invalid payment amount.')
         return redirect('parent_pay_upi')
 
     # Verify the student belongs to this parent
@@ -4717,7 +4727,7 @@ def accounts_overview(request):
         end_date = None
 
     # --- INCOME: Fee Payments ---
-    fee_qs = FeePayment.objects.filter(organization=org)
+    fee_qs = FeePayment.objects.filter(organization=org, status='Approved')
     if start_date:
         fee_qs = fee_qs.filter(payment_date__gte=start_date)
     if end_date:
