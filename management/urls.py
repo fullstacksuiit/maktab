@@ -150,6 +150,7 @@ urlpatterns = [
     # Admin Payroll Management URLs
     path('payroll/', views.payroll_list, name='payroll_list'),
     path('payroll/generate/', views.payroll_generate, name='payroll_generate'),
+    path('payroll/bulk-action/', views.payroll_bulk_action, name='payroll_bulk_action'),
     path('payroll/<int:pk>/', views.payroll_detail, name='payroll_detail'),
     path('payroll/<int:pk>/edit/', views.payroll_edit, name='payroll_edit'),
     path('payroll/<int:pk>/process/', views.payroll_process, name='payroll_process'),

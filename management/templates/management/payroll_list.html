@@ -50,6 +50,45 @@
     </a>
 </div>
 
+<!-- Bulk Action Bar (hidden by default, shown when checkboxes are selected) -->
+<div id="bulkActionBar" class="hidden sticky top-0 z-20 mb-4 bg-white rounded-2xl shadow-lg border border-primary/20 p-4 animate-[slideUp_0.3s_ease-out]">
+    <form method="post" action="{% url 'payroll_bulk_action' %}" id="bulkForm">
+        {% csrf_token %}
+        <input type="hidden" name="month" value="{{ selected_month }}">
+        <input type="hidden" name="year" value="{{ selected_year }}">
+        <input type="hidden" name="status" value="{{ status_filter }}">
+        <input type="hidden" name="q" value="{{ search_query }}">
+        <div id="bulkPayrollIds"></div>
+        <div class="flex flex-col sm:flex-row items-center gap-3">
+            <span class="text-sm font-semibold text-gray-700">
+                <i class="fas fa-check-square text-primary mr-1"></i>
+                <span id="selectedCount">0</span> selected
+            </span>
+            <div class="flex flex-wrap gap-2 sm:ml-auto">
+                <button type="submit" name="bulk_action" value="process"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors inline-flex items-center gap-2">
+                    <i class="fas fa-check-double"></i> Process All
+                </button>
+                <div class="flex items-center gap-2">
+                    <select id="bulkPaymentMethod" name="payment_method" class="px-3 py-2 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Online">Online</option>
+                        <option value="UPI">UPI</option>
+                    </select>
+                    <button type="submit" name="bulk_action" value="mark_paid"
+                        class="px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition-colors inline-flex items-center gap-2">
+                        <i class="fas fa-money-bill-wave"></i> Mark Paid
+                    </button>
+                </div>
+                <button type="button" onclick="clearSelection()" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
 <!-- Payroll Table -->
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
     <!-- Desktop Table View -->
@@ -57,6 +96,9 @@
         <table class="w-full">
             <thead>
                 <tr class="bg-gray-50 border-b border-gray-100">
+                    <th class="px-4 py-3 text-center w-10">
+                        <input type="checkbox" id="selectAll" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary/50 cursor-pointer">
+                    </th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Payroll #</th>
                     <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Staff</th>
                     <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Base Salary</th>
@@ -68,7 +110,10 @@
             </thead>
             <tbody class="divide-y divide-gray-50">
                 {% for payroll in payrolls %}
-                <tr class="hover:bg-gray-50/50 transition-colors">
+                <tr class="hover:bg-gray-50/50 transition-colors payroll-row" data-id="{{ payroll.pk }}" data-status="{{ payroll.status }}">
+                    <td class="px-4 py-3 text-center">
+                        <input type="checkbox" class="payroll-checkbox w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary/50 cursor-pointer" value="{{ payroll.pk }}">
+                    </td>
                     <td class="px-4 py-3 text-sm font-medium text-gray-800">{{ payroll.payroll_number }}</td>
                     <td class="px-4 py-3">
                         <div class="flex items-center gap-3">
@@ -109,7 +154,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="px-4 py-12 text-center text-gray-400">
+                    <td colspan="8" class="px-4 py-12 text-center text-gray-400">
                         <i class="fas fa-file-invoice-dollar text-3xl mb-2 block"></i>
                         No payroll records found. Click "Generate Payroll" to create them.
                     </td>
@@ -122,50 +167,55 @@
     <!-- Mobile Card View -->
     <div class="md:hidden divide-y divide-gray-100">
         {% for payroll in payrolls %}
-        <div class="p-4">
-            <a href="{% url 'payroll_detail' payroll.pk %}" class="block active:bg-gray-50">
-                <div class="flex items-start justify-between gap-3 mb-2">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-xs font-bold shrink-0">
-                            {{ payroll.staff.first_name.0 }}{{ payroll.staff.last_name.0 }}
+        <div class="p-4 payroll-row" data-id="{{ payroll.pk }}" data-status="{{ payroll.status }}">
+            <div class="flex items-start gap-3">
+                <input type="checkbox" class="payroll-checkbox mt-1 w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary/50 cursor-pointer shrink-0" value="{{ payroll.pk }}">
+                <div class="flex-1 min-w-0">
+                    <a href="{% url 'payroll_detail' payroll.pk %}" class="block active:bg-gray-50">
+                        <div class="flex items-start justify-between gap-3 mb-2">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-xs font-bold shrink-0">
+                                    {{ payroll.staff.first_name.0 }}{{ payroll.staff.last_name.0 }}
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="font-semibold text-gray-800 text-sm">{{ payroll.staff.first_name }} {{ payroll.staff.last_name }}</h4>
+                                    <p class="text-xs text-gray-500">{{ payroll.payroll_number }} &middot; {{ payroll.staff.staff_id }}</p>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold shrink-0
+                                {% if payroll.status == 'draft' %}bg-yellow-100 text-yellow-700 border border-yellow-200
+                                {% elif payroll.status == 'processed' %}bg-blue-100 text-blue-700 border border-blue-200
+                                {% else %}bg-green-100 text-green-700 border border-green-200{% endif %}">
+                                {{ payroll.get_status_display }}
+                            </span>
                         </div>
-                        <div class="min-w-0">
-                            <h4 class="font-semibold text-gray-800 text-sm">{{ payroll.staff.first_name }} {{ payroll.staff.last_name }}</h4>
-                            <p class="text-xs text-gray-500">{{ payroll.payroll_number }} &middot; {{ payroll.staff.staff_id }}</p>
+                        <div class="flex items-center gap-4 text-xs pl-[52px]">
+                            <div>
+                                <span class="text-gray-400">Base</span>
+                                <span class="font-medium text-gray-700 ml-1">{{ currency_symbol }} {{ payroll.base_salary }}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Ded.</span>
+                                <span class="font-medium text-red-600 ml-1">{{ currency_symbol }} {{ payroll.total_deductions }}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-400">Net</span>
+                                <span class="font-bold text-gray-800 ml-1">{{ currency_symbol }} {{ payroll.net_salary }}</span>
+                            </div>
                         </div>
-                    </div>
-                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold shrink-0
-                        {% if payroll.status == 'draft' %}bg-yellow-100 text-yellow-700 border border-yellow-200
-                        {% elif payroll.status == 'processed' %}bg-blue-100 text-blue-700 border border-blue-200
-                        {% else %}bg-green-100 text-green-700 border border-green-200{% endif %}">
-                        {{ payroll.get_status_display }}
-                    </span>
-                </div>
-                <div class="flex items-center gap-4 text-xs pl-[52px]">
-                    <div>
-                        <span class="text-gray-400">Base</span>
-                        <span class="font-medium text-gray-700 ml-1">{{ currency_symbol }} {{ payroll.base_salary }}</span>
-                    </div>
-                    <div>
-                        <span class="text-gray-400">Ded.</span>
-                        <span class="font-medium text-red-600 ml-1">{{ currency_symbol }} {{ payroll.total_deductions }}</span>
-                    </div>
-                    <div>
-                        <span class="text-gray-400">Net</span>
-                        <span class="font-bold text-gray-800 ml-1">{{ currency_symbol }} {{ payroll.net_salary }}</span>
+                    </a>
+                    <div class="flex items-center gap-1 mt-2 pl-[52px]">
+                        {% if payroll.status == 'draft' %}
+                        <a href="{% url 'payroll_edit' payroll.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
+                        {% endif %}
+                        {% if request.user.role == 'admin' %}
+                        <button class="w-8 h-8 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors" title="Delete"
+                            onclick="openDeleteModal('{% url 'payroll_delete' payroll.pk %}', 'Payroll {{ payroll.payroll_number|escapejs }}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        {% endif %}
                     </div>
                 </div>
-            </a>
-            <div class="flex items-center gap-1 mt-2 pl-[52px]">
-                {% if payroll.status == 'draft' %}
-                <a href="{% url 'payroll_edit' payroll.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
-                {% endif %}
-                {% if request.user.role == 'admin' %}
-                <button class="w-8 h-8 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors" title="Delete"
-                    onclick="openDeleteModal('{% url 'payroll_delete' payroll.pk %}', 'Payroll {{ payroll.payroll_number|escapejs }}')">
-                    <i class="fas fa-trash"></i>
-                </button>
-                {% endif %}
             </div>
         </div>
         {% empty %}
@@ -189,4 +239,67 @@
     {% endif %}
 </div>
 {% include 'management/components/delete_modal.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    const selectAll = document.getElementById('selectAll');
+    const bulkBar = document.getElementById('bulkActionBar');
+    const bulkIdsContainer = document.getElementById('bulkPayrollIds');
+    const selectedCountEl = document.getElementById('selectedCount');
+    const checkboxes = document.querySelectorAll('.payroll-checkbox');
+
+    function getChecked() {
+        return document.querySelectorAll('.payroll-checkbox:checked');
+    }
+
+    function updateBulkBar() {
+        const checked = getChecked();
+        const count = checked.length;
+        selectedCountEl.textContent = count;
+
+        // Sync hidden inputs
+        bulkIdsContainer.innerHTML = '';
+        checked.forEach(function(cb) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'payroll_ids';
+            input.value = cb.value;
+            bulkIdsContainer.appendChild(input);
+        });
+
+        if (count > 0) {
+            bulkBar.classList.remove('hidden');
+        } else {
+            bulkBar.classList.add('hidden');
+        }
+
+        // Update select-all state
+        if (selectAll) {
+            selectAll.checked = checkboxes.length > 0 && count === checkboxes.length;
+            selectAll.indeterminate = count > 0 && count < checkboxes.length;
+        }
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            checkboxes.forEach(function(cb) {
+                cb.checked = selectAll.checked;
+            });
+            updateBulkBar();
+        });
+    }
+
+    checkboxes.forEach(function(cb) {
+        cb.addEventListener('change', updateBulkBar);
+    });
+
+    window.clearSelection = function() {
+        checkboxes.forEach(function(cb) { cb.checked = false; });
+        if (selectAll) selectAll.checked = false;
+        updateBulkBar();
+    };
+})();
+</script>
 {% endblock %}

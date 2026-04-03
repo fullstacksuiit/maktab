@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.views.decorators.http import require_POST
 from django.db import models, transaction
 from django.db.models import Sum, Count, Q, Subquery, OuterRef, DecimalField
@@ -13,6 +13,7 @@ from django.core.paginator import Paginator
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from datetime import date, datetime, timedelta
+from django.utils import timezone
 import calendar as cal_module
 from django.conf import settings
 from django.core import signing
@@ -4610,6 +4611,49 @@ def payroll_revert_draft(request, pk):
     payroll.save(update_fields=['status', 'payment_date', 'payment_method', 'updated_at'])
     messages.success(request, f'Payroll {payroll.payroll_number} reverted to draft. You can now edit or delete it.')
     return redirect('payroll_detail', pk=pk)
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def payroll_bulk_action(request):
+    """Bulk process or mark-paid payrolls."""
+    org = get_org(request)
+    action = request.POST.get('bulk_action', '')
+    ids = request.POST.getlist('payroll_ids')
+
+    if not ids:
+        messages.warning(request, 'No payrolls selected.')
+        return redirect('payroll_list')
+
+    payrolls = Payroll.objects.filter(pk__in=ids, organization=org)
+
+    if action == 'process':
+        updated = payrolls.filter(status='draft').update(status='processed', updated_at=timezone.now())
+        messages.success(request, f'{updated} payroll(s) marked as processed.')
+    elif action == 'mark_paid':
+        payment_method = request.POST.get('payment_method', 'Cash')
+        updated = payrolls.filter(status='processed').update(
+            status='paid',
+            payment_date=date.today(),
+            payment_method=payment_method,
+            updated_at=timezone.now(),
+        )
+        messages.success(request, f'{updated} payroll(s) marked as paid.')
+    else:
+        messages.error(request, 'Invalid action.')
+
+    # Preserve current filters in redirect
+    params = []
+    for key in ('month', 'year', 'status', 'q'):
+        val = request.POST.get(key, '')
+        if val:
+            params.append(f'{key}={val}')
+    redirect_url = 'payroll_list'
+    if params:
+        redirect_url = f'/payroll/?{"&".join(params)}'
+        return HttpResponseRedirect(redirect_url)
+    return redirect(redirect_url)
 
 
 @login_required(login_url='login')
