@@ -93,9 +93,18 @@
                         </span>
                     </td>
                     <td class="px-4 py-3 text-center">
-                        <a href="{% url 'payroll_detail' payroll.pk %}" class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs hover:bg-primary hover:text-white transition-colors">
-                            View
-                        </a>
+                        <div class="flex items-center justify-center gap-1">
+                            <a href="{% url 'payroll_detail' payroll.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors" title="View"><i class="fas fa-eye"></i></a>
+                            {% if payroll.status == 'draft' %}
+                            <a href="{% url 'payroll_edit' payroll.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
+                            {% endif %}
+                            {% if request.user.role == 'admin' %}
+                            <button class="w-8 h-8 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors" title="Delete"
+                                onclick="openDeleteModal('{% url 'payroll_delete' payroll.pk %}', 'Payroll {{ payroll.payroll_number|escapejs }}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
@@ -113,39 +122,52 @@
     <!-- Mobile Card View -->
     <div class="md:hidden divide-y divide-gray-100">
         {% for payroll in payrolls %}
-        <a href="{% url 'payroll_detail' payroll.pk %}" class="block p-4 active:bg-gray-50">
-            <div class="flex items-start justify-between gap-3 mb-2">
-                <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-xs font-bold shrink-0">
-                        {{ payroll.staff.first_name.0 }}{{ payroll.staff.last_name.0 }}
+        <div class="p-4">
+            <a href="{% url 'payroll_detail' payroll.pk %}" class="block active:bg-gray-50">
+                <div class="flex items-start justify-between gap-3 mb-2">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center text-xs font-bold shrink-0">
+                            {{ payroll.staff.first_name.0 }}{{ payroll.staff.last_name.0 }}
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-semibold text-gray-800 text-sm">{{ payroll.staff.first_name }} {{ payroll.staff.last_name }}</h4>
+                            <p class="text-xs text-gray-500">{{ payroll.payroll_number }} &middot; {{ payroll.staff.staff_id }}</p>
+                        </div>
                     </div>
-                    <div class="min-w-0">
-                        <h4 class="font-semibold text-gray-800 text-sm">{{ payroll.staff.first_name }} {{ payroll.staff.last_name }}</h4>
-                        <p class="text-xs text-gray-500">{{ payroll.payroll_number }} &middot; {{ payroll.staff.staff_id }}</p>
+                    <span class="px-2.5 py-1 rounded-full text-xs font-semibold shrink-0
+                        {% if payroll.status == 'draft' %}bg-yellow-100 text-yellow-700 border border-yellow-200
+                        {% elif payroll.status == 'processed' %}bg-blue-100 text-blue-700 border border-blue-200
+                        {% else %}bg-green-100 text-green-700 border border-green-200{% endif %}">
+                        {{ payroll.get_status_display }}
+                    </span>
+                </div>
+                <div class="flex items-center gap-4 text-xs pl-[52px]">
+                    <div>
+                        <span class="text-gray-400">Base</span>
+                        <span class="font-medium text-gray-700 ml-1">{{ currency_symbol }} {{ payroll.base_salary }}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-400">Ded.</span>
+                        <span class="font-medium text-red-600 ml-1">{{ currency_symbol }} {{ payroll.total_deductions }}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-400">Net</span>
+                        <span class="font-bold text-gray-800 ml-1">{{ currency_symbol }} {{ payroll.net_salary }}</span>
                     </div>
                 </div>
-                <span class="px-2.5 py-1 rounded-full text-xs font-semibold shrink-0
-                    {% if payroll.status == 'draft' %}bg-yellow-100 text-yellow-700 border border-yellow-200
-                    {% elif payroll.status == 'processed' %}bg-blue-100 text-blue-700 border border-blue-200
-                    {% else %}bg-green-100 text-green-700 border border-green-200{% endif %}">
-                    {{ payroll.get_status_display }}
-                </span>
+            </a>
+            <div class="flex items-center gap-1 mt-2 pl-[52px]">
+                {% if payroll.status == 'draft' %}
+                <a href="{% url 'payroll_edit' payroll.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
+                {% endif %}
+                {% if request.user.role == 'admin' %}
+                <button class="w-8 h-8 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors" title="Delete"
+                    onclick="openDeleteModal('{% url 'payroll_delete' payroll.pk %}', 'Payroll {{ payroll.payroll_number|escapejs }}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+                {% endif %}
             </div>
-            <div class="flex items-center gap-4 text-xs pl-[52px]">
-                <div>
-                    <span class="text-gray-400">Base</span>
-                    <span class="font-medium text-gray-700 ml-1">{{ currency_symbol }} {{ payroll.base_salary }}</span>
-                </div>
-                <div>
-                    <span class="text-gray-400">Ded.</span>
-                    <span class="font-medium text-red-600 ml-1">{{ currency_symbol }} {{ payroll.total_deductions }}</span>
-                </div>
-                <div>
-                    <span class="text-gray-400">Net</span>
-                    <span class="font-bold text-gray-800 ml-1">{{ currency_symbol }} {{ payroll.net_salary }}</span>
-                </div>
-            </div>
-        </a>
+        </div>
         {% empty %}
         <div class="p-8 text-center text-gray-400">
             <i class="fas fa-file-invoice-dollar text-3xl mb-2 block"></i>
@@ -166,4 +188,5 @@
     </div>
     {% endif %}
 </div>
+{% include 'management/components/delete_modal.html' %}
 {% endblock %}

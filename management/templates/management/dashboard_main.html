@@ -5,20 +5,41 @@
 
 {% block content %}
 <div class="animate-[slideUp_0.4s_ease-out]">
-    <!-- Welcome Section - Mobile Optimized -->
-    <div class="bg-gradient-to-br from-primary via-secondary to-primary rounded-xl sm:rounded-2xl mb-5 sm:mb-6 text-white relative overflow-hidden shadow-lg shadow-primary/20">
+    <!-- Welcome Section - Deeply Islamic -->
+    <div class="stagger-in bg-gradient-to-br from-primary via-secondary to-primary rounded-xl sm:rounded-2xl mb-5 sm:mb-6 text-white relative overflow-hidden shadow-lg shadow-primary/20">
+        <!-- Islamic geometric pattern overlay -->
+        <div class="absolute inset-0 opacity-[0.04]" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><path d=%22M40 0L80 40L40 80L0 40Z%22 fill=%22none%22 stroke=%22white%22 stroke-width=%221%22/><path d=%22M20 0L60 0L80 20L80 60L60 80L20 80L0 60L0 20Z%22 fill=%22none%22 stroke=%22white%22 stroke-width=%220.5%22/><circle cx=%2240%22 cy=%2240%22 r=%2220%22 fill=%22none%22 stroke=%22white%22 stroke-width=%220.5%22/></svg>'); background-size: 80px 80px;"></div>
         <div class="absolute top-0 right-0 -mr-12 -mt-12 w-32 sm:w-40 h-32 sm:h-40 bg-white/10 rounded-full blur-3xl"></div>
         <div class="absolute bottom-0 left-0 -ml-12 -mb-12 w-24 sm:w-32 h-24 sm:h-32 bg-gold/20 rounded-full blur-3xl"></div>
 
         <div class="relative z-10 px-4 pt-3.5 pb-3 sm:px-6 sm:pt-5 sm:pb-4">
-            <h1 class="text-lg sm:text-xl lg:text-2xl font-bold mb-0.5 flex items-center gap-2">
-                <i class="fas fa-mosque text-gold text-base sm:text-lg"></i>
-                <span>Assalamu Alaikum, {% if user_prefix %}{{ user_prefix }} {% endif %}{{ user.username }}!</span>
-            </h1>
-            <p class="text-white/80 text-xs sm:text-sm">
-                Here's what's happening at <strong class="text-gold">Maktab {{ user.organization.org_name }}</strong> today.
-                <span class="urdu text-white/90 text-sm sm:text-base ml-1">آج کی سرگرمیاں</span>
-            </p>
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                <div class="flex-1 min-w-0">
+                    <!-- Bismillah -->
+                    <p class="text-gold/80 text-xs mb-1" style="font-family: 'Noto Nastaliq Urdu', serif; letter-spacing: 0.1em;">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
+                    <h1 class="text-lg sm:text-xl lg:text-2xl font-bold mb-0.5 flex items-center gap-2">
+                        <i class="fas fa-mosque text-gold text-base sm:text-lg"></i>
+                        <span id="greeting-text">Assalamu Alaikum, {% if user_prefix %}{{ user_prefix }} {% endif %}{{ user.username }}!</span>
+                    </h1>
+                    <p class="text-white/80 text-xs sm:text-sm">
+                        Here's what's happening at <strong class="text-gold">Maktab {{ user.organization.org_name }}</strong> today.
+                        {% if user.organization.org_name_urdu %}
+                        <span class="urdu text-gold/90 text-sm sm:text-base ml-1">{{ user.organization.org_name_urdu }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <!-- Hijri Date + Next Prayer -->
+                <div class="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-1.5 flex-shrink-0">
+                    <div class="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm rounded-lg px-2.5 py-1 sm:px-3 sm:py-1.5 border border-white/10">
+                        <i class="fas fa-moon text-gold text-[10px]"></i>
+                        <span class="text-[10px] sm:text-xs font-semibold text-white/90 whitespace-nowrap">{{ hijri_date }}</span>
+                    </div>
+                    <div id="next-prayer-pill" class="hidden items-center gap-1.5 bg-gold/20 backdrop-blur-sm rounded-lg px-2.5 py-1 sm:px-3 sm:py-1.5 border border-gold/30">
+                        <i class="fas fa-clock text-gold text-[10px]"></i>
+                        <span id="next-prayer-label" class="text-[10px] sm:text-xs font-semibold text-gold whitespace-nowrap"></span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Hadith of the Hour - Marquee -->
@@ -47,41 +68,69 @@
         </style>
     </div>
 
-    <!-- Quick Stats Grid - Compact Cards -->
-    <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-3 sm:mb-4">
+    <!-- Quick Stats Grid - Animated Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-3 sm:mb-4">
         <!-- Students -->
-        <a href="{% url 'student_list' %}" class="bg-white p-3 sm:p-4 rounded-xl shadow-sm hover:shadow-md border border-gray-100 hover:border-purple-200 transition-all group">
-            <div class="flex items-center gap-2.5 sm:gap-3">
-                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center text-sm sm:text-base shadow-md group-hover:scale-105 transition-transform">
+        <a href="{% url 'student_list' %}" class="stagger-in bg-white p-3 sm:p-4 rounded-xl shadow-sm hover:shadow-md border border-gray-100 hover:border-purple-200 transition-all group relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-16 h-16 bg-purple-500/5 rounded-full -mr-4 -mt-4 group-hover:scale-150 transition-transform duration-500"></div>
+            <div class="relative flex items-center gap-2.5 sm:gap-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center text-sm sm:text-base shadow-md group-hover:scale-110 transition-transform">
                     <i class="fas fa-user-graduate"></i>
                 </div>
                 <div class="min-w-0">
-                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 leading-tight group-hover:text-purple-600 transition-colors">{{ total_students|default:0 }}</h3>
-                    <p class="text-[10px] sm:text-xs text-gray-500 truncate">Students <span class="urdu text-gray-600">طلباء</span>{% if orphan_count %} <span class="text-purple-400">({{ orphan_count }} orphan{{ orphan_count|pluralize }})</span>{% endif %}</p>
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 leading-tight group-hover:text-purple-600 transition-colors" data-count="{{ total_students|default:0 }}">0</h3>
+                    <p class="text-[10px] sm:text-xs text-gray-500 truncate">Students{% if orphan_count %} <span class="text-purple-400">({{ orphan_count }} orphan{{ orphan_count|pluralize }})</span>{% endif %}</p>
+                    {% if month_enrollments %}
+                    <p class="text-[9px] sm:text-[10px] font-semibold mt-0.5 {% if month_enrollments > last_month_enrollments %}text-green-600{% elif month_enrollments < last_month_enrollments %}text-red-500{% else %}text-gray-400{% endif %}">
+                        {% if month_enrollments > last_month_enrollments %}<i class="fas fa-arrow-up text-[7px]"></i>{% elif month_enrollments < last_month_enrollments %}<i class="fas fa-arrow-down text-[7px]"></i>{% endif %}
+                        +{{ month_enrollments }} this month
+                    </p>
+                    {% endif %}
                 </div>
             </div>
         </a>
         <!-- Staff -->
-        <a href="{% url 'staff_list' %}" class="bg-white p-3 sm:p-4 rounded-xl shadow-sm hover:shadow-md border border-gray-100 hover:border-orange-200 transition-all group">
-            <div class="flex items-center gap-2.5 sm:gap-3">
-                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white flex items-center justify-center text-sm sm:text-base shadow-md group-hover:scale-105 transition-transform">
+        <a href="{% url 'staff_list' %}" class="stagger-in bg-white p-3 sm:p-4 rounded-xl shadow-sm hover:shadow-md border border-gray-100 hover:border-orange-200 transition-all group relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-16 h-16 bg-orange-500/5 rounded-full -mr-4 -mt-4 group-hover:scale-150 transition-transform duration-500"></div>
+            <div class="relative flex items-center gap-2.5 sm:gap-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white flex items-center justify-center text-sm sm:text-base shadow-md group-hover:scale-110 transition-transform">
                     <i class="fas fa-users-cog"></i>
                 </div>
                 <div>
-                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 leading-tight group-hover:text-orange-600 transition-colors">{{ total_staff|default:0 }}</h3>
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 leading-tight group-hover:text-orange-600 transition-colors" data-count="{{ total_staff|default:0 }}">0</h3>
                     <p class="text-[10px] sm:text-xs text-gray-500">Staff <span class="urdu text-gray-600">عملہ</span></p>
                 </div>
             </div>
         </a>
         <!-- Courses -->
-        <a href="{% url 'course_list' %}" class="bg-white p-3 sm:p-4 rounded-xl shadow-sm hover:shadow-md border border-gray-100 hover:border-blue-200 transition-all group">
-            <div class="flex items-center gap-2.5 sm:gap-3">
-                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-sm sm:text-base shadow-md group-hover:scale-105 transition-transform">
+        <a href="{% url 'course_list' %}" class="stagger-in bg-white p-3 sm:p-4 rounded-xl shadow-sm hover:shadow-md border border-gray-100 hover:border-blue-200 transition-all group relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 rounded-full -mr-4 -mt-4 group-hover:scale-150 transition-transform duration-500"></div>
+            <div class="relative flex items-center gap-2.5 sm:gap-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center text-sm sm:text-base shadow-md group-hover:scale-110 transition-transform">
                     <i class="fas fa-book-quran"></i>
                 </div>
                 <div>
-                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 leading-tight group-hover:text-blue-600 transition-colors">{{ total_courses|default:0 }}</h3>
-                    <p class="text-[10px] sm:text-xs text-gray-500">Courses <span class="urdu text-gray-600">کورسز</span> <span class="text-gray-400">({{ total_batches|default:0 }} batch{{ total_batches|pluralize:"es" }})</span></p>
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 leading-tight group-hover:text-blue-600 transition-colors" data-count="{{ total_courses|default:0 }}">0</h3>
+                    <p class="text-[10px] sm:text-xs text-gray-500">Courses <span class="text-gray-400">({{ total_batches|default:0 }} batch{{ total_batches|pluralize:"es" }})</span></p>
+                </div>
+            </div>
+        </a>
+        <!-- Revenue -->
+        <a href="{% url 'fee_payment_list' %}" class="stagger-in bg-white p-3 sm:p-4 rounded-xl shadow-sm hover:shadow-md border border-gray-100 hover:border-green-200 transition-all group relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-16 h-16 bg-green-500/5 rounded-full -mr-4 -mt-4 group-hover:scale-150 transition-transform duration-500"></div>
+            <div class="relative flex items-center gap-2.5 sm:gap-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 text-white flex items-center justify-center text-sm sm:text-base shadow-md group-hover:scale-110 transition-transform">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div class="min-w-0">
+                    <h3 class="text-lg sm:text-xl font-bold text-gray-800 leading-tight group-hover:text-green-600 transition-colors"><span class="text-sm text-gray-400">{{ currency_symbol }}</span><span data-count="{{ total_revenue|default:0 }}">0</span></h3>
+                    <p class="text-[10px] sm:text-xs text-gray-500">Revenue <span class="urdu text-gray-600">آمدنی</span></p>
+                    {% if month_revenue %}
+                    <p class="text-[9px] sm:text-[10px] font-semibold mt-0.5 {% if month_revenue > last_month_revenue %}text-green-600{% elif month_revenue < last_month_revenue %}text-red-500{% else %}text-gray-400{% endif %}">
+                        {% if month_revenue > last_month_revenue %}<i class="fas fa-arrow-up text-[7px]"></i>{% elif month_revenue < last_month_revenue %}<i class="fas fa-arrow-down text-[7px]"></i>{% endif %}
+                        {{ currency_symbol }}{{ month_revenue }} this month
+                    </p>
+                    {% endif %}
                 </div>
             </div>
         </a>
@@ -124,6 +173,110 @@
                         </div>
                         <span class="text-[10px] sm:text-sm font-semibold text-gray-700 text-center leading-tight">Add<br class="sm:hidden"> Course</span>
                     </a>
+                </div>
+            </div>
+
+            <!-- Finance Overview - Animated Donut + Monthly Comparison -->
+            <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-md border border-gray-100 p-4 sm:p-6 transition-shadow">
+                <h2 class="text-base sm:text-lg font-bold text-gray-800 mb-4 sm:mb-5 flex items-center gap-2">
+                    <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm shadow-md">
+                        <i class="fas fa-chart-pie"></i>
+                    </span>
+                    Finance Overview <span class="urdu text-gray-600 text-base font-normal">مالی جائزہ</span>
+                </h2>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <!-- Donut Chart - Payment Method Breakdown -->
+                    <div class="flex flex-col items-center">
+                        <div class="relative w-36 h-36 sm:w-44 sm:h-44">
+                            <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
+                                <!-- Background circle -->
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#f3f4f6" stroke-width="12"/>
+                                {% if total_revenue %}
+                                <!-- Cash segment -->
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="12"
+                                    stroke-dasharray="{{ cash_pct_dash }} 251.2" stroke-dashoffset="0"
+                                    class="donut-segment" stroke-linecap="round"
+                                    data-dash="{{ cash_pct_dash }}"/>
+                                <!-- Bank segment -->
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#3b82f6" stroke-width="12"
+                                    stroke-dasharray="{{ bank_pct_dash }} 251.2" stroke-dashoffset="-{{ cash_pct_dash }}"
+                                    class="donut-segment" stroke-linecap="round"
+                                    data-dash="{{ bank_pct_dash }}" style="animation-delay: 0.2s"/>
+                                <!-- Online segment -->
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" stroke-width="12"
+                                    stroke-dasharray="{{ online_pct_dash }} 251.2" stroke-dashoffset="-{{ cash_bank_dash }}"
+                                    class="donut-segment" stroke-linecap="round"
+                                    data-dash="{{ online_pct_dash }}" style="animation-delay: 0.4s"/>
+                                {% else %}
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" stroke-width="12"/>
+                                {% endif %}
+                            </svg>
+                            <!-- Center label -->
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span class="text-[10px] text-gray-400 font-medium">Total</span>
+                                <span class="text-sm sm:text-base font-bold text-gray-800">{{ currency_symbol }}{{ total_revenue|default:0 }}</span>
+                            </div>
+                        </div>
+                        <!-- Legend -->
+                        <div class="flex flex-wrap justify-center gap-3 mt-3">
+                            <div class="flex items-center gap-1.5">
+                                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                                <span class="text-[10px] sm:text-xs text-gray-600">Cash <span class="font-bold">{{ currency_symbol }}{{ cash_total }}</span></span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <div class="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                                <span class="text-[10px] sm:text-xs text-gray-600">Bank <span class="font-bold">{{ currency_symbol }}{{ bank_total }}</span></span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <div class="w-2.5 h-2.5 rounded-full bg-amber-500"></div>
+                                <span class="text-[10px] sm:text-xs text-gray-600">Online <span class="font-bold">{{ currency_symbol }}{{ online_total }}</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Comparison + Pending -->
+                    <div class="flex flex-col justify-center gap-4">
+                        <!-- Revenue Comparison Bar -->
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-xs font-semibold text-gray-600">This Month</span>
+                                <span class="text-xs font-bold text-gray-800">{{ currency_symbol }}{{ month_revenue|default:0 }}</span>
+                            </div>
+                            <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full bar-animate"
+                                     style="width: {% if month_revenue and last_month_revenue %}{% if month_revenue >= last_month_revenue %}100{% else %}{% widthratio month_revenue last_month_revenue 100 %}{% endif %}{% elif month_revenue %}100{% else %}0{% endif %}%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-xs font-semibold text-gray-400">Last Month</span>
+                                <span class="text-xs font-bold text-gray-400">{{ currency_symbol }}{{ last_month_revenue|default:0 }}</span>
+                            </div>
+                            <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-gray-300 rounded-full bar-animate" style="animation-delay: 0.5s;
+                                     width: {% if last_month_revenue and month_revenue %}{% if last_month_revenue >= month_revenue %}100{% else %}{% widthratio last_month_revenue month_revenue 100 %}{% endif %}{% elif last_month_revenue %}100{% else %}0{% endif %}%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Pending Fees Summary -->
+                        <div class="mt-2 p-3 rounded-xl bg-gradient-to-br from-red-50 to-orange-50 border border-red-100">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 text-white flex items-center justify-center text-xs shadow-sm">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] sm:text-xs text-red-600/70 font-medium">Pending Fees</p>
+                                        <p class="text-sm sm:text-base font-bold text-red-700">{{ currency_symbol }}{{ total_pending|default:0 }}</p>
+                                    </div>
+                                </div>
+                                <a href="{% url 'fee_payment_add' %}" class="text-[10px] sm:text-xs font-bold text-white bg-gradient-to-r from-red-500 to-orange-500 px-3 py-1.5 rounded-lg hover:shadow-lg hover:shadow-red-500/25 transition-all">
+                                    Collect <i class="fas fa-arrow-right text-[8px] ml-0.5"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -303,6 +456,44 @@
 
         <!-- Sidebar / Profile Column - Mobile Optimized -->
         <div class="lg:col-span-1 space-y-6 sm:space-y-8">
+            {% if orphan_count %}
+            <!-- Orphan Care (Yateem) Card -->
+            <div class="relative bg-gradient-to-br from-purple-50 via-white to-amber-50 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-lg border border-purple-100 overflow-hidden transition-all group">
+                <!-- Subtle pattern -->
+                <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 60 60%22><path d=%22M30 0L60 30L30 60L0 30Z%22 fill=%22none%22 stroke=%22%239333ea%22 stroke-width=%220.5%22/></svg>'); background-size: 60px 60px;"></div>
+                <div class="relative px-4 sm:px-5 py-4 sm:py-5">
+                    <div class="flex items-start gap-3">
+                        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white flex items-center justify-center text-lg shadow-lg shadow-purple-500/25 group-hover:scale-110 transition-transform flex-shrink-0">
+                            <i class="fas fa-hand-holding-heart"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <h3 class="text-sm sm:text-base font-bold text-purple-800">Yateem Care</h3>
+                                <span class="urdu text-purple-600 text-base font-normal">کفالتِ یتیم</span>
+                            </div>
+                            <p class="text-[11px] sm:text-xs text-purple-600/80 leading-relaxed mb-2.5">
+                                Your maktab is educating <strong class="text-purple-700">{{ orphan_count }} orphan{{ orphan_count|pluralize }}</strong> with full fee waiver — fulfilling the Sunnah of caring for the yateem.
+                            </p>
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1 h-1.5 bg-purple-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-purple-500 to-amber-500 rounded-full" style="width: {% widthratio orphan_count total_students 100 %}%"></div>
+                                </div>
+                                <span class="text-[10px] font-bold text-purple-500">{% widthratio orphan_count total_students 100 %}%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Hadith reference -->
+                    <div class="mt-3 pt-2.5 border-t border-purple-100/60">
+                        <p class="text-[10px] sm:text-[11px] text-purple-400 italic leading-relaxed">
+                            <i class="fas fa-quote-left text-[8px] text-purple-300 mr-1"></i>
+                            "I and the one who sponsors an orphan will be like this in Paradise" — gesturing with his index and middle fingers.
+                            <span class="not-italic font-semibold text-purple-500 ml-1">Sahih al-Bukhari 5304</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Quick Attendance Widget -->
             <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 overflow-hidden transition-shadow">
                 <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-gold/10 to-transparent">
@@ -510,6 +701,91 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Animated number counters -->
+<script>
+(function() {
+    function animateCount(el) {
+        var target = parseInt(el.getAttribute('data-count')) || 0;
+        if (target === 0) return;
+        var duration = 1200;
+        var start = performance.now();
+        function step(now) {
+            var elapsed = now - start;
+            var progress = Math.min(elapsed / duration, 1);
+            // easeOutExpo
+            var eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+            el.textContent = Math.round(eased * target).toLocaleString();
+            if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                animateCount(entry.target);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.3 });
+    document.querySelectorAll('[data-count]').forEach(function(el) {
+        observer.observe(el);
+    });
+})();
+</script>
+
+<!-- Prayer-time greeting + Next prayer countdown -->
+<script>
+(function() {
+    var greetingEl = document.getElementById('greeting-text');
+    var pillEl = document.getElementById('next-prayer-pill');
+    var labelEl = document.getElementById('next-prayer-label');
+    var username = '{% if user_prefix %}{{ user_prefix }} {% endif %}{{ user.username }}';
+
+    // Next prayer countdown using cached salah times
+    function updateNextPrayer() {
+        var prayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+        var prayerNames = { Fajr: 'Fajr', Dhuhr: 'Zohar', Asr: 'Asr', Maghrib: 'Maghrib', Isha: 'Isha' };
+        var now = new Date();
+        var nowMins = now.getHours() * 60 + now.getMinutes();
+
+        // Try to get cached salah times
+        var LAT = {{ org_latitude|default:"null" }};
+        var LNG = {{ org_longitude|default:"null" }};
+        if (!LAT || !LNG) return;
+        var d = now;
+        var cacheKey = 'salah_' + LAT.toFixed(2) + '_' + LNG.toFixed(2) + '_' + d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+        var cached;
+        try { cached = JSON.parse(localStorage.getItem(cacheKey)); } catch(e) { return; }
+        if (!cached) return;
+
+        for (var i = 0; i < prayers.length; i++) {
+            var t = cached[prayers[i]];
+            if (!t) continue;
+            var parts = t.split(' ')[0].split(':');
+            var pMins = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+            if (nowMins < pMins) {
+                var diff = pMins - nowMins;
+                var hrs = Math.floor(diff / 60);
+                var mins = diff % 60;
+                var timeStr = hrs > 0 ? hrs + 'h ' + mins + 'm' : mins + 'm';
+                labelEl.textContent = prayerNames[prayers[i]] + ' in ' + timeStr;
+                pillEl.classList.remove('hidden');
+                pillEl.classList.add('flex');
+                return;
+            }
+        }
+        // All prayers passed
+        labelEl.textContent = 'Fajr tomorrow';
+        pillEl.classList.remove('hidden');
+        pillEl.classList.add('flex');
+    }
+
+    // Run after salah times are likely cached (1.5s delay)
+    setTimeout(updateNextPrayer, 1500);
+    setInterval(updateNextPrayer, 60000);
+})();
+</script>
+
 <script>
 (function() {
     var marquee = document.getElementById('hadith-marquee');

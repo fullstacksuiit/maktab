@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Organization, Course, Batch, Student, Staff, Attendance, StaffAttendance, FeePayment, BehaviorNote, AdmissionApplication, Event, LeaveType, LeaveBalance, LeaveRequest, Expense
+from .models import User, Organization, Course, Batch, Student, Staff, Attendance, StaffAttendance, FeePayment, BehaviorNote, AdmissionApplication, Event, LeaveType, LeaveBalance, LeaveRequest, Expense, Payroll, PayrollComponent, SalaryComponent
 
 
 @admin.register(Organization)
@@ -126,6 +126,36 @@ class ExpenseAdmin(admin.ModelAdmin):
     list_filter = ['category', 'payment_method', 'expense_date', 'organization']
     search_fields = ['title', 'description', 'reference_number']
     readonly_fields = ['created_at', 'updated_at']
+
+
+class PayrollComponentInline(admin.TabularInline):
+    model = PayrollComponent
+    extra = 0
+    fields = ['name', 'component_type', 'amount', 'salary_component', 'notes']
+    readonly_fields = []
+
+
+@admin.register(SalaryComponent)
+class SalaryComponentAdmin(admin.ModelAdmin):
+    list_display = ['name', 'code', 'component_type', 'is_percentage', 'default_amount', 'is_active', 'organization']
+    list_filter = ['component_type', 'is_active', 'organization']
+    search_fields = ['name', 'code']
+
+
+@admin.register(Payroll)
+class PayrollAdmin(admin.ModelAdmin):
+    list_display = ['payroll_number', 'staff', 'month', 'year', 'net_salary', 'status', 'payment_date', 'payment_method', 'organization']
+    list_filter = ['status', 'year', 'month', 'payment_method', 'organization']
+    search_fields = ['payroll_number', 'staff__first_name', 'staff__last_name', 'staff__staff_id']
+    readonly_fields = ['payroll_number', 'created_at', 'updated_at']
+    inlines = [PayrollComponentInline]
+
+
+@admin.register(PayrollComponent)
+class PayrollComponentAdmin(admin.ModelAdmin):
+    list_display = ['payroll', 'name', 'component_type', 'amount']
+    list_filter = ['component_type']
+    search_fields = ['name', 'payroll__payroll_number']
 
 
 admin.site.register(User, CustomUserAdmin)

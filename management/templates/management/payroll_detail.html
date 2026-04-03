@@ -34,9 +34,27 @@
             </div>
         </form>
         {% endif %}
+        {% if payroll.status != 'draft' and request.user.role == 'admin' %}
+        <form method="post" action="{% url 'payroll_revert_draft' payroll.pk %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="px-4 py-2 bg-yellow-500 text-white rounded-xl text-sm font-medium hover:bg-yellow-600 transition-colors"
+                    onclick="return confirm('Revert this payroll to draft? This will allow editing and deletion.')">
+                <i class="fas fa-undo mr-1"></i> Revert to Draft
+            </button>
+        </form>
+        {% endif %}
         <a href="{% url 'payroll_payslip_print' payroll.pk %}" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors">
             <i class="fas fa-print mr-1"></i> Pay Slip
         </a>
+        {% if request.user.role == 'admin' %}
+        <form method="post" action="{% url 'payroll_delete' payroll.pk %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 transition-colors"
+                    onclick="return confirm('Are you sure you want to permanently delete this payroll record? This cannot be undone.')">
+                <i class="fas fa-trash mr-1"></i> Delete
+            </button>
+        </form>
+        {% endif %}
     </div>
 </div>
 

@@ -343,6 +343,21 @@ def dashboard_view(request):
     # --- NEW: Orphan students count ---
     orphan_count = Student.objects.filter(organization=org, is_orphan=True).count()
 
+    # Today's Hijri date for welcome banner
+    from hijridate import Gregorian as HijriGregorian
+    hijri_today = HijriGregorian(today.year, today.month, today.day).to_hijri()
+    hijri_date_str = f"{hijri_today.day} {hijri_today.month_name()} {hijri_today.year} AH"
+
+    # Donut chart dash values (circumference = 2 * pi * 40 ≈ 251.2)
+    circumference = 251.2
+    if total_revenue > 0:
+        cash_pct_dash = round(float(cash_total) / float(total_revenue) * circumference, 1)
+        bank_pct_dash = round(float(bank_total) / float(total_revenue) * circumference, 1)
+        online_pct_dash = round(float(online_total) / float(total_revenue) * circumference, 1)
+        cash_bank_dash = round(cash_pct_dash + bank_pct_dash, 1)
+    else:
+        cash_pct_dash = bank_pct_dash = online_pct_dash = cash_bank_dash = 0
+
     context = {
         'total_courses': total_courses,
         'total_batches': total_batches,
@@ -358,6 +373,10 @@ def dashboard_view(request):
         'cash_total': cash_total,
         'bank_total': bank_total,
         'online_total': online_total,
+        'cash_pct_dash': cash_pct_dash,
+        'bank_pct_dash': bank_pct_dash,
+        'online_pct_dash': online_pct_dash,
+        'cash_bank_dash': cash_bank_dash,
         'islamic_dates': get_upcoming_islamic_dates(),
         'staff_today_total': staff_today_total,
         'staff_today_present': staff_today_present,
@@ -369,6 +388,7 @@ def dashboard_view(request):
         'students_with_pending': students_with_pending,
         'batch_attendance_today': batch_attendance_today,
         'orphan_count': orphan_count,
+        'hijri_date': hijri_date_str,
     }
     return render(request, 'management/dashboard_main.html', context)
 
@@ -4223,6 +4243,38 @@ def payroll_mark_paid(request, pk):
     payroll.payment_method = request.POST.get('payment_method', 'Cash')
     payroll.save(update_fields=['status', 'payment_date', 'payment_method', 'updated_at'])
     messages.success(request, f'Payroll {payroll.payroll_number} marked as paid.')
+    return redirect('payroll_detail', pk=pk)
+
+
+@login_required(login_url='login')
+@admin_required
+@require_POST
+def payroll_delete(request, pk):
+    """Delete a payroll record (admin only)."""
+    org = get_org(request)
+    payroll = get_object_or_404(Payroll, pk=pk, organization=org)
+    payroll_number = payroll.payroll_number
+    payroll.components.all().delete()
+    payroll.delete()
+    messages.success(request, f'Payroll {payroll_number} has been deleted.')
+    return redirect('payroll_list')
+
+
+@login_required(login_url='login')
+@admin_required
+@require_POST
+def payroll_revert_draft(request, pk):
+    """Revert a processed/paid payroll back to draft (admin only)."""
+    org = get_org(request)
+    payroll = get_object_or_404(Payroll, pk=pk, organization=org)
+    if payroll.status == 'draft':
+        messages.info(request, 'Payroll is already in draft status.')
+        return redirect('payroll_detail', pk=pk)
+    payroll.status = 'draft'
+    payroll.payment_date = None
+    payroll.payment_method = ''
+    payroll.save(update_fields=['status', 'payment_date', 'payment_method', 'updated_at'])
+    messages.success(request, f'Payroll {payroll.payroll_number} reverted to draft. You can now edit or delete it.')
     return redirect('payroll_detail', pk=pk)
 
 

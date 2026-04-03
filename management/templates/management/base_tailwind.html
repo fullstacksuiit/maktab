@@ -128,6 +128,8 @@
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #f3f4f6;
+            background-image: url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 80 80%22><path d=%22M40 0L80 40L40 80L0 40Z%22 fill=%22none%22 stroke=%22%230d6b4e%22 stroke-width=%220.3%22 opacity=%220.04%22/></svg>');
+            background-size: 80px 80px;
         }
 
         /* PWA Standalone Mode Adjustments */
@@ -298,6 +300,45 @@
                 opacity: 1;
                 transform: translateY(0);
             }
+        }
+        /* Staggered entrance animations */
+        .stagger-in {
+            opacity: 0;
+            transform: translateY(24px);
+            animation: staggerSlideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        @keyframes staggerSlideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .stagger-in:nth-child(1) { animation-delay: 0.04s; }
+        .stagger-in:nth-child(2) { animation-delay: 0.10s; }
+        .stagger-in:nth-child(3) { animation-delay: 0.16s; }
+        .stagger-in:nth-child(4) { animation-delay: 0.22s; }
+        .stagger-in:nth-child(5) { animation-delay: 0.28s; }
+        .stagger-in:nth-child(6) { animation-delay: 0.34s; }
+        .stagger-in:nth-child(7) { animation-delay: 0.40s; }
+        .stagger-in:nth-child(8) { animation-delay: 0.46s; }
+
+        /* Donut chart animation */
+        @keyframes donutFill {
+            from { stroke-dashoffset: 251.2; }
+        }
+        .donut-segment {
+            animation: donutFill 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        /* Bar grow animation */
+        @keyframes barGrow {
+            from { transform: scaleX(0); }
+            to { transform: scaleX(1); }
+        }
+        .bar-animate {
+            transform-origin: left;
+            animation: barGrow 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            animation-delay: 0.3s;
+            transform: scaleX(0);
         }
         /* HTMX Indicator */
         .htmx-indicator {

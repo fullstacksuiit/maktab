@@ -153,6 +153,8 @@ urlpatterns = [
     path('payroll/<int:pk>/edit/', views.payroll_edit, name='payroll_edit'),
     path('payroll/<int:pk>/process/', views.payroll_process, name='payroll_process'),
     path('payroll/<int:pk>/mark-paid/', views.payroll_mark_paid, name='payroll_mark_paid'),
+    path('payroll/<int:pk>/delete/', views.payroll_delete, name='payroll_delete'),
+    path('payroll/<int:pk>/revert-draft/', views.payroll_revert_draft, name='payroll_revert_draft'),
     path('payroll/<int:pk>/payslip/', views.payroll_payslip_print, name='payroll_payslip_print'),
 
     # Salary Components Management URLs
