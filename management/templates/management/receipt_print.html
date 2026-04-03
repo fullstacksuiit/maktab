@@ -23,7 +23,7 @@
                  url("{% static 'management/fonts/NotoNastaliqUrdu-Bold.ttf' %}") format('truetype');
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #000; background: #eee; -webkit-print-color-adjust: exact; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #000; background: #eee; -webkit-print-color-adjust: exact; }
         .no-print-wrap { display: flex; justify-content: center; padding: 20px; }
         .receipt { width: 210mm; max-width: 100%; background: #fff; padding: 8mm 10mm; border: 1px solid #ccc; }
         table { width: 100%; border-collapse: collapse; }
@@ -33,74 +33,74 @@
         .bilingual .en { text-align: left; }
         .bilingual .ur-side { text-align: right; font-family: 'Jameel Noori Nastaleeq Kasheeda', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; direction: rtl; }
 
-        /* Header */
-        .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 6px; }
-        .header .ur-name { font-family: 'Jameel Noori Nastaleeq Kasheeda', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size: 22px; font-weight: 700; direction: rtl; margin-bottom: 2px; line-height: 1.6; }
-        .header .en-name { font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2px; }
-        .header p { font-size: 11px; color: #000; }
+        /* Header - largest, most prominent */
+        .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 8px; }
+        .header .ur-name { font-family: 'Jameel Noori Nastaleeq Kasheeda', 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif; font-size: 30px; font-weight: 700; direction: rtl; margin-bottom: 2px; line-height: 1.6; }
+        .header .en-name { font-size: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 3px; }
+        .header p { font-size: 13px; color: #000; }
 
-        .receipt-title-wrap { text-align: center; margin: 6px 0 8px; }
-        .receipt-title { font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; border: 1.5px solid #000; display: inline-block; padding: 3px 20px; }
-        .receipt-title .ur-inline { font-size: 15px; letter-spacing: 0; }
+        .receipt-title-wrap { text-align: center; margin: 8px 0 10px; }
+        .receipt-title { font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; border: 1.5px solid #000; display: inline-block; padding: 4px 24px; }
+        .receipt-title .ur-inline { font-size: 20px; letter-spacing: 0; }
 
-        /* Meta row */
-        .meta-row { margin-bottom: 8px; }
-        .meta-row td { padding: 3px 0; vertical-align: top; }
-        .meta-row .label { font-size: 10px; text-transform: uppercase; color: #000; letter-spacing: 0.5px; font-weight: bold; }
-        .meta-row .label-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: 12px; color: #000; direction: rtl; }
-        .meta-row .value { font-weight: bold; font-size: 13px; }
+        /* Meta row - receipt no, date */
+        .meta-row { margin-bottom: 10px; }
+        .meta-row td { padding: 4px 0; vertical-align: top; }
+        .meta-row .label { font-size: 12px; text-transform: uppercase; color: #000; letter-spacing: 0.5px; font-weight: bold; }
+        .meta-row .label-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: 15px; color: #000; direction: rtl; }
+        .meta-row .value { font-weight: bold; font-size: 16px; }
 
-        /* Student box */
-        .student-box { border: 1px solid #000; padding: 6px 8px; margin-bottom: 8px; }
-        .student-box .label { font-size: 10px; text-transform: uppercase; color: #000; letter-spacing: 0.5px; font-weight: bold; }
-        .student-box .label-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: 12px; color: #000; direction: rtl; }
-        .student-box .name { font-size: 15px; font-weight: bold; }
-        .student-box .sid { font-size: 11px; color: #000; font-weight: 600; }
+        /* Student box - important, who paid */
+        .student-box { border: 1px solid #000; padding: 8px 10px; margin-bottom: 10px; }
+        .student-box .label { font-size: 12px; text-transform: uppercase; color: #000; letter-spacing: 0.5px; font-weight: bold; }
+        .student-box .label-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: 15px; color: #000; direction: rtl; }
+        .student-box .name { font-size: 20px; font-weight: bold; }
+        .student-box .sid { font-size: 13px; color: #000; font-weight: 600; }
 
         /* Section headers */
-        .section-hdr { font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #000; padding-bottom: 2px; margin: 8px 0 4px; display: flex; justify-content: space-between; align-items: baseline; }
-        .section-hdr .ur-side { font-family: 'Noto Nastaliq Urdu', serif; font-size: 12px; text-transform: none; letter-spacing: 0; direction: rtl; }
+        .section-hdr { font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #000; padding-bottom: 3px; margin: 10px 0 5px; display: flex; justify-content: space-between; align-items: baseline; }
+        .section-hdr .ur-side { font-family: 'Noto Nastaliq Urdu', serif; font-size: 16px; text-transform: none; letter-spacing: 0; direction: rtl; }
 
         /* Detail table */
-        .dtl-table td { padding: 3px 0; border-bottom: 1px solid #999; font-size: 12px; font-weight: 600; }
+        .dtl-table td { padding: 4px 0; border-bottom: 1px solid #999; font-size: 14px; font-weight: 600; }
         .dtl-table td:first-child { width: 40%; }
         .dtl-table td:last-child { text-align: right; }
         .dtl-table tr:last-child td { border-bottom: none; }
-        .dtl-table .td-label-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: 11px; color: #000; direction: rtl; display: block; }
+        .dtl-table .td-label-ur { font-family: 'Noto Nastaliq Urdu', serif; font-size: 14px; color: #000; direction: rtl; display: block; }
 
         /* Breakdown table */
-        .bkdn-table { border: 1px solid #000; margin-bottom: 8px; }
-        .bkdn-table th { background: #f0f0f0; font-size: 10px; text-transform: uppercase; padding: 4px 6px; border-bottom: 2px solid #000; text-align: left; font-weight: bold; }
+        .bkdn-table { border: 1px solid #000; margin-bottom: 10px; }
+        .bkdn-table th { background: #f0f0f0; font-size: 12px; text-transform: uppercase; padding: 5px 6px; border-bottom: 2px solid #000; text-align: left; font-weight: bold; }
         .bkdn-table th:last-child { text-align: right; }
-        .bkdn-table td { padding: 3px 6px; border-bottom: 1px solid #ccc; font-size: 12px; font-weight: 600; }
+        .bkdn-table td { padding: 4px 6px; border-bottom: 1px solid #ccc; font-size: 14px; font-weight: 600; }
         .bkdn-table td:last-child { text-align: right; }
         .bkdn-table tr:last-child td { border-bottom: none; }
 
-        /* Total box */
-        .total-box { border: 2px solid #000; padding: 6px 10px; margin: 8px 0; }
-        .total-box table td { font-size: 15px; font-weight: bold; padding: 0; }
-        .total-box table td:last-child { text-align: right; font-size: 18px; }
-        .total-box .ur-label { font-family: 'Noto Nastaliq Urdu', serif; font-size: 14px; direction: rtl; display: block; font-weight: 600; color: #000; }
+        /* Total box - high importance, the amount */
+        .total-box { border: 2px solid #000; padding: 8px 12px; margin: 10px 0; }
+        .total-box table td { font-size: 20px; font-weight: bold; padding: 0; }
+        .total-box table td:last-child { text-align: right; font-size: 24px; }
+        .total-box .ur-label { font-family: 'Noto Nastaliq Urdu', serif; font-size: 18px; direction: rtl; display: block; font-weight: 700; color: #000; }
 
         /* Summary */
-        .summary-table td { padding: 3px 0; font-size: 12px; font-weight: 600; }
+        .summary-table td { padding: 4px 0; font-size: 14px; font-weight: 600; }
         .summary-table td:last-child { text-align: right; }
-        .summary-table .divider td { border-top: 2px solid #000; padding-top: 4px; font-weight: bold; font-size: 13px; }
+        .summary-table .divider td { border-top: 2px solid #000; padding-top: 5px; font-weight: bold; font-size: 16px; }
 
         /* Notes */
-        .notes-box { border: 1px solid #000; padding: 5px 8px; margin: 6px 0; font-size: 11px; }
-        .notes-box .label { font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+        .notes-box { border: 1px solid #000; padding: 6px 8px; margin: 8px 0; font-size: 13px; }
+        .notes-box .label { font-size: 12px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
 
         /* Bank details */
-        .bank-box { border: 1px solid #000; padding: 5px 8px; margin: 6px 0; font-size: 11px; }
-        .bank-box .label { font-size: 9px; text-transform: uppercase; color: #000; font-weight: bold; }
+        .bank-box { border: 1px solid #000; padding: 6px 8px; margin: 8px 0; font-size: 12px; }
+        .bank-box .label { font-size: 11px; text-transform: uppercase; color: #000; font-weight: bold; }
         .bank-box .val { font-weight: bold; font-family: 'Courier New', monospace; }
 
-        /* Footer */
-        .footer { margin-top: 14px; }
+        /* Footer - smallest, least important */
+        .footer { margin-top: 16px; }
         .sig-line { width: 150px; border-bottom: 1px solid #000; margin-bottom: 3px; }
-        .footer-note { text-align: center; font-size: 10px; color: #000; border-top: 1px solid #000; padding-top: 4px; margin-top: 10px; }
-        .footer-note .ur-inline { font-size: 12px; }
+        .footer-note { text-align: center; font-size: 11px; color: #000; border-top: 1px solid #000; padding-top: 5px; margin-top: 12px; }
+        .footer-note .ur-inline { font-size: 14px; }
 
         /* Buttons */
         .btn-bar { position: fixed; top: 12px; right: 12px; display: flex; gap: 8px; z-index: 50; }
@@ -263,8 +263,8 @@
         <!-- Bank Details -->
         {% if user.organization.bank_name or user.organization.upi_id %}
         <div class="bank-box">
-            <div class="label" style="margin-bottom:3px; font-weight:bold;">Bank Details / <span class="ur-inline" style="font-size:11px">بینک کی تفصیلات</span></div>
-            <table style="font-size:10px">
+            <div class="label" style="margin-bottom:3px; font-weight:bold;">Bank Details / <span class="ur-inline" style="font-size:14px">بینک کی تفصیلات</span></div>
+            <table style="font-size:12px">
                 <tr>
                     {% if user.organization.bank_name %}
                     <td style="padding:1px 8px 1px 0"><span class="label">Bank:</span> <span class="val">{{ user.organization.bank_name }}</span></td>
@@ -295,13 +295,13 @@
             <table>
                 <tr>
                     <td style="vertical-align:bottom">
-                        <div style="font-size:10px; color:#000;">System Generated</div>
-                        <div style="font-size:10px; color:#000;">{{ payment.created_at|date:"d/m/Y h:i A" }}</div>
+                        <div style="font-size:11px; color:#000;">System Generated</div>
+                        <div style="font-size:11px; color:#000;">{{ payment.created_at|date:"d/m/Y h:i A" }}</div>
                     </td>
                     <td style="text-align:right">
-                        <div style="font-size:11px; font-weight:bold; margin-bottom:4px;">{% if user_prefix %}{{ user_prefix }} {% endif %}{{ user.get_full_name|default:user.username }}</div>
+                        <div style="font-size:13px; font-weight:bold; margin-bottom:4px;">{% if user_prefix %}{{ user_prefix }} {% endif %}{{ user.get_full_name|default:user.username }}</div>
                         <div class="sig-line" style="margin-left:auto"></div>
-                        <div style="font-size:10px; text-transform:uppercase; letter-spacing:1px; color:#000; font-weight:600;">Authorized Signature / <span class="ur-inline" style="letter-spacing:0; text-transform:none;">مجاز دستخط</span></div>
+                        <div style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:#000; font-weight:600;">Authorized Signature / <span class="ur-inline" style="letter-spacing:0; text-transform:none;">مجاز دستخط</span></div>
                     </td>
                 </tr>
             </table>
