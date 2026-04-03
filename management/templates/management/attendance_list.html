@@ -1,21 +1,18 @@
 {% extends 'management/base_tailwind.html' %}
-{% load pagination_tags %}
 
 {% block title %}Attendance History - Maktab{% endblock %}
 {% block header_title %}Attendance History{% endblock %}
 
 {% block content %}
-<div class="mb-6 flex flex-col lg:flex-row lg:items-center justify-end gap-4 animate-[slideUp_0.4s_ease-out]">
-    <div class="flex flex-col sm:flex-row gap-3">
-        <div class="flex gap-2 flex-wrap">
-            <a href="{% url 'attendance_list' %}?{% if selected_batch %}batch={{ selected_batch }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}export=excel"
-               class="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 font-medium transition-colors flex items-center gap-2">
-                <i class="fas fa-file-excel"></i> Export Excel
-            </a>
-            <a href="{% url 'attendance_mark' %}" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors flex items-center gap-2">
-                <i class="fas fa-list-alt"></i> Full View
-            </a>
-        </div>
+<div class="mb-6 flex justify-end gap-4 animate-[slideUp_0.4s_ease-out]">
+    <div class="flex gap-2 flex-wrap">
+        <a href="{% url 'attendance_list' %}?{% if selected_batch %}batch={{ selected_batch }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}export=excel"
+           class="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 font-medium transition-colors flex items-center gap-2">
+            <i class="fas fa-file-excel"></i> Export Excel
+        </a>
+        <a href="{% url 'attendance_mark' %}" class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors flex items-center gap-2">
+            <i class="fas fa-list-alt"></i> Full View
+        </a>
     </div>
 </div>
 
