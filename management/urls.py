@@ -107,8 +107,9 @@ urlpatterns = [
     path('users/edit/<int:pk>/', views.user_edit, name='user_edit'),
     path('users/delete/<int:pk>/', views.user_delete, name='user_delete'),
 
-    # Settings
+    # Settings & Backup
     path('settings/', views.settings_view, name='settings'),
+    path('settings/backup/download/', views.backup_download, name='backup_download'),
 
     # API
     path('api/cities/', views.get_cities_for_state, name='api_cities'),

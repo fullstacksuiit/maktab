@@ -1710,11 +1710,72 @@ def attendance_list(request):
     attendances = Attendance.objects.filter(organization=org).select_related('student', 'batch__course', 'marked_by')
 
     batch_id = request.GET.get('batch')
-    filter_date = request.GET.get('date')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
     if batch_id:
         attendances = attendances.filter(batch_id=batch_id)
-    if filter_date:
-        attendances = attendances.filter(date=filter_date)
+    if date_from:
+        attendances = attendances.filter(date__gte=date_from)
+    if date_to:
+        attendances = attendances.filter(date__lte=date_to)
+
+    # Excel export
+    if request.GET.get('export') == 'excel':
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Student Attendance'
+
+        headers = ['Date', 'Student ID', 'Student Name', 'Course', 'Batch', 'Status', 'Minutes Late', 'Notes', 'Marked By']
+        header_font = Font(name='Calibri', bold=True, color='FFFFFF', size=11)
+        header_fill = PatternFill(start_color='0D6B4E', end_color='0D6B4E', fill_type='solid')
+        header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        thin_border = Border(
+            left=Side(style='thin', color='D1D5DB'),
+            right=Side(style='thin', color='D1D5DB'),
+            top=Side(style='thin', color='D1D5DB'),
+            bottom=Side(style='thin', color='D1D5DB'),
+        )
+
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = thin_border
+
+        for row_num, record in enumerate(attendances, 2):
+            row_data = [
+                record.date.strftime('%Y-%m-%d'),
+                record.student.student_id,
+                record.student.full_name,
+                record.batch.course.course_name if record.batch else '',
+                record.batch.batch_name if record.batch else '',
+                record.status,
+                record.minutes_late or '',
+                record.notes or '',
+                f"{record.marked_by.first_name} {record.marked_by.last_name}" if record.marked_by else '',
+            ]
+            for col_num, value in enumerate(row_data, 1):
+                cell = ws.cell(row=row_num, column=col_num, value=value)
+                cell.border = thin_border
+                cell.alignment = Alignment(vertical='center')
+
+        for col in ws.columns:
+            max_length = 0
+            for cell in col:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            ws.column_dimensions[col[0].column_letter].width = min(max_length + 4, 40)
+
+        label_parts = [date_from or '', date_to or '']
+        label = '_to_'.join(p for p in label_parts if p) or date.today().strftime('%Y-%m-%d')
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="student_attendance_{org.org_name}_{label}.xlsx"'
+        wb.save(response)
+        return response
 
     batches = Batch.objects.filter(organization=org, is_active=True).select_related('course').prefetch_related('teachers')
 
@@ -1726,7 +1787,8 @@ def attendance_list(request):
         'attendances': attendances_page,
         'batches': batches,
         'selected_batch': batch_id,
-        'selected_date': filter_date,
+        'date_from': date_from,
+        'date_to': date_to,
     }
     return render(request, 'management/attendance_list.html', context)
 
@@ -2049,12 +2111,74 @@ def staff_attendance_list(request):
     org = get_org(request)
     attendances = StaffAttendance.objects.filter(organization=org).select_related('staff', 'marked_by')
 
-    filter_date = request.GET.get('date')
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
     staff_role = request.GET.get('role')
-    if filter_date:
-        attendances = attendances.filter(date=filter_date)
+    if date_from:
+        attendances = attendances.filter(date__gte=date_from)
+    if date_to:
+        attendances = attendances.filter(date__lte=date_to)
     if staff_role:
         attendances = attendances.filter(staff__staff_role=staff_role)
+
+    # Excel export
+    if request.GET.get('export') == 'excel':
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Staff Attendance'
+
+        headers = ['Date', 'Staff ID', 'Staff Name', 'Role', 'Department', 'Status', 'Hours', 'Earnings', 'Notes', 'Marked By']
+        header_font = Font(name='Calibri', bold=True, color='FFFFFF', size=11)
+        header_fill = PatternFill(start_color='0D6B4E', end_color='0D6B4E', fill_type='solid')
+        header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        thin_border = Border(
+            left=Side(style='thin', color='D1D5DB'),
+            right=Side(style='thin', color='D1D5DB'),
+            top=Side(style='thin', color='D1D5DB'),
+            bottom=Side(style='thin', color='D1D5DB'),
+        )
+
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = thin_border
+
+        for row_num, record in enumerate(attendances, 2):
+            row_data = [
+                record.date.strftime('%Y-%m-%d'),
+                record.staff.staff_id,
+                f"{record.staff.first_name} {record.staff.last_name}",
+                record.staff.get_staff_role_display(),
+                record.staff.department or '',
+                record.status,
+                float(record.hours) if record.hours else '',
+                float(record.earnings) if record.earnings else '',
+                record.notes or '',
+                f"{record.marked_by.first_name} {record.marked_by.last_name}" if record.marked_by else '',
+            ]
+            for col_num, value in enumerate(row_data, 1):
+                cell = ws.cell(row=row_num, column=col_num, value=value)
+                cell.border = thin_border
+                cell.alignment = Alignment(vertical='center')
+
+        for col in ws.columns:
+            max_length = 0
+            for cell in col:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            ws.column_dimensions[col[0].column_letter].width = min(max_length + 4, 40)
+
+        label_parts = [date_from or '', date_to or '']
+        label = '_to_'.join(p for p in label_parts if p) or date.today().strftime('%Y-%m-%d')
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = f'attachment; filename="staff_attendance_{org.org_name}_{label}.xlsx"'
+        wb.save(response)
+        return response
 
     # Summary stats (before pagination)
     summary = attendances.aggregate(
@@ -2085,7 +2209,8 @@ def staff_attendance_list(request):
 
     context = {
         'attendances': attendances_page,
-        'selected_date': filter_date,
+        'date_from': date_from,
+        'date_to': date_to,
         'selected_role': staff_role,
         'role_choices': Staff.ROLE_CHOICES,
         'summary': summary,
@@ -2634,6 +2759,215 @@ def settings_view(request):
     else:
         form = SettingsForm(instance=org)
     return render(request, 'management/settings.html', {'form': form})
+
+
+@login_required(login_url='login')
+@admin_required
+def backup_download(request):
+    """Export this organization's complete data as a multi-sheet Excel file."""
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from management.models import (
+        Course, Batch, Student, Staff, Attendance, BehaviorNote,
+        StaffAttendance, FeePayment, Expense, Event,
+        LeaveRequest, SalaryComponent, Payroll, PayrollComponent,
+    )
+
+    org = get_org(request)
+    now = datetime.now()
+    filename = f'{org.slug or "maktab"}_data_{now.strftime("%Y%m%d_%H%M")}.xlsx'
+
+    wb = openpyxl.Workbook()
+
+    # Common styles
+    header_font = Font(name='Calibri', bold=True, color='FFFFFF', size=11)
+    header_fill = PatternFill(start_color='0D6B4E', end_color='0D6B4E', fill_type='solid')
+    header_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    thin_border = Border(
+        left=Side(style='thin', color='D1D5DB'),
+        right=Side(style='thin', color='D1D5DB'),
+        top=Side(style='thin', color='D1D5DB'),
+        bottom=Side(style='thin', color='D1D5DB'),
+    )
+    cell_align = Alignment(vertical='center')
+
+    def write_sheet(ws, headers, rows):
+        for col, h in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=h)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_align
+            cell.border = thin_border
+        for r, row_data in enumerate(rows, 2):
+            for col, val in enumerate(row_data, 1):
+                cell = ws.cell(row=r, column=col, value=val)
+                cell.border = thin_border
+                cell.alignment = cell_align
+        # Auto-width columns
+        for col in ws.columns:
+            max_len = 0
+            for cell in col:
+                if cell.value:
+                    max_len = max(max_len, len(str(cell.value)))
+            ws.column_dimensions[col[0].column_letter].width = min(max_len + 4, 45)
+
+    # --- Info sheet ---
+    ws_info = wb.active
+    ws_info.title = 'Export Info'
+    info_data = [
+        ['Maktab Name', org.org_name],
+        ['Exported On', now.strftime('%d %b %Y, %I:%M %p')],
+        ['Exported By', request.user.username],
+        ['Address', org.full_address],
+        ['Contact', org.contact],
+    ]
+    for r, (label, val) in enumerate(info_data, 1):
+        ws_info.cell(row=r, column=1, value=label).font = Font(bold=True)
+        ws_info.cell(row=r, column=2, value=val)
+    ws_info.column_dimensions['A'].width = 18
+    ws_info.column_dimensions['B'].width = 50
+
+    # --- Students ---
+    ws = wb.create_sheet('Students')
+    students = Student.all_objects.filter(organization=org).prefetch_related('batches__course')
+    headers = ['Student ID', 'Full Name', 'Guardian', 'Phone', 'Guardian Phone',
+               'Gender', 'DOB', 'Address', 'City', 'Enrollment Date',
+               'Batches', 'Orphan', 'Discount', 'Email']
+    rows = []
+    for s in students:
+        batches_str = ', '.join(f'{b.batch_code}' for b in s.batches.all())
+        discount = f'{s.get_discount_type_display()} {s.discount_value}' if s.discount_value else ''
+        rows.append([
+            s.student_id, s.full_name, s.guardian_name, s.phone, s.guardian_phone,
+            s.get_gender_display(), s.date_of_birth.strftime('%Y-%m-%d') if s.date_of_birth else '',
+            s.address, s.city, s.enrollment_date.strftime('%Y-%m-%d') if s.enrollment_date else '',
+            batches_str, 'Yes' if s.is_orphan else 'No', discount, s.email,
+        ])
+    write_sheet(ws, headers, rows)
+
+    # --- Staff ---
+    ws = wb.create_sheet('Staff')
+    staff = Staff.all_objects.filter(organization=org)
+    headers = ['Staff ID', 'Name', 'Role', 'Department', 'Phone', 'Email',
+               'Gender', 'DOB', 'Joining Date', 'Salary', 'Address', 'City']
+    rows = []
+    for st in staff:
+        rows.append([
+            st.staff_id, f'{st.first_name} {st.last_name}', st.get_staff_role_display(),
+            st.department, st.phone, st.email, st.get_gender_display(),
+            st.date_of_birth.strftime('%Y-%m-%d'), st.joining_date.strftime('%Y-%m-%d'),
+            float(st.salary), st.address, st.city,
+        ])
+    write_sheet(ws, headers, rows)
+
+    # --- Courses & Batches ---
+    ws = wb.create_sheet('Courses & Batches')
+    courses = Course.all_objects.filter(organization=org)
+    headers = ['Course Code', 'Course Name', 'Fees', 'Fee Period', 'Duration']
+    rows = [[c.course_code, c.course_name, float(c.fees), c.get_fee_period_display(), c.duration_display] for c in courses]
+    write_sheet(ws, headers, rows)
+    # Add batches below with a gap
+    batch_start = len(rows) + 3
+    ws.cell(row=batch_start, column=1, value='Batches').font = Font(bold=True, size=12)
+    batch_headers = ['Batch Code', 'Batch Name', 'Course', 'Schedule', 'Active', 'Students']
+    batches = Batch.all_objects.filter(organization=org).select_related('course').annotate(
+        student_count=Count('students')
+    )
+    for col, h in enumerate(batch_headers, 1):
+        cell = ws.cell(row=batch_start + 1, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_align
+        cell.border = thin_border
+    for r, b in enumerate(batches, batch_start + 2):
+        row_data = [b.batch_code, b.batch_name, b.course.course_code, b.get_schedule_display(),
+                    'Yes' if b.is_active else 'No', b.student_count]
+        for col, val in enumerate(row_data, 1):
+            cell = ws.cell(row=r, column=col, value=val)
+            cell.border = thin_border
+
+    # --- Fee Payments ---
+    ws = wb.create_sheet('Fee Payments')
+    payments = FeePayment.all_objects.filter(organization=org).select_related('student', 'batch')
+    headers = ['Receipt #', 'Student', 'Student ID', 'Batch', 'Amount', 'Payment Date',
+               'Method', 'Status', 'Fee Period', 'Notes']
+    rows = []
+    for p in payments:
+        rows.append([
+            p.receipt_number, p.student.full_name, p.student.student_id,
+            p.batch.batch_code if p.batch else '', float(p.amount),
+            p.payment_date.strftime('%Y-%m-%d'), p.payment_method, p.status,
+            p.fee_months_display, p.notes or '',
+        ])
+    write_sheet(ws, headers, rows)
+
+    # --- Attendance ---
+    ws = wb.create_sheet('Student Attendance')
+    attendance = Attendance.all_objects.filter(organization=org).select_related('student', 'batch')
+    headers = ['Date', 'Student', 'Student ID', 'Batch', 'Status', 'Minutes Late', 'Notes']
+    rows = []
+    for a in attendance:
+        rows.append([
+            a.date.strftime('%Y-%m-%d'), a.student.full_name, a.student.student_id,
+            a.batch.batch_code if a.batch else '', a.status,
+            a.minutes_late or '', a.notes or '',
+        ])
+    write_sheet(ws, headers, rows)
+
+    # --- Staff Attendance ---
+    ws = wb.create_sheet('Staff Attendance')
+    staff_att = StaffAttendance.objects.filter(organization=org).select_related('staff')
+    headers = ['Date', 'Staff', 'Staff ID', 'Status', 'Hours', 'Notes']
+    rows = []
+    for sa in staff_att:
+        rows.append([
+            sa.date.strftime('%Y-%m-%d'), f'{sa.staff.first_name} {sa.staff.last_name}',
+            sa.staff.staff_id, sa.status, float(sa.hours) if sa.hours else '', sa.notes or '',
+        ])
+    write_sheet(ws, headers, rows)
+
+    # --- Expenses ---
+    ws = wb.create_sheet('Expenses')
+    expenses = Expense.all_objects.filter(organization=org)
+    headers = ['Date', 'Title', 'Category', 'Amount', 'Payment Method', 'Description', 'Reference']
+    rows = []
+    for e in expenses:
+        rows.append([
+            e.expense_date.strftime('%Y-%m-%d'), e.title, e.get_category_display(),
+            float(e.amount), e.payment_method, e.description or '', e.reference_number or '',
+        ])
+    write_sheet(ws, headers, rows)
+
+    # --- Events ---
+    ws = wb.create_sheet('Events')
+    events = Event.all_objects.filter(organization=org)
+    headers = ['Title', 'Type', 'Start Date', 'End Date', 'Description']
+    rows = []
+    for ev in events:
+        rows.append([
+            ev.title, ev.get_event_type_display(),
+            ev.start_date.strftime('%Y-%m-%d'), ev.end_date.strftime('%Y-%m-%d') if ev.end_date else '',
+            ev.description or '',
+        ])
+    write_sheet(ws, headers, rows)
+
+    # --- Leave Requests ---
+    ws = wb.create_sheet('Leave Requests')
+    leaves = LeaveRequest.objects.filter(organization=org).select_related('staff', 'leave_type')
+    headers = ['Staff', 'Leave Type', 'Start Date', 'End Date', 'Days', 'Status', 'Reason']
+    rows = []
+    for lr in leaves:
+        rows.append([
+            f'{lr.staff.first_name} {lr.staff.last_name}', lr.leave_type.name,
+            lr.start_date.strftime('%Y-%m-%d'), lr.end_date.strftime('%Y-%m-%d'),
+            float(lr.days), lr.status, lr.reason or '',
+        ])
+    write_sheet(ws, headers, rows)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    wb.save(response)
+    return response
 
 
 # ─── User Management Views ───────────────────────────────────────────────────
