@@ -1396,22 +1396,33 @@ def student_detail(request, uuid):
     # Build month-wise dues status per batch
     today = date.today()
     dues_by_batch = []
-    # Pre-fetch all approved payments once and group by batch_id to avoid N+1
-    approved_payments_list = list(fee_payments.filter(status='Approved'))
-    payments_by_batch = {}
+    # Pre-fetch all approved payments once and group by course_id
+    # (payments may reference old batches if student switched batches within a course)
+    approved_payments_list = list(fee_payments.filter(status='Approved').select_related('batch'))
+    payments_by_course = {}
     for payment in approved_payments_list:
-        payments_by_batch.setdefault(payment.batch_id, []).append(payment)
+        course_id = payment.batch.course_id if payment.batch else None
+        payments_by_course.setdefault(course_id, []).append(payment)
 
     for batch in student.batches.select_related('course').all():
-        # Collect all paid months for this batch from pre-grouped data
+        # Collect all paid months for this course from pre-grouped data
         paid_months = set()
-        for payment in payments_by_batch.get(batch.pk, []):
+        for payment in payments_by_course.get(batch.course_id, []):
             for m in payment.fee_months_list:
                 paid_months.add((m.year, m.month))
 
-        # Generate expected months: from enrollment (or batch start) to current month
+        # Generate expected months: from earliest of enrollment or first payment to last completed month
         start = student.enrollment_date.replace(day=1) if student.enrollment_date else today.replace(day=1)
-        end = today.replace(day=1)
+        # Extend start to include earliest paid month if it's before enrollment
+        if paid_months:
+            earliest_paid = date(min(paid_months)[0], min(paid_months)[1], 1)
+            start = min(start, earliest_paid)
+        # End at previous month (current month is not yet due)
+        first_of_this_month = today.replace(day=1)
+        if first_of_this_month.month == 1:
+            end = first_of_this_month.replace(year=first_of_this_month.year - 1, month=12)
+        else:
+            end = first_of_this_month.replace(month=first_of_this_month.month - 1)
         current = start
         months = []
         while current <= end:
@@ -1453,6 +1464,11 @@ def student_detail(request, uuid):
             'pending_amount': pending_count * monthly_fee,
         })
 
+    # Total fees = sum of (monthly_fee × total months) across all batches + opening balance
+    cumulative_total_fees = sum(
+        item['monthly_fee'] * len(item['months']) for item in dues_by_batch
+    ) + student.opening_balance
+
     # Compute attendance percentage in a single query instead of model method
     att_result = Attendance.objects.filter(
         student=student, organization=org
@@ -1470,7 +1486,8 @@ def student_detail(request, uuid):
         'behavior_notes': behavior_notes,
         'attendance_percentage': attendance_percentage,
         'total_paid': total_paid,
-        'pending_fees': total_fees + student.opening_balance - total_paid,
+        'total_fees': cumulative_total_fees,
+        'pending_fees': cumulative_total_fees - total_paid,
         'dues_by_batch': dues_by_batch,
     }
     return render(request, 'management/student_detail.html', context)
