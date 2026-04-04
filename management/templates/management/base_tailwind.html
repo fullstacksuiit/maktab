@@ -73,8 +73,26 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 
-    <!-- Tailwind CSS (pre-built static file — no runtime compilation) -->
-    <link rel="stylesheet" href="{% static 'management/css/tailwind.css' %}">
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0d6b4e',
+                        secondary: '#1a9e6f',
+                        gold: '#c9a84c',
+                        dark: '#1e1e1e',
+                        light: '#f8f9fa',
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
     <!-- Fonts - Poppins from CDN, Noto Nastaliq Urdu served locally -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
