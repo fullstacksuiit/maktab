@@ -54,6 +54,7 @@ urlpatterns = [
     path('students/export/', views.student_export_excel, name='student_export_excel'),
     path('students/import/', views.student_import_excel, name='student_import_excel'),
     path('students/<uuid:uuid>/fees/', views.student_fee_history, name='student_fee_history'),
+    path('students/<uuid:uuid>/attendance/export/', views.student_attendance_export, name='student_attendance_export'),
 
     # Behavior Notes URLs
     path('students/<uuid:student_uuid>/behavior-notes/add/', views.behavior_note_add, name='behavior_note_add'),

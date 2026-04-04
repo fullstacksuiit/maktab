@@ -1497,6 +1497,77 @@ def student_detail(request, uuid):
 
 @login_required(login_url='login')
 @internal_user_required
+def student_attendance_export(request, uuid):
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+
+    org = get_org(request)
+    student = get_object_or_404(Student, uuid=uuid, organization=org)
+    attendances = Attendance.objects.filter(
+        student=student, organization=org
+    ).select_related('batch__course', 'marked_by').order_by('-date')
+
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    if date_from:
+        attendances = attendances.filter(date__gte=date_from)
+    if date_to:
+        attendances = attendances.filter(date__lte=date_to)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Attendance'
+
+    headers = ['Date', 'Course', 'Batch', 'Status', 'Minutes Late', 'Notes']
+    header_font = Font(name='Calibri', bold=True, color='FFFFFF', size=11)
+    header_fill = PatternFill(start_color='0D6B4E', end_color='0D6B4E', fill_type='solid')
+    header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    thin_border = Border(
+        left=Side(style='thin', color='D1D5DB'),
+        right=Side(style='thin', color='D1D5DB'),
+        top=Side(style='thin', color='D1D5DB'),
+        bottom=Side(style='thin', color='D1D5DB'),
+    )
+
+    for col_num, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_num, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_alignment
+        cell.border = thin_border
+
+    for row_num, record in enumerate(attendances, 2):
+        row_data = [
+            record.date.strftime('%Y-%m-%d'),
+            record.batch.course.course_name if record.batch else '',
+            record.batch.batch_name if record.batch else '',
+            record.status,
+            record.minutes_late or '',
+            record.notes or '',
+        ]
+        for col_num, value in enumerate(row_data, 1):
+            cell = ws.cell(row=row_num, column=col_num, value=value)
+            cell.border = thin_border
+            cell.alignment = Alignment(vertical='center')
+
+    for col in ws.columns:
+        max_length = 0
+        for cell in col:
+            if cell.value:
+                max_length = max(max_length, len(str(cell.value)))
+        ws.column_dimensions[col[0].column_letter].width = min(max_length + 4, 40)
+
+    label_parts = [date_from or '', date_to or '']
+    label = '_to_'.join(p for p in label_parts if p) or date.today().strftime('%Y-%m-%d')
+    filename = f'attendance_{student.student_id}_{label}.xlsx'
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    wb.save(response)
+    return response
+
+
+@login_required(login_url='login')
+@internal_user_required
 def student_fee_history(request, uuid):
     org = get_org(request)
     student = get_object_or_404(Student.objects.prefetch_related('batches__course'), uuid=uuid, organization=org)
