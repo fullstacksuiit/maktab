@@ -125,6 +125,8 @@ urlpatterns = [
     path('applications/<int:pk>/', views.application_detail, name='application_detail'),
     path('applications/<int:pk>/accept/', views.application_accept, name='application_accept'),
     path('applications/<int:pk>/reject/', views.application_reject, name='application_reject'),
+    path('applications/<int:pk>/edit/', views.application_edit, name='application_edit'),
+    path('applications/<int:pk>/delete/', views.application_delete, name='application_delete'),
 
     # Parent Portal URLs
     path('parent/', views.parent_dashboard, name='parent_dashboard'),

@@ -20,6 +20,10 @@
             <i class="fas fa-arrow-left"></i> Back
         </a>
         {% if application.status == 'pending' %}
+        <a href="{% url 'application_edit' application.pk %}"
+           class="px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors flex items-center gap-2">
+            <i class="fas fa-edit"></i> Edit
+        </a>
         <button type="button" onclick="document.getElementById('acceptModal').classList.remove('hidden')"
                 class="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 shadow-lg shadow-green-600/20 transition-all font-medium flex items-center gap-2">
             <i class="fas fa-check"></i> Accept
@@ -29,6 +33,11 @@
             <i class="fas fa-times"></i> Reject
         </button>
         {% endif %}
+        <button type="button" onclick="document.getElementById('deleteModal').classList.remove('hidden')"
+                class="px-4 py-2 border border-red-300 text-red-600 bg-white rounded-xl hover:bg-red-50 font-medium transition-colors flex items-center gap-2"
+                {% if application.status == 'accepted' and application.student %}disabled title="Cannot delete accepted application with linked student"{% endif %}>
+            <i class="fas fa-trash"></i> Delete
+        </button>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -274,4 +283,35 @@
     </div>
 </div>
 {% endif %}
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-[slideUp_0.3s_ease-out]">
+        <div class="p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-500">
+                    <i class="fas fa-trash"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800">Delete Application</h3>
+                    <p class="text-sm text-gray-500">{{ application.first_name }} {{ application.last_name }}</p>
+                </div>
+            </div>
+            <p class="text-sm text-gray-600 mb-5">This will permanently delete this application. This action cannot be undone.</p>
+            <div class="flex gap-3 justify-end">
+                <button type="button" onclick="document.getElementById('deleteModal').classList.add('hidden')"
+                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-colors">
+                    Cancel
+                </button>
+                <form method="post" action="{% url 'application_delete' application.pk %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium transition-colors flex items-center gap-2">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

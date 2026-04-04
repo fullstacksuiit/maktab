@@ -305,13 +305,15 @@ def dashboard_view(request):
     last_month_end = this_month_start - timedelta(days=1)
     last_month_start = last_month_end.replace(day=1)
 
-    month_revenue = FeePayment.objects.filter(
-        organization=org, payment_date__gte=this_month_start, payment_date__lt=next_month_start
-    ).aggregate(total=Sum('amount'))['total'] or 0
-
-    last_month_revenue = FeePayment.objects.filter(
-        organization=org, payment_date__gte=last_month_start, payment_date__lte=last_month_end
-    ).aggregate(total=Sum('amount'))['total'] or 0
+    # Single query for both this month and last month revenue
+    _revenue = FeePayment.objects.filter(
+        organization=org, payment_date__gte=last_month_start, payment_date__lt=next_month_start
+    ).aggregate(
+        this_month=Coalesce(Sum('amount', filter=Q(payment_date__gte=this_month_start)), 0, output_field=DecimalField()),
+        last_month=Coalesce(Sum('amount', filter=Q(payment_date__lt=this_month_start)), 0, output_field=DecimalField()),
+    )
+    month_revenue = _revenue['this_month']
+    last_month_revenue = _revenue['last_month']
 
     # --- NEW: This month's enrollments ---
     month_enrollments = Student.objects.filter(
@@ -639,20 +641,31 @@ def batch_list(request):
     }
 
     if view_mode == 'teacher':
-        # Build teacher-wise batch data
+        # Build teacher-wise batch data using a single query with grouping
+        all_batches = list(batches_qs)
+        # Build a map of teacher_id -> list of batches
+        from collections import defaultdict
+        teacher_batches_map = defaultdict(list)
+        unassigned_list = []
+        for batch in all_batches:
+            assigned = False
+            for teacher in batch.teachers.all():  # uses prefetched teachers
+                teacher_batches_map[teacher.pk].append(batch)
+                assigned = True
+            if not assigned:
+                unassigned_list.append(batch)
+
         teachers_with_batches = []
         for teacher in teachers:
-            t_batches = batches_qs.filter(teachers=teacher).distinct()
+            t_batches = teacher_batches_map.get(teacher.pk, [])
             teachers_with_batches.append({
                 'teacher': teacher,
                 'batches': t_batches,
-                'batch_count': t_batches.count(),
+                'batch_count': len(t_batches),
                 'total_students': sum(b.student_count for b in t_batches),
             })
-        # Also get unassigned batches (no teachers)
-        unassigned = batches_qs.filter(teachers__isnull=True)
         context['teachers_with_batches'] = teachers_with_batches
-        context['unassigned_batches'] = unassigned
+        context['unassigned_batches'] = unassigned_list
 
     if request.headers.get('HX-Request'):
         if view_mode == 'teacher':
@@ -1564,7 +1577,7 @@ def student_attendance_export(request, uuid):
     ws = wb.active
     ws.title = 'Attendance'
 
-    headers = ['Date', 'Course', 'Batch', 'Status', 'Minutes Late', 'Notes']
+    headers = ['Date', 'Student ID', 'Student Name', 'Course', 'Batch', 'Status', 'Minutes Late', 'Notes', 'Marked By', 'Recorded At']
     header_font = Font(name='Calibri', bold=True, color='FFFFFF', size=11)
     header_fill = PatternFill(start_color='0D6B4E', end_color='0D6B4E', fill_type='solid')
     header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
@@ -1585,11 +1598,15 @@ def student_attendance_export(request, uuid):
     for row_num, record in enumerate(attendances, 2):
         row_data = [
             record.date.strftime('%Y-%m-%d'),
+            student.student_id,
+            student.full_name,
             record.batch.course.course_name if record.batch else '',
             record.batch.batch_name if record.batch else '',
             record.status,
             record.minutes_late or '',
             record.notes or '',
+            record.marked_by.get_full_name() or record.marked_by.username if record.marked_by else '',
+            record.created_at.strftime('%Y-%m-%d %H:%M') if record.created_at else '',
         ]
         for col_num, value in enumerate(row_data, 1):
             cell = ws.cell(row=row_num, column=col_num, value=value)
@@ -3115,8 +3132,11 @@ def backup_download(request):
 def user_list(request):
     """List all users in the organization."""
     org = get_org(request)
-    users = User.objects.filter(organization=org, is_active=True).order_by('-date_joined')
-    return render(request, 'management/user_list.html', {'users': users})
+    users_qs = User.objects.filter(organization=org, is_active=True).select_related('staff_profile').order_by('-date_joined')
+    paginator = Paginator(users_qs, 25)
+    page_number = request.GET.get('page')
+    users = paginator.get_page(page_number)
+    return render(request, 'management/user_list.html', {'users': users, 'page_obj': users})
 
 
 @login_required(login_url='login')
@@ -3587,6 +3607,50 @@ def application_reject(request, pk):
             request,
             f'Application from "{application.first_name} {application.last_name}" has been rejected.'
         )
+    return redirect('application_list')
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+def application_edit(request, pk):
+    """Edit an admission application."""
+    org = get_org(request)
+    application = get_object_or_404(AdmissionApplication, pk=pk, organization=org)
+
+    if application.status != 'pending':
+        messages.error(request, 'Only pending applications can be edited.')
+        return redirect('application_detail', pk=pk)
+
+    if request.method == 'POST':
+        form = AdmissionApplicationForm(request.POST, request.FILES, instance=application)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Application for "{application.first_name} {application.last_name}" updated.')
+            return redirect('application_detail', pk=pk)
+    else:
+        form = AdmissionApplicationForm(instance=application)
+
+    return render(request, 'management/application_edit.html', {
+        'form': form,
+        'application': application,
+    })
+
+
+@login_required(login_url='login')
+@manager_or_admin_required
+@require_POST
+def application_delete(request, pk):
+    """Delete an admission application."""
+    org = get_org(request)
+    application = get_object_or_404(AdmissionApplication, pk=pk, organization=org)
+
+    if application.status == 'accepted' and application.student:
+        messages.error(request, 'Cannot delete an accepted application that has a linked student record.')
+        return redirect('application_detail', pk=pk)
+
+    name = f"{application.first_name} {application.last_name}"
+    application.delete()
+    messages.success(request, f'Application from "{name}" has been deleted.')
     return redirect('application_list')
 
 
@@ -5283,10 +5347,14 @@ def fee_collection_report(request):
 def arrears_report(request):
     org = get_org(request)
     batch_id = request.GET.get('batch', '')
+    today = date.today()
 
     batches = Batch.objects.filter(organization=org, is_active=True).select_related('course').order_by('batch_name')
 
-    students = Student.objects.filter(organization=org).prefetch_related('batches__course', 'fee_payments')
+    students = Student.objects.filter(organization=org).prefetch_related('batches__course', 'fee_payments').annotate(
+        _total_fees=Coalesce(Sum('batches__course__fees'), 0, output_field=DecimalField()),
+        _total_paid=Coalesce(Sum('fee_payments__amount', filter=Q(fee_payments__status='Approved')), 0, output_field=DecimalField()),
+    )
 
     selected_batch = None
     if batch_id:
@@ -5296,16 +5364,50 @@ def arrears_report(request):
         except Batch.DoesNotExist:
             pass
 
-    # Build arrears list
+    # Build arrears list — uses annotated values + prefetched data (no extra queries)
+    import math
     arrears = []
     for student in students:
-        pending = student.get_pending_fees()
+        if student.is_orphan:
+            effective_fee = Decimal(0)
+        else:
+            effective_fee = student._total_fees
+            if student.discount_value and student.discount_value > 0:
+                if student.discount_type == 'percentage':
+                    effective_fee -= effective_fee * student.discount_value / 100
+                else:
+                    effective_fee -= student.discount_value
+            effective_fee = max(effective_fee, Decimal(0))
+
+        total_paid = student._total_paid
+
+        # Compute pending fees using prefetched batches (no extra query)
+        if effective_fee == 0:
+            pending = student.opening_balance - total_paid
+        else:
+            months_elapsed = (today.year - student.enrollment_date.year) * 12 + (today.month - student.enrollment_date.month)
+            months_elapsed = max(months_elapsed, 0)
+            fee_periods = set(b.course.fee_period for b in student.batches.all())
+            if len(fee_periods) == 1:
+                period = fee_periods.pop()
+                if period == 'quarterly':
+                    periods = math.ceil(months_elapsed / 3) if months_elapsed else 0
+                elif period == 'yearly':
+                    periods = math.ceil(months_elapsed / 12) if months_elapsed else 0
+                else:
+                    periods = months_elapsed
+            else:
+                periods = months_elapsed
+            pending = effective_fee * periods + student.opening_balance - total_paid
+
         if pending > 0:
-            last_payment = student.fee_payments.filter(status='Approved').order_by('-payment_date').first()
+            # Use prefetched fee_payments to find last approved payment (no extra query)
+            approved = [fp for fp in student.fee_payments.all() if fp.status == 'Approved']
+            last_payment = max(approved, key=lambda fp: fp.payment_date) if approved else None
             arrears.append({
                 'student': student,
-                'effective_fee': student.get_effective_fee(),
-                'total_paid': student.get_total_paid(),
+                'effective_fee': effective_fee,
+                'total_paid': total_paid,
                 'pending': pending,
                 'last_payment_date': last_payment.payment_date if last_payment else None,
             })

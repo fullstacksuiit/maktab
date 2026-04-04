@@ -1,0 +1,162 @@
+{% extends 'management/base_tailwind.html' %}
+
+{% block title %}Edit Application - {{ application.first_name }} {{ application.last_name }} - Maktab{% endblock %}
+{% block header_title %}Edit Application{% endblock %}
+
+{% block breadcrumb %}
+<nav class="mb-2 text-sm" aria-label="Breadcrumb">
+    <ol class="flex items-center gap-1.5 text-gray-500">
+        <li><a href="{% url 'application_list' %}" class="hover:text-primary transition-colors">Applications</a></li>
+        <li><i class="fas fa-chevron-right text-[10px] text-gray-300"></i></li>
+        <li><a href="{% url 'application_detail' application.pk %}" class="hover:text-primary transition-colors">{{ application.first_name }} {{ application.last_name }}</a></li>
+        <li><i class="fas fa-chevron-right text-[10px] text-gray-300"></i></li>
+        <li class="text-gray-800 font-medium">Edit</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="animate-[slideUp_0.4s_ease-out]">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="bg-gradient-to-r from-primary to-secondary px-6 py-4">
+                <h5 class="text-white font-semibold flex items-center gap-2">
+                    <i class="fas fa-edit"></i> Edit Application
+                </h5>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <form method="post" enctype="multipart/form-data" novalidate class="space-y-6">
+                    {% csrf_token %}
+
+                    <!-- Photo Upload -->
+                    <div class="flex flex-col items-center">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">Photo</label>
+                        <div class="relative cursor-pointer group" onclick="document.getElementById('id_photo').click()">
+                            <div id="photoPreview" class="w-28 h-28 rounded-2xl bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden group-hover:border-primary group-hover:bg-primary/5 transition-all duration-300">
+                                {% if application.photo %}
+                                <img id="photoImg" src="{{ application.photo.url }}" class="w-full h-full object-cover" alt="Photo">
+                                <div id="photoPlaceholder" class="text-center hidden">
+                                    <i class="fas fa-camera text-2xl text-gray-300 group-hover:text-primary transition-colors"></i>
+                                    <p class="text-[10px] text-gray-400 mt-1 group-hover:text-primary transition-colors">Tap to upload</p>
+                                </div>
+                                {% else %}
+                                <div id="photoPlaceholder" class="text-center">
+                                    <i class="fas fa-camera text-2xl text-gray-300 group-hover:text-primary transition-colors"></i>
+                                    <p class="text-[10px] text-gray-400 mt-1 group-hover:text-primary transition-colors">Tap to upload</p>
+                                </div>
+                                <img id="photoImg" class="w-full h-full object-cover hidden" alt="Photo">
+                                {% endif %}
+                            </div>
+                            <div class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs shadow-lg group-hover:scale-110 transition-transform">
+                                <i class="fas fa-{% if application.photo %}pen{% else %}plus{% endif %}"></i>
+                            </div>
+                        </div>
+                        <input type="file" name="photo" id="id_photo" accept="image/*" class="hidden" onchange="previewPhoto(this)">
+                        {% if form.photo.errors %}<p class="mt-2 text-xs text-red-500 font-medium">{{ form.photo.errors.0 }}</p>{% endif %}
+                    </div>
+
+                    <!-- Name -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">First Name <span class="text-red-400">*</span></label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}<p class="mt-1 text-xs text-red-500 font-medium">{{ form.first_name.errors.0 }}</p>{% endif %}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Last Name <span class="text-red-400">*</span></label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}<p class="mt-1 text-xs text-red-500 font-medium">{{ form.last_name.errors.0 }}</p>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Contact -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Phone <span class="text-red-400">*</span></label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}<p class="mt-1 text-xs text-red-500 font-medium">{{ form.phone.errors.0 }}</p>{% endif %}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}<p class="mt-1 text-xs text-red-500 font-medium">{{ form.email.errors.0 }}</p>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Personal -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Date of Birth</label>
+                            {{ form.date_of_birth }}
+                            {% if form.date_of_birth.errors %}<p class="mt-1 text-xs text-red-500 font-medium">{{ form.date_of_birth.errors.0 }}</p>{% endif %}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Gender <span class="text-red-400">*</span></label>
+                            {{ form.gender }}
+                            {% if form.gender.errors %}<p class="mt-1 text-xs text-red-500 font-medium">{{ form.gender.errors.0 }}</p>{% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Address -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Address <span class="text-red-400">*</span></label>
+                        {{ form.address }}
+                        {% if form.address.errors %}<p class="mt-1 text-xs text-red-500 font-medium">{{ form.address.errors.0 }}</p>{% endif %}
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">City</label>
+                            {{ form.city }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">State</label>
+                            {{ form.state }}
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Pin Code</label>
+                            {{ form.pin_code }}
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Notes</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}<p class="mt-1 text-xs text-red-500 font-medium">{{ form.notes.errors.0 }}</p>{% endif %}
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex flex-wrap gap-3 justify-end pt-4 border-t border-gray-100">
+                        <a href="{% url 'application_detail' application.pk %}"
+                           class="px-5 py-2.5 border border-gray-300 text-gray-700 bg-white rounded-xl hover:bg-gray-50 font-medium transition-colors">
+                            Cancel
+                        </a>
+                        <button type="submit"
+                                class="px-5 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all font-medium flex items-center gap-2">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewPhoto(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.getElementById('photoImg');
+            const placeholder = document.getElementById('photoPlaceholder');
+            img.src = e.target.result;
+            img.classList.remove('hidden');
+            if (placeholder) placeholder.classList.add('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %}
