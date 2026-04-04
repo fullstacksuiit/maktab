@@ -1,5 +1,6 @@
 import logging
 
+from django.db import IntegrityError
 from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 
@@ -42,20 +43,28 @@ def create_or_update_parent_account(sender, instance, created, **kwargs):
     uname = parent_username(normalized, org)
 
     # Create or get parent user for this phone+org combination
-    parent_user, user_created = User.objects.get_or_create(
-        username=uname,
-        defaults={
-            'role': 'parent',
-            'organization': org,
-            'first_name': 'Parent',
-            'last_name': normalized,
-        }
-    )
+    try:
+        parent_user, user_created = User.objects.get_or_create(
+            username=uname,
+            defaults={
+                'role': 'parent',
+                'organization': org,
+                'first_name': 'Parent',
+                'last_name': normalized,
+            }
+        )
 
-    if user_created:
-        parent_user.set_password(normalized)
-        parent_user.save(update_fields=['password'])
-        logger.info(f'Created parent account for phone {normalized} in org {org}')
+        if user_created:
+            parent_user.set_password(normalized)
+            parent_user.save(update_fields=['password'])
+            logger.info(f'Created parent account for phone {normalized} in org {org}')
+    except IntegrityError:
+        # Concurrent request already created the user — just fetch it
+        try:
+            parent_user = User.objects.get(username=uname)
+        except User.DoesNotExist:
+            logger.warning(f'Failed to create/get parent account for {normalized} in org {org}')
+            return
 
     # Handle phone number change: clean up old parent if no students left
     old_phone = getattr(instance, '_old_phone', None)

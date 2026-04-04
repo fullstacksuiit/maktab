@@ -183,11 +183,22 @@
                         <i class="fas fa-chart-pie"></i>
                     </span>
                     Finance Overview <span class="urdu text-gray-600 text-base font-normal">مالی جائزہ</span>
+                    <button type="button" id="finance-toggle-btn" onclick="toggleFinanceVisibility()" class="ml-auto text-gray-400 hover:text-gray-600 transition-colors p-1" title="Toggle visibility">
+                        <i id="finance-toggle-icon" class="fas fa-eye text-sm"></i>
+                    </button>
                 </h2>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div id="finance-content" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <!-- Hidden state overlay -->
+                    <div id="finance-hidden-overlay" class="hidden col-span-full flex items-center justify-center py-8 text-gray-400">
+                        <div class="text-center">
+                            <i class="fas fa-eye-slash text-3xl mb-2"></i>
+                            <p class="text-sm font-medium">Financial data hidden</p>
+                            <p class="text-xs">Click the eye icon to reveal</p>
+                        </div>
+                    </div>
                     <!-- Donut Chart - Payment Method Breakdown -->
-                    <div class="flex flex-col items-center">
+                    <div id="finance-data-donut" class="flex flex-col items-center">
                         <div class="relative w-36 h-36 sm:w-44 sm:h-44">
                             <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
                                 <!-- Background circle -->
@@ -236,7 +247,7 @@
                     </div>
 
                     <!-- Monthly Comparison + Pending -->
-                    <div class="flex flex-col justify-center gap-4">
+                    <div id="finance-data-monthly" class="flex flex-col justify-center gap-4">
                         <!-- Revenue Comparison Bar -->
                         <div>
                             <div class="flex items-center justify-between mb-1.5">
@@ -456,6 +467,52 @@
 
         <!-- Sidebar / Profile Column - Mobile Optimized -->
         <div class="lg:col-span-1 space-y-6 sm:space-y-8">
+            <!-- Chronic Absent Students -->
+            <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 overflow-hidden transition-shadow">
+                <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-red-500/10 to-transparent">
+                    <h3 class="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+                        <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-red-500 to-red-600 text-white flex items-center justify-center text-xs shadow-sm">
+                            <i class="fas fa-user-times"></i>
+                        </span>
+                        Absent Students <span class="urdu text-gray-600 text-base font-normal">غیر حاضر طلباء</span>
+                    </h3>
+                    <span class="text-[10px] sm:text-xs font-bold bg-red-100 text-red-700 px-2 py-0.5 sm:py-1 rounded-lg flex items-center gap-1">
+                        <i class="fas fa-exclamation-circle text-[8px]"></i> >2 Days
+                    </span>
+                </div>
+
+                <div class="p-3 sm:p-4">
+                    {% if chronic_absent_students %}
+                    <div class="divide-y divide-gray-50">
+                        {% for entry in chronic_absent_students %}
+                        <a href="{% url 'student_detail' entry.student.uuid %}" class="flex items-center gap-2 px-1 py-2 hover:bg-red-50/50 transition-colors group">
+                            <span class="text-xs sm:text-sm font-semibold text-gray-800 truncate group-hover:text-red-600 transition-colors">{{ entry.student.full_name }}</span>
+                            <span class="text-[10px] text-gray-400 hidden sm:inline truncate">{% if entry.batch %}{{ entry.batch.batch_name }}{% endif %}</span>
+                            <span class="ml-auto flex items-center gap-2 flex-shrink-0">
+                                {% if entry.student.guardian_phone %}<a href="tel:{{ entry.student.guardian_phone }}" class="text-[10px] sm:text-xs text-gray-400 hover:text-primary transition-colors" onclick="event.stopPropagation()"><i class="fas fa-phone-alt text-[8px]"></i> {{ entry.student.guardian_phone }}</a>{% elif entry.student.phone %}<a href="tel:{{ entry.student.phone }}" class="text-[10px] sm:text-xs text-gray-400 hover:text-primary transition-colors" onclick="event.stopPropagation()"><i class="fas fa-phone-alt text-[8px]"></i> {{ entry.student.phone }}</a>{% endif %}
+                                <span class="text-[10px] sm:text-xs font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">{{ entry.absent_days }}d</span>
+                            </span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-6 text-gray-400">
+                        <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-green-50 flex items-center justify-center">
+                            <i class="fas fa-check-circle text-xl text-green-400"></i>
+                        </div>
+                        <p class="text-xs sm:text-sm font-medium text-green-600">All students attending well!</p>
+                        <p class="text-[10px] sm:text-xs text-gray-400 mt-1">No one absent for more than 2 days</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="px-4 sm:px-6 pb-4 sm:pb-5">
+                    <a href="{% url 'attendance_list' %}" class="flex items-center justify-center gap-2 w-full py-2 text-xs sm:text-sm font-semibold text-primary bg-primary/5 rounded-xl hover:bg-primary hover:text-white transition-all duration-300">
+                        View All Records <i class="fas fa-arrow-right text-[10px]"></i>
+                    </a>
+                </div>
+            </div>
+
             {% if orphan_count %}
             <!-- Orphan Care (Yateem) Card -->
             <div class="relative bg-gradient-to-br from-purple-50 via-white to-amber-50 rounded-xl sm:rounded-2xl shadow-sm hover:shadow-lg border border-purple-100 overflow-hidden transition-all group">
@@ -494,154 +551,6 @@
             </div>
             {% endif %}
 
-            {% if request.user.is_admin %}
-            <!-- Data Protection Card -->
-            <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 overflow-hidden transition-shadow">
-                <div class="px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 bg-gradient-to-r from-cyan-500/10 to-transparent">
-                    <h3 class="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
-                        <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center text-xs shadow-sm">
-                            <i class="fas fa-shield-alt"></i>
-                        </span>
-                        Data Protection <span class="urdu text-gray-600 text-base font-normal">ڈیٹا تحفظ</span>
-                    </h3>
-                </div>
-
-                <div class="p-4 sm:p-5 space-y-3">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-sm">
-                            <i class="fas fa-trash-restore"></i>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-[10px] text-gray-400 font-medium">Deletion Protection</p>
-                            <p class="text-xs font-semibold text-green-600"><i class="fas fa-check text-[8px] mr-0.5"></i> Soft-delete enabled — records are recoverable</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="px-4 sm:px-5 pb-4 sm:pb-5">
-                    <a href="{% url 'backup_download' %}"
-                       class="flex items-center justify-center gap-2 w-full py-2.5 text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl hover:shadow-lg hover:shadow-cyan-500/25 transition-all duration-300"
-                       onclick="this.innerHTML='<i class=\'fas fa-spinner fa-spin\'></i> Preparing Excel...'; this.style.pointerEvents='none';">
-                        <i class="fas fa-file-excel"></i> Download Your Data
-                    </a>
-                    <p class="text-[10px] text-gray-400 text-center mt-1.5">Excel file with all your maktab's data in separate sheets</p>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Quick Attendance Widget -->
-            <div class="bg-white rounded-xl sm:rounded-2xl shadow-sm hover:shadow-lg border border-gray-100 overflow-hidden transition-shadow">
-                <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-gold/10 to-transparent">
-                    <h3 class="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
-                        <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-gold to-yellow-500 text-white flex items-center justify-center text-xs shadow-sm">
-                            <i class="fas fa-bolt"></i>
-                        </span>
-                        Quick Attendance <span class="urdu text-gray-600 text-base font-normal">فوری حاضری</span>
-                    </h3>
-                    <span class="text-[10px] sm:text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 sm:py-1 rounded-lg flex items-center gap-1">
-                        <i class="fas fa-calendar-day text-[8px]"></i> Today
-                    </span>
-                </div>
-
-                <!-- Today's Stats -->
-                <div class="px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-br from-primary/5 via-secondary/5 to-gold/5 border-b border-gray-100">
-                    <div class="flex items-center justify-around">
-                        <div class="text-center px-2">
-                            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-green-500 to-green-600 text-white flex items-center justify-center mx-auto mb-1 shadow-lg shadow-green-500/30">
-                                <span class="text-lg sm:text-xl font-bold">{{ today_present|default:0 }}</span>
-                            </div>
-                            <p class="text-[10px] sm:text-xs text-gray-500 font-medium">Present</p>
-                        </div>
-                        <div class="w-px h-12 bg-gradient-to-b from-transparent via-gray-200 to-transparent"></div>
-                        <div class="text-center px-2">
-                            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 text-white flex items-center justify-center mx-auto mb-1 shadow-lg shadow-gray-500/30">
-                                <span class="text-lg sm:text-xl font-bold">{{ today_total|default:0 }}</span>
-                            </div>
-                            <p class="text-[10px] sm:text-xs text-gray-500 font-medium">Total</p>
-                        </div>
-                        <div class="w-px h-12 bg-gradient-to-b from-transparent via-gray-200 to-transparent"></div>
-                        <div class="text-center px-2">
-                            <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center mx-auto mb-1 shadow-lg shadow-primary/30">
-                                <span class="text-base sm:text-lg font-bold">{% if today_total %}{% widthratio today_present today_total 100 %}{% else %}0{% endif %}%</span>
-                            </div>
-                            <p class="text-[10px] sm:text-xs text-gray-500 font-medium">Rate</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Staff Attendance Today -->
-                <div class="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100">
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                            <i class="fas fa-user-clock text-primary"></i> Staff Today
-                        </h4>
-                        <a href="{% url 'staff_quick_attendance' %}" class="text-xs text-primary font-semibold hover:underline">
-                            Mark <i class="fas fa-arrow-right text-[10px]"></i>
-                        </a>
-                    </div>
-                    <div class="flex items-center justify-around">
-                        <div class="text-center px-2">
-                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-green-500 to-green-600 text-white flex items-center justify-center mx-auto mb-1 shadow-lg shadow-green-500/30">
-                                <span class="text-base sm:text-lg font-bold">{{ staff_today_present|default:0 }}</span>
-                            </div>
-                            <p class="text-[10px] sm:text-xs text-gray-500 font-medium">Present</p>
-                        </div>
-                        <div class="w-px h-10 bg-gradient-to-b from-transparent via-gray-200 to-transparent"></div>
-                        <div class="text-center px-2">
-                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 text-white flex items-center justify-center mx-auto mb-1 shadow-lg shadow-gray-500/30">
-                                <span class="text-base sm:text-lg font-bold">{{ staff_today_total|default:0 }}</span>
-                            </div>
-                            <p class="text-[10px] sm:text-xs text-gray-500 font-medium">Total</p>
-                        </div>
-                        <div class="w-px h-10 bg-gradient-to-b from-transparent via-gray-200 to-transparent"></div>
-                        <div class="text-center px-2">
-                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 text-white flex items-center justify-center mx-auto mb-1 shadow-lg shadow-primary/30">
-                                <span class="text-sm sm:text-base font-bold">{% if staff_today_total %}{% widthratio staff_today_present staff_today_total 100 %}{% else %}0{% endif %}%</span>
-                            </div>
-                            <p class="text-[10px] sm:text-xs text-gray-500 font-medium">Rate</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Batch Quick Links -->
-                <div class="p-3 sm:p-4">
-                    <p class="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 sm:mb-3">Tap a batch to mark attendance:</p>
-                    {% if batches_for_attendance %}
-                    <div class="grid grid-cols-1 gap-2">
-                        {% for batch in batches_for_attendance %}
-                        <a href="{% url 'quick_attendance' batch.pk %}"
-                           class="flex items-center gap-3 p-2.5 sm:p-3 rounded-xl border border-gray-100 hover:border-primary/50 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent hover:shadow-md transition-all duration-300 group">
-                            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-md group-hover:scale-110 transition-transform">
-                                {{ batch.course.course_code|slice:":2"|upper }}
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xs sm:text-sm font-semibold text-gray-800 truncate group-hover:text-primary transition-colors">{{ batch.course.course_name }}</p>
-                                <p class="text-[10px] sm:text-xs text-gray-500">{{ batch.batch_name }} - {{ batch.student_count }} students</p>
-                                {% if batch.teachers.all %}<p class="text-[10px] sm:text-xs text-primary/60 truncate"><i class="fas fa-chalkboard-teacher text-[8px]"></i> {% for t in batch.teachers.all %}{{ t.first_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
-                            </div>
-                            <div class="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-primary group-hover:text-white transition-all">
-                                <i class="fas fa-chevron-right text-[10px]"></i>
-                            </div>
-                        </a>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="text-center py-4 text-gray-400">
-                        <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-gray-50 flex items-center justify-center">
-                            <i class="fas fa-layer-group text-xl text-gray-300"></i>
-                        </div>
-                        <p class="text-xs sm:text-sm">No batches yet</p>
-                        <a href="{% url 'batch_add' %}" class="text-primary hover:underline text-xs sm:text-sm mt-1 inline-block font-medium">Add a batch</a>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <div class="px-4 sm:px-6 pb-4 sm:pb-5">
-                    <a href="{% url 'attendance_list' %}" class="flex items-center justify-center gap-2 w-full py-2 text-xs sm:text-sm font-semibold text-primary bg-primary/5 rounded-xl hover:bg-primary hover:text-white transition-all duration-300">
-                        View All Records <i class="fas fa-arrow-right text-[10px]"></i>
-                    </a>
-                </div>
-            </div>
 
         </div>
     </div>
@@ -736,6 +645,39 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Finance visibility toggle -->
+<script>
+function toggleFinanceVisibility() {
+    var isHidden = localStorage.getItem('finance_hidden') === 'true';
+    if (isHidden) {
+        showFinance();
+        localStorage.removeItem('finance_hidden');
+    } else {
+        hideFinance();
+        localStorage.setItem('finance_hidden', 'true');
+    }
+}
+function hideFinance() {
+    document.getElementById('finance-data-donut').classList.add('hidden');
+    document.getElementById('finance-data-monthly').classList.add('hidden');
+    var overlay = document.getElementById('finance-hidden-overlay');
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
+    document.getElementById('finance-toggle-icon').classList.replace('fa-eye', 'fa-eye-slash');
+}
+function showFinance() {
+    document.getElementById('finance-data-donut').classList.remove('hidden');
+    document.getElementById('finance-data-monthly').classList.remove('hidden');
+    var overlay = document.getElementById('finance-hidden-overlay');
+    overlay.classList.add('hidden');
+    overlay.classList.remove('flex');
+    document.getElementById('finance-toggle-icon').classList.replace('fa-eye-slash', 'fa-eye');
+}
+// Apply saved state on load
+if (localStorage.getItem('finance_hidden') === 'true') {
+    hideFinance();
+}
+</script>
 <!-- Animated number counters -->
 <script>
 (function() {

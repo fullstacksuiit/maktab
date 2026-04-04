@@ -25,6 +25,7 @@ SECRET_KEY = "django-insecure-ge$eb+8(p&+=ije&ie0675zh&kpdlge%h#_6x0_0-v&$)rf2cf
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
+
 ALLOWED_HOSTS = ['*']
 
 # Application definition
@@ -56,7 +57,7 @@ ROOT_URLCONF = "Finetouch.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",

@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.contrib.auth import login, authenticate, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.views.decorators.http import require_POST
 from django.db import models, transaction
 from django.db.models import Sum, Count, Q, Subquery, OuterRef, DecimalField
@@ -280,7 +280,7 @@ def dashboard_view(request):
 
     # Get batches with student count for quick attendance
     batches_for_attendance = Batch.objects.filter(organization=org, is_active=True).select_related('course').prefetch_related('teachers').annotate(
-        student_count=Count('students')
+        student_count=Count('students', filter=Q(students__is_deleted=False))
     ).order_by('course__course_name', 'batch_name')[:6]
 
     # Payment method breakdown
@@ -338,13 +338,58 @@ def dashboard_view(request):
     batch_attendance_today = Batch.objects.filter(
         organization=org, is_active=True
     ).select_related('course').prefetch_related('teachers').annotate(
-        student_count=Count('students', distinct=True),
+        student_count=Count('students', distinct=True, filter=Q(students__is_deleted=False)),
         today_marked=Count('attendances', filter=Q(attendances__date=today), distinct=True),
         today_present=Count('attendances', filter=Q(attendances__date=today, attendances__status__in=['Present', 'Late']), distinct=True),
     ).order_by('course__course_name', 'batch_name')
 
     # --- NEW: Orphan students count ---
     orphan_count = Student.objects.filter(organization=org, is_orphan=True).count()
+
+    # --- Students absent for more than 2 consecutive days (per batch) ---
+    from collections import defaultdict
+    recent_days = 10  # look back window
+    cutoff_date = today - timedelta(days=recent_days)
+    absent_records = Attendance.objects.filter(
+        organization=org, status='Absent', date__gte=cutoff_date, date__lte=today
+    ).values('student_id', 'batch_id', 'date').order_by('student_id', 'batch_id', '-date')
+
+    # Group by (student, batch) and count consecutive absent days from today backwards
+    student_batch_dates = defaultdict(list)
+    for rec in absent_records:
+        student_batch_dates[(rec['student_id'], rec['batch_id'])].append(rec['date'])
+
+    chronic_absent_entries = []
+    for (sid, bid), dates in student_batch_dates.items():
+        sorted_dates = sorted(dates, reverse=True)
+        consecutive = 0
+        expected = today
+        for d in sorted_dates:
+            if d == expected:
+                consecutive += 1
+                expected -= timedelta(days=1)
+            elif d < expected:
+                break
+        if consecutive > 2:
+            chronic_absent_entries.append((sid, bid, consecutive))
+
+    chronic_absent_entries.sort(key=lambda x: -x[2])
+    chronic_absent_entries = chronic_absent_entries[:10]
+
+    chronic_absent_students = []
+    if chronic_absent_entries:
+        student_ids = {e[0] for e in chronic_absent_entries}
+        batch_ids = {e[1] for e in chronic_absent_entries}
+        students_map = {s.id: s for s in Student.objects.filter(id__in=student_ids)}
+        batches_map = {b.id: b for b in Batch.objects.filter(id__in=batch_ids).select_related('course')}
+        for sid, bid, days in chronic_absent_entries:
+            student = students_map.get(sid)
+            if student:
+                chronic_absent_students.append({
+                    'student': student,
+                    'absent_days': days,
+                    'batch': batches_map.get(bid),
+                })
 
     # Today's Hijri date for welcome banner
     from hijridate import Gregorian as HijriGregorian
@@ -392,6 +437,7 @@ def dashboard_view(request):
         'batch_attendance_today': batch_attendance_today,
         'orphan_count': orphan_count,
         'hijri_date': hijri_date_str,
+        'chronic_absent_students': chronic_absent_students,
     }
     return render(request, 'management/dashboard_main.html', context)
 
@@ -403,7 +449,7 @@ def dashboard_view(request):
 def course_list(request):
     org = get_org(request)
     courses_qs = Course.objects.filter(organization=org).annotate(
-        student_count=Count('batches__students', distinct=True)
+        student_count=Count('batches__students', distinct=True, filter=Q(batches__students__is_deleted=False))
     )
 
     # Server-side search
@@ -433,7 +479,7 @@ def course_detail(request, pk):
     batches = Batch.objects.filter(course=course, organization=org).prefetch_related(
         'teachers', 'students'
     ).annotate(
-        student_count=Count('students', distinct=True),
+        student_count=Count('students', distinct=True, filter=Q(students__is_deleted=False)),
     )
 
     total_students = Student.objects.filter(batches__course=course, organization=org).values('pk').distinct().count()
@@ -542,7 +588,7 @@ def course_create_ajax(request):
 def batch_list(request):
     org = get_org(request)
     batches_qs = Batch.objects.filter(organization=org).select_related('course').prefetch_related('teachers').annotate(
-        student_count=Count('students')
+        student_count=Count('students', filter=Q(students__is_deleted=False))
     )
 
     # Server-side search
@@ -744,7 +790,7 @@ def batch_timetable(request):
     org = get_org(request)
     batches = Batch.objects.filter(
         organization=org, is_active=True, start_time__isnull=False, end_time__isnull=False
-    ).select_related('course').prefetch_related('teachers').annotate(student_count=Count('students'))
+    ).select_related('course').prefetch_related('teachers').annotate(student_count=Count('students', filter=Q(students__is_deleted=False)))
 
     course_colors = {}
     palette = [
@@ -1893,7 +1939,7 @@ def attendance_mark(request):
         attendance_date = request.POST.get('date')
         batch = get_object_or_404(Batch, pk=batch_id, organization=org)
 
-        students = list(batch.students.filter(organization=org))
+        students = list(batch.students.filter(organization=org, is_deleted=False))
         # Use all_objects to find both active and soft-deleted records
         existing = {
             a.student_id: a for a in Attendance.all_objects.filter(
@@ -1940,7 +1986,7 @@ def attendance_mark(request):
         try:
             selected_batch = Batch.objects.select_related('course').get(pk=request.GET['batch'], organization=org)
             selected_date = request.GET['date']
-            students = selected_batch.students.filter(organization=org)
+            students = selected_batch.students.filter(organization=org, is_deleted=False)
 
             existing = Attendance.objects.filter(
                 batch=selected_batch, date=selected_date, organization=org
@@ -1978,7 +2024,7 @@ def quick_attendance(request, batch_id):
     today = date.today()
     attendance_date = request.GET.get('date', str(today))
 
-    students = batch.students.filter(organization=org).order_by('full_name')
+    students = batch.students.filter(organization=org, is_deleted=False).order_by('full_name')
 
     # Get existing attendance for this date
     existing = Attendance.objects.filter(
@@ -2075,7 +2121,7 @@ def batch_attendance_detail(request, batch_id):
     batch = get_object_or_404(Batch, pk=batch_id, organization=org)
     attendance_date = request.GET.get('date', str(date.today()))
 
-    students = batch.students.filter(organization=org).order_by('full_name')
+    students = batch.students.filter(organization=org, is_deleted=False).order_by('full_name')
     attendance_map = {
         a.student_id: a
         for a in Attendance.objects.filter(batch=batch, date=attendance_date, organization=org)
@@ -2106,7 +2152,7 @@ def mark_all_present(request):
         attendance_date = data.get('date')
 
         batch = get_object_or_404(Batch, pk=batch_id, organization=org)
-        students = list(batch.students.filter(organization=org))
+        students = list(batch.students.filter(organization=org, is_deleted=False))
         existing = {
             a.student_id: a for a in Attendance.all_objects.filter(
                 date=attendance_date, batch=batch, organization=org,
@@ -2156,7 +2202,7 @@ def mark_all_absent(request):
         attendance_date = data.get('date')
 
         batch = get_object_or_404(Batch, pk=batch_id, organization=org)
-        students = list(batch.students.filter(organization=org))
+        students = list(batch.students.filter(organization=org, is_deleted=False))
         existing = {
             a.student_id: a for a in Attendance.all_objects.filter(
                 date=attendance_date, batch=batch, organization=org,
@@ -2796,6 +2842,7 @@ def behavior_note_delete(request, pk):
 
 # ─── API: Cities by State ────────────────────────────────────────────────────
 
+@login_required(login_url='login')
 def get_cities_for_state(request):
     """Return cities for a given state as JSON (used by dynamic dropdowns)."""
     state = request.GET.get('state', '')
@@ -2962,7 +3009,7 @@ def backup_download(request):
     ws.cell(row=batch_start, column=1, value='Batches').font = Font(bold=True, size=12)
     batch_headers = ['Batch Code', 'Batch Name', 'Course', 'Schedule', 'Active', 'Students']
     batches = Batch.all_objects.filter(organization=org).select_related('course').annotate(
-        student_count=Count('students')
+        student_count=Count('students', filter=Q(students__is_deleted=False))
     )
     for col, h in enumerate(batch_headers, 1):
         cell = ws.cell(row=batch_start + 1, column=col, value=h)
@@ -3773,7 +3820,7 @@ def parent_pay_upi(request):
                 'months_raw': months,
                 'transaction_note': tn,
             }
-        except Exception:
+        except (Http404, Student.DoesNotExist, Batch.DoesNotExist, ValueError, TypeError, AttributeError):
             messages.error(request, 'Invalid selection. Please try again.')
             return redirect('parent_pay_upi')
 
@@ -3826,8 +3873,12 @@ def parent_confirm_payment(request):
 
     # Build fee_month_from / fee_month_to from months_raw (e.g. ['2026-03', '2026-04'])
     months_sorted = sorted(months_raw)
-    fee_month_from = date(int(months_sorted[0].split('-')[0]), int(months_sorted[0].split('-')[1]), 1)
-    fee_month_to = date(int(months_sorted[-1].split('-')[0]), int(months_sorted[-1].split('-')[1]), 1)
+    try:
+        fee_month_from = date(int(months_sorted[0].split('-')[0]), int(months_sorted[0].split('-')[1]), 1)
+        fee_month_to = date(int(months_sorted[-1].split('-')[0]), int(months_sorted[-1].split('-')[1]), 1)
+    except (ValueError, IndexError):
+        messages.error(request, 'Invalid month selection. Please try again.')
+        return redirect('parent_pay_upi')
 
     payment = FeePayment(
         student=student,

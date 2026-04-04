@@ -232,6 +232,8 @@
                 });
 
                 calculate();
+            }).catch(function() {
+                console.error('Failed to fetch student batches');
             });
     }
 

@@ -91,7 +91,7 @@
                             <a href="{% url 'staff_detail' staff.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="View" aria-label="View {{ staff.first_name }} {{ staff.last_name }}"><i class="fas fa-eye"></i></a>
                             <a href="{% url 'staff_edit' staff.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit" aria-label="Edit {{ staff.first_name }} {{ staff.last_name }}"><i class="fas fa-edit"></i></a>
                              <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
-                                onclick="openDeleteModal('{% url 'staff_delete' staff.pk %}', '{{ staff.first_name }} {{ staff.last_name|escapejs }}')"
+                                onclick="openDeleteModal('{% url 'staff_delete' staff.pk %}', '{{ staff.first_name|escapejs }} {{ staff.last_name|escapejs }}')"
                                 title="Delete" aria-label="Delete {{ staff.first_name }} {{ staff.last_name }}">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -137,7 +137,7 @@
                     <a href="{% url 'staff_detail' staff.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-blue-500 hover:bg-blue-50 transition-colors" title="View"><i class="fas fa-eye"></i></a>
                     <a href="{% url 'staff_edit' staff.pk %}" class="w-8 h-8 rounded-lg flex items-center justify-center text-green-500 hover:bg-green-50 transition-colors" title="Edit"><i class="fas fa-edit"></i></a>
                     <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
-                        onclick="openDeleteModal('{% url 'staff_delete' staff.pk %}', '{{ staff.first_name }} {{ staff.last_name|escapejs }}')" title="Delete">
+                        onclick="openDeleteModal('{% url 'staff_delete' staff.pk %}', '{{ staff.first_name|escapejs }} {{ staff.last_name|escapejs }}')" title="Delete">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>

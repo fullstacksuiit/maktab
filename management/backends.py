@@ -1,6 +1,7 @@
 import re
 
 from django.contrib.auth.backends import ModelBackend
+from django.db import IntegrityError
 
 from .models import User, Staff
 from .utils import normalize_phone
@@ -78,15 +79,22 @@ class PhoneOrUsernameBackend(ModelBackend):
             pass
 
         # Auto-create a User account for this staff member
-        user = User(
-            username=staff.staff_id,
-            first_name=staff.first_name,
-            last_name=staff.last_name,
-            email=staff.email,
-            role='staff',
-            organization=staff.organization,
-            staff_profile=staff,
-        )
-        user.set_password(normalize_phone(staff.phone))
-        user.save()
-        return user
+        try:
+            user = User(
+                username=staff.staff_id,
+                first_name=staff.first_name,
+                last_name=staff.last_name,
+                email=staff.email,
+                role='staff',
+                organization=staff.organization,
+                staff_profile=staff,
+            )
+            user.set_password(normalize_phone(staff.phone))
+            user.save()
+            return user
+        except IntegrityError:
+            # Concurrent request already created the user
+            try:
+                return User.objects.get(username=staff.staff_id, organization=staff.organization)
+            except User.DoesNotExist:
+                return None

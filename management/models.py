@@ -6,6 +6,26 @@ from django.utils.text import slugify
 from django.utils import timezone
 import uuid
 import time
+from io import BytesIO
+from PIL import Image
+from django.core.files.uploadedfile import InMemoryUploadedFile
+
+
+def compress_image(image_field, max_size=(800, 800), quality=60):
+    """Compress an ImageField's image to JPEG with reduced size and quality."""
+    if not image_field:
+        return image_field
+    img = Image.open(image_field)
+    if img.mode in ('RGBA', 'P'):
+        img = img.convert('RGB')
+    img.thumbnail(max_size, Image.LANCZOS)
+    output = BytesIO()
+    img.save(output, format='JPEG', quality=quality, optimize=True)
+    output.seek(0)
+    name = image_field.name.rsplit('.', 1)[0] + '.jpg'
+    return InMemoryUploadedFile(
+        output, 'ImageField', name, 'image/jpeg', output.getbuffer().nbytes, None
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -411,6 +431,8 @@ class Student(SoftDeleteModel):
         return f"{self.student_id} - {self.full_name}"
 
     def save(self, *args, **kwargs):
+        if self.photo and hasattr(self.photo.file, 'content_type'):
+            self.photo = compress_image(self.photo)
         if not self.student_id:
             for attempt in range(5):
                 with transaction.atomic():
@@ -502,9 +524,10 @@ class Student(SoftDeleteModel):
             from .utils import normalize_phone
             normalized = normalize_phone(phone)
             if normalized:
+                # Exclude self since we're already soft-deleted
                 remaining = Student.objects.filter(
                     organization=org, phone=phone,
-                ).exists()
+                ).exclude(pk=self.pk).exists()
                 if not remaining:
                     uname = f'{normalized}_{org.id}'
                     User.objects.filter(
@@ -583,6 +606,8 @@ class Staff(SoftDeleteModel):
         return f"{self.staff_id} - {self.first_name} {self.last_name}"
 
     def save(self, *args, **kwargs):
+        if self.photo and hasattr(self.photo.file, 'content_type'):
+            self.photo = compress_image(self.photo)
         if not self.staff_id:
             for attempt in range(5):
                 with transaction.atomic():
@@ -857,6 +882,11 @@ class AdmissionApplication(models.Model):
             models.Index(fields=['organization', 'created_at']),
         ]
 
+    def save(self, *args, **kwargs):
+        if self.photo and hasattr(self.photo.file, 'content_type'):
+            self.photo = compress_image(self.photo)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.get_status_display()})"
 
@@ -1041,7 +1071,7 @@ def create_default_leave_types(organization):
 
 
 def ensure_leave_balances(staff, year):
-    """Ensure LeaveBalance records exist for all leave types for this staff and year."""
+    """Ensure LeaveBalance records exist for all active leave types for this staff and year."""
     org = staff.organization
     leave_types = LeaveType.objects.filter(organization=org)
     for lt in leave_types:

@@ -30,6 +30,7 @@
             </div>
             <h4 class="font-semibold text-gray-800 text-sm truncate">{{ batch.batch_name }}</h4>
             <p class="text-xs text-gray-500 truncate">{{ batch.course.course_name }}</p>
+            {% with batch.teachers.all as teachers %}{% if teachers %}<p class="text-xs text-gray-400 truncate mt-0.5">{{ teachers.0.first_name }}{% if teachers|length > 1 %} +{{ teachers|length|add:"-1" }}{% endif %}</p>{% endif %}{% endwith %}
         </a>
         {% endfor %}
     </div>
@@ -48,7 +49,7 @@
                     <option value="">All Batches</option>
                     {% for batch in batches %}
                         <option value="{{ batch.pk }}" {% if selected_batch == batch.pk|stringformat:"d" %}selected{% endif %}>
-                            {{ batch.course.course_name }} - {{ batch.batch_name }}
+                            {{ batch.course.course_name }} - {{ batch.batch_name }}{% with batch.teachers.all as teachers %}{% if teachers %} ({{ teachers.0.first_name }}{% if teachers|length > 1 %} +{{ teachers|length|add:"-1" }}{% endif %}){% endif %}{% endwith %}
                         </option>
                     {% endfor %}
                 </select>
