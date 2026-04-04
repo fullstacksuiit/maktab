@@ -288,7 +288,7 @@
                         </div>
 
                         <!-- Date Filter & Download -->
-                        <form id="attendance-export-form" method="get" action="{% url 'student_attendance_export' student.uuid %}" class="flex flex-wrap items-end gap-3 mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <form id="attendance-export-form" method="get" action="{% url 'student_attendance_export' student.uuid %}" data-export class="flex flex-wrap items-end gap-3 mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
                             <div class="flex-1 min-w-[140px]">
                                 <label class="block text-xs font-semibold text-gray-500 mb-1">From</label>
                                 <input type="date" name="date_from" id="att-date-from" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary">

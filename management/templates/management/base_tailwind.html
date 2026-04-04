@@ -782,8 +782,8 @@
                 form.addEventListener('submit', function(e) {
                     const submitBtn = form.querySelector('button[type="submit"]');
                     if (submitBtn && !submitBtn.classList.contains('btn-loading')) {
-                        // Don't add loading to delete modals (handled separately)
-                        if (!form.closest('#deleteModal')) {
+                        // Don't add loading to delete modals or export/download forms
+                        if (!form.closest('#deleteModal') && !form.hasAttribute('data-export')) {
                             submitBtn.classList.add('btn-loading');
                             submitBtn.disabled = true;
                         }
