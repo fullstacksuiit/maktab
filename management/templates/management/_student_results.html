@@ -200,8 +200,14 @@
 </div>
 
 <script>
+function getVisibleCheckboxes() {
+    return Array.from(document.querySelectorAll('.student-checkbox')).filter(function(cb) {
+        return cb.offsetParent !== null;
+    });
+}
+
 function toggleSelectAll(master) {
-    var checkboxes = document.querySelectorAll('.student-checkbox');
+    var checkboxes = getVisibleCheckboxes();
     checkboxes.forEach(function(cb) { cb.checked = master.checked; });
     // Sync the other select-all if exists
     var otherMaster = master.id === 'select-all-desktop' ?
@@ -212,10 +218,10 @@ function toggleSelectAll(master) {
 }
 
 function updateBulkBar() {
-    var checked = document.querySelectorAll('.student-checkbox:checked');
+    var visible = getVisibleCheckboxes();
+    var checked = visible.filter(function(cb) { return cb.checked; });
     var bar = document.getElementById('bulk-action-bar');
     var count = document.getElementById('selected-count');
-    var total = document.querySelectorAll('.student-checkbox');
     var selectAllDesktop = document.getElementById('select-all-desktop');
 
     count.textContent = checked.length;
@@ -228,13 +234,13 @@ function updateBulkBar() {
 
     // Update select-all state
     if (selectAllDesktop) {
-        selectAllDesktop.checked = total.length > 0 && checked.length === total.length;
-        selectAllDesktop.indeterminate = checked.length > 0 && checked.length < total.length;
+        selectAllDesktop.checked = visible.length > 0 && checked.length === visible.length;
+        selectAllDesktop.indeterminate = checked.length > 0 && checked.length < visible.length;
     }
 }
 
 function openBulkDeleteModal() {
-    var checked = document.querySelectorAll('.student-checkbox:checked');
+    var checked = getVisibleCheckboxes().filter(function(cb) { return cb.checked; });
     if (checked.length === 0) return;
 
     // Populate the hidden form with selected UUIDs
@@ -260,7 +266,7 @@ function closeBulkDeleteModal() {
 }
 
 function openBulkAssignModal() {
-    var checked = document.querySelectorAll('.student-checkbox:checked');
+    var checked = getVisibleCheckboxes().filter(function(cb) { return cb.checked; });
     if (checked.length === 0) return;
 
     var form = document.getElementById('bulkAssignForm');

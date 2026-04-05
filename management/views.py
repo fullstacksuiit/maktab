@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.views.decorators.http import require_POST
+from django.views.decorators.cache import never_cache
 from django.db import models, transaction
 from django.db.models import Sum, Count, Q, Subquery, OuterRef, DecimalField
 from django.db.models.functions import Coalesce
@@ -938,6 +939,7 @@ def student_list(request):
         students_qs = students_qs.filter(batches__pk=selected_batch).distinct()
     # Courses for filter dropdown
     courses = Course.objects.filter(organization=org)
+    students_qs = students_qs.order_by('student_id')
     paginator = Paginator(students_qs, 20)
     students = paginator.get_page(request.GET.get('page') if active_tab == 'students' else 1)
 
@@ -2774,6 +2776,7 @@ def fee_payment_delete(request, pk):
     return redirect('fee_payment_list')
 
 
+@never_cache
 @login_required(login_url='login')
 @internal_user_required
 def print_receipt(request, pk):
