@@ -9,27 +9,29 @@
     <div class="sticky top-0 z-40 -mx-4 px-4 pt-2 pb-4 bg-gray-50/95 backdrop-blur-sm">
         <!-- Batch & Date Bar -->
         <div class="bg-gradient-to-r from-primary to-secondary rounded-2xl p-4 text-white shadow-lg mb-4">
-            <div class="flex items-center justify-between gap-4">
-                <div class="min-w-0">
-                    <h1 class="font-bold text-lg truncate">{{ batch.course.course_name }} - {{ batch.batch_name }}</h1>
-                    <div class="flex items-center gap-2 mt-1">
-                        <i class="fas fa-calendar text-white/70"></i>
-                        <input type="date" id="attendanceDate" value="{{ attendance_date }}"
-                               class="bg-white/20 border-0 rounded-lg px-3 py-1 text-white font-semibold focus:outline-none focus:ring-2 focus:ring-white/50 cursor-pointer text-sm">
+            <div class="flex flex-col gap-3">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="min-w-0">
+                        <h1 class="font-bold text-lg truncate">{{ batch.course.course_name }}</h1>
+                        <div class="flex items-center gap-2 mt-1">
+                            <i class="fas fa-calendar text-white/70"></i>
+                            <input type="date" id="attendanceDate" value="{{ attendance_date }}"
+                                   class="bg-white/20 border-0 rounded-lg px-3 py-1 text-white font-semibold focus:outline-none focus:ring-2 focus:ring-white/50 cursor-pointer text-sm">
+                        </div>
                     </div>
                 </div>
 
                 <!-- Live Stats -->
-                <div class="flex gap-2 shrink-0">
-                    <div class="bg-green-500 rounded-xl px-3 py-2 text-center min-w-[50px]">
+                <div class="flex gap-2">
+                    <div class="bg-green-500 rounded-xl px-3 py-2 text-center flex-1">
                         <div id="presentCount" class="text-xl font-bold">{{ present_count }}</div>
                         <div class="text-[10px] text-white/80 uppercase">Present</div>
                     </div>
-                    <div class="bg-red-500 rounded-xl px-3 py-2 text-center min-w-[50px]">
+                    <div class="bg-red-500 rounded-xl px-3 py-2 text-center flex-1">
                         <div id="absentCount" class="text-xl font-bold">{{ absent_count }}</div>
                         <div class="text-[10px] text-white/80 uppercase">Absent</div>
                     </div>
-                    <div class="bg-yellow-500 rounded-xl px-3 py-2 text-center min-w-[50px]">
+                    <div class="bg-yellow-500 rounded-xl px-3 py-2 text-center flex-1">
                         <div id="lateCount" class="text-xl font-bold">{{ late_count }}</div>
                         <div class="text-[10px] text-white/80 uppercase">Late</div>
                     </div>
@@ -74,10 +76,10 @@
              data-student-id="{{ item.student.pk }}"
              data-status="{{ item.status|default:'none' }}">
 
-            <div class="flex items-center p-3 gap-4">
+            <div class="flex items-center p-3 gap-3">
                 <!-- Avatar with Status Indicator -->
-                <div class="relative">
-                    <div class="avatar w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold shadow-md transition-all
+                <div class="relative shrink-0">
+                    <div class="avatar w-12 h-12 rounded-full flex items-center justify-center text-base font-bold shadow-md transition-all
                                 {% if item.status == 'Present' %}
                                     bg-green-500 text-white
                                 {% elif item.status == 'Absent' %}
@@ -120,7 +122,7 @@
 
                 <!-- Quick Action Buttons -->
                 <div class="flex gap-2">
-                    <button class="present-btn w-11 h-11 rounded-xl flex items-center justify-center text-base transition-all active:scale-90
+                    <button class="present-btn w-10 h-10 rounded-xl flex items-center justify-center text-sm transition-all active:scale-90
                                    {% if item.status == 'Present' %}
                                        bg-green-500 text-white shadow-lg shadow-green-500/30
                                    {% else %}
@@ -129,7 +131,7 @@
                             onclick="event.stopPropagation(); markStudent({{ item.student.pk }}, 'Present')">
                         <i class="fas fa-check"></i>
                     </button>
-                    <button class="absent-btn w-11 h-11 rounded-xl flex items-center justify-center text-base transition-all active:scale-90
+                    <button class="absent-btn w-10 h-10 rounded-xl flex items-center justify-center text-sm transition-all active:scale-90
                                    {% if item.status == 'Absent' %}
                                        bg-red-500 text-white shadow-lg shadow-red-500/30
                                    {% else %}
@@ -138,7 +140,7 @@
                             onclick="event.stopPropagation(); markStudent({{ item.student.pk }}, 'Absent')">
                         <i class="fas fa-times"></i>
                     </button>
-                    <button class="late-btn w-11 h-11 rounded-xl flex items-center justify-center text-base transition-all active:scale-90
+                    <button class="late-btn w-10 h-10 rounded-xl flex items-center justify-center text-sm transition-all active:scale-90
                                    {% if item.status == 'Late' %}
                                        bg-yellow-500 text-white shadow-lg shadow-yellow-500/30
                                    {% else %}
