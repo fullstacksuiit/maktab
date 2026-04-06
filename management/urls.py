@@ -115,6 +115,7 @@ urlpatterns = [
     # API
     path('api/cities/', views.get_cities_for_state, name='api_cities'),
     path('api/student-batches/', views.api_student_batches, name='api_student_batches'),
+    path('api/teacher-batches/', views.api_teacher_batches, name='api_teacher_batches'),
 
     # Admission Application - Public URLs
     path('apply/<slug:org_slug>/', views.admission_apply, name='admission_apply'),

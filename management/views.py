@@ -1865,9 +1865,12 @@ def attendance_list(request):
     org = get_org(request)
     attendances = Attendance.objects.filter(organization=org).select_related('student', 'batch__course', 'marked_by')
 
+    teacher_id = request.GET.get('teacher')
     batch_id = request.GET.get('batch')
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
+    if teacher_id:
+        attendances = attendances.filter(batch__teachers__pk=teacher_id)
     if batch_id:
         attendances = attendances.filter(batch_id=batch_id)
     if date_from:
@@ -1933,7 +1936,10 @@ def attendance_list(request):
         wb.save(response)
         return response
 
+    teachers = Staff.objects.filter(organization=org, is_deleted=False, teaching_batches__isnull=False).distinct()
     batches = Batch.objects.filter(organization=org, is_active=True).select_related('course').prefetch_related('teachers')
+    if teacher_id:
+        batches = batches.filter(teachers__pk=teacher_id)
 
     paginator = Paginator(attendances, 50)
     page_number = request.GET.get('page')
@@ -1941,7 +1947,9 @@ def attendance_list(request):
 
     context = {
         'attendances': attendances_page,
+        'teachers': teachers,
         'batches': batches,
+        'selected_teacher': teacher_id,
         'selected_batch': batch_id,
         'date_from': date_from,
         'date_to': date_to,
@@ -2898,6 +2906,26 @@ def api_student_batches(request):
         'discount_type': student.discount_type or '',
         'discount_value': str(student.discount_value) if student.discount_value > 0 else '0',
     })
+
+
+@login_required(login_url='login')
+@internal_user_required
+def api_teacher_batches(request):
+    """Return batches taught by a given teacher as JSON."""
+    org = get_org(request)
+    teacher_id = request.GET.get('teacher_id', '')
+    if not teacher_id:
+        batches = Batch.objects.filter(organization=org, is_active=True).select_related('course').prefetch_related('teachers')
+    else:
+        batches = Batch.objects.filter(organization=org, is_active=True, teachers__pk=teacher_id).select_related('course').prefetch_related('teachers')
+
+    result = []
+    for batch in batches:
+        result.append({
+            'id': batch.pk,
+            'label': f"{batch.course.course_name} - {batch.batch_name}",
+        })
+    return JsonResponse({'batches': result})
 
 
 # ─── Settings ────────────────────────────────────────────────────────────────

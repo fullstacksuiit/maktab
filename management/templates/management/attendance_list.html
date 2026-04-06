@@ -6,7 +6,7 @@
 {% block content %}
 <div class="mb-6 flex justify-end gap-4 animate-[slideUp_0.4s_ease-out]">
     <div class="flex gap-2 flex-wrap">
-        <a href="{% url 'attendance_list' %}?{% if selected_batch %}batch={{ selected_batch }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}export=excel"
+        <a href="{% url 'attendance_list' %}?{% if selected_teacher %}teacher={{ selected_teacher }}&{% endif %}{% if selected_batch %}batch={{ selected_batch }}&{% endif %}{% if date_from %}date_from={{ date_from }}&{% endif %}{% if date_to %}date_to={{ date_to }}&{% endif %}export=excel"
            class="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 font-medium transition-colors flex items-center gap-2">
             <i class="fas fa-file-excel"></i> Export Excel
         </a>
@@ -39,17 +39,17 @@
 
 <!-- Filters -->
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 animate-[slideUp_0.5s_ease-out]">
-    <form method="get" action="{% url 'attendance_list' %}" class="flex flex-col md:flex-row gap-4 items-end">
-        <div class="w-full md:w-1/3">
+    <form method="get" action="{% url 'attendance_list' %}" class="flex flex-col md:flex-row gap-4 items-end flex-wrap">
+        <div class="w-full md:w-1/4">
             <label class="block text-sm font-semibold text-gray-700 mb-2">
-                <i class="fas fa-layer-group text-primary mr-1"></i> Batch
+                <i class="fas fa-chalkboard-teacher text-primary mr-1"></i> Teacher
             </label>
             <div class="relative">
-                <select name="batch" class="w-full appearance-none pl-4 pr-10 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white text-gray-700">
-                    <option value="">All Batches</option>
-                    {% for batch in batches %}
-                        <option value="{{ batch.pk }}" {% if selected_batch == batch.pk|stringformat:"d" %}selected{% endif %}>
-                            {{ batch.course.course_name }} - {{ batch.batch_name }}{% with batch.teachers.all as teachers %}{% if teachers %} ({{ teachers.0.first_name }}{% if teachers|length > 1 %} +{{ teachers|length|add:"-1" }}{% endif %}){% endif %}{% endwith %}
+                <select name="teacher" id="teacherSelect" class="w-full appearance-none pl-4 pr-10 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white text-gray-700">
+                    <option value="">All Teachers</option>
+                    {% for teacher in teachers %}
+                        <option value="{{ teacher.pk }}" {% if selected_teacher == teacher.pk|stringformat:"d" %}selected{% endif %}>
+                            {{ teacher.first_name }} {{ teacher.last_name }}
                         </option>
                     {% endfor %}
                 </select>
@@ -61,12 +61,31 @@
 
         <div class="w-full md:w-1/4">
             <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fas fa-layer-group text-primary mr-1"></i> Batch
+            </label>
+            <div class="relative">
+                <select name="batch" id="batchSelect" class="w-full appearance-none pl-4 pr-10 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-white text-gray-700">
+                    <option value="">All Batches</option>
+                    {% for batch in batches %}
+                        <option value="{{ batch.pk }}" {% if selected_batch == batch.pk|stringformat:"d" %}selected{% endif %}>
+                            {{ batch.course.course_name }} - {{ batch.batch_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-gray-500">
+                    <i class="fas fa-chevron-down text-xs"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="w-full md:w-1/5">
+            <label class="block text-sm font-semibold text-gray-700 mb-2">
                 <i class="fas fa-calendar text-primary mr-1"></i> From
             </label>
             <input type="date" name="date_from" value="{{ date_from|default:'' }}" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-gray-700">
         </div>
 
-        <div class="w-full md:w-1/4">
+        <div class="w-full md:w-1/5">
             <label class="block text-sm font-semibold text-gray-700 mb-2">
                 <i class="fas fa-calendar text-primary mr-1"></i> To
             </label>
@@ -84,13 +103,15 @@
     </form>
 </div>
 
-{% if selected_batch or date_from or date_to %}
+{% if selected_teacher or selected_batch or date_from or date_to %}
 <div class="mb-4 px-4 py-2 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-sm flex items-center justify-between">
     <span>
         <i class="fas fa-filter mr-2"></i>
         Filtering by:
+        {% if selected_teacher %}<strong>Teacher</strong>{% endif %}
+        {% if selected_teacher and selected_batch %}, {% endif %}
         {% if selected_batch %}<strong>Batch</strong>{% endif %}
-        {% if selected_batch and date_from %} and {% endif %}
+        {% if selected_teacher or selected_batch %}{% if date_from %} and {% endif %}{% endif %}
         {% if date_from %}<strong>{{ date_from }}</strong>{% endif %}
         {% if date_from and date_to %} to {% endif %}
         {% if date_to %}<strong>{{ date_to }}</strong>{% endif %}
@@ -210,4 +231,32 @@
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('teacherSelect').addEventListener('change', function() {
+    const teacherId = this.value;
+    const batchSelect = document.getElementById('batchSelect');
+    const selectedBatch = batchSelect.value;
+
+    // Fetch batches for the selected teacher
+    const url = teacherId
+        ? '{% url "api_teacher_batches" %}?teacher_id=' + teacherId
+        : '{% url "api_teacher_batches" %}';
+
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            batchSelect.innerHTML = '<option value="">All Batches</option>';
+            data.batches.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.id;
+                opt.textContent = b.label;
+                if (String(b.id) === selectedBatch) opt.selected = true;
+                batchSelect.appendChild(opt);
+            });
+        });
+});
+</script>
 {% endblock %}
