@@ -143,7 +143,7 @@
                         {% elif record.status == 'Absent' %}
                             <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold border border-red-200">Absent</span>
                         {% elif record.status == 'Late' %}
-                            <span class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold border border-yellow-200">Late</span>
+                            <span class="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold border border-yellow-200">Late{% if record.minutes_late %} ({{ record.minutes_late }} min){% endif %}</span>
                         {% elif record.status == 'Excused' %}
                             <span class="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">Excused</span>
                         {% else %}
@@ -180,7 +180,7 @@
                 {% elif record.status == 'Absent' %}
                     <span class="px-2.5 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold border border-red-200 shrink-0">Absent</span>
                 {% elif record.status == 'Late' %}
-                    <span class="px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold border border-yellow-200 shrink-0">Late</span>
+                    <span class="px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold border border-yellow-200 shrink-0">Late{% if record.minutes_late %} ({{ record.minutes_late }} min){% endif %}</span>
                 {% elif record.status == 'Excused' %}
                     <span class="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200 shrink-0">Excused</span>
                 {% else %}
