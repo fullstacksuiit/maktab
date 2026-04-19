@@ -353,9 +353,25 @@ def dashboard_view(request):
     from collections import defaultdict
     recent_days = 10  # look back window
     cutoff_date = today - timedelta(days=recent_days)
-    absent_records = Attendance.objects.filter(
+
+    # Teacher filter for the Absent Students card
+    absent_teacher_id = request.GET.get('absent_teacher') or ''
+    try:
+        absent_teacher_id_int = int(absent_teacher_id) if absent_teacher_id else None
+    except (TypeError, ValueError):
+        absent_teacher_id_int = None
+
+    absent_records_qs = Attendance.objects.filter(
         organization=org, status='Absent', date__gte=cutoff_date, date__lte=today
-    ).values('student_id', 'batch_id', 'date').order_by('student_id', 'batch_id', '-date')
+    )
+    if absent_teacher_id_int:
+        absent_records_qs = absent_records_qs.filter(batch__teachers__id=absent_teacher_id_int)
+    absent_records = absent_records_qs.values('student_id', 'batch_id', 'date').order_by('student_id', 'batch_id', '-date')
+
+    # Teachers for the dropdown (only staff linked to at least one batch)
+    absent_teachers = Staff.objects.filter(
+        organization=org, teaching_batches__isnull=False
+    ).distinct().order_by('first_name', 'last_name')
 
     # Group by (student, batch) and count consecutive absent days from today backwards
     student_batch_dates = defaultdict(list)
@@ -377,22 +393,49 @@ def dashboard_view(request):
             chronic_absent_entries.append((sid, bid, consecutive))
 
     chronic_absent_entries.sort(key=lambda x: -x[2])
-    chronic_absent_entries = chronic_absent_entries[:10]
+    chronic_absent_entries = chronic_absent_entries[:20]
 
     chronic_absent_students = []
+    chronic_absent_by_teacher = []
     if chronic_absent_entries:
         student_ids = {e[0] for e in chronic_absent_entries}
         batch_ids = {e[1] for e in chronic_absent_entries}
         students_map = {s.id: s for s in Student.objects.filter(id__in=student_ids)}
-        batches_map = {b.id: b for b in Batch.objects.filter(id__in=batch_ids).select_related('course')}
+        batches_map = {
+            b.id: b for b in Batch.objects
+            .filter(id__in=batch_ids)
+            .select_related('course')
+            .prefetch_related('teachers')
+        }
+
+        teacher_groups = {}  # teacher_id -> {'teacher', 'students': [...]}
+        no_teacher_group = {'teacher': None, 'students': []}
+
         for sid, bid, days in chronic_absent_entries:
             student = students_map.get(sid)
-            if student:
-                chronic_absent_students.append({
-                    'student': student,
-                    'absent_days': days,
-                    'batch': batches_map.get(bid),
-                })
+            if not student:
+                continue
+            batch = batches_map.get(bid)
+            entry = {'student': student, 'absent_days': days, 'batch': batch}
+            chronic_absent_students.append(entry)
+
+            batch_teachers = list(batch.teachers.all()) if batch else []
+            if batch_teachers:
+                for t in batch_teachers:
+                    group = teacher_groups.setdefault(t.id, {'teacher': t, 'students': []})
+                    group['students'].append(entry)
+            else:
+                no_teacher_group['students'].append(entry)
+
+        # Sort each teacher's students by absent_days desc, then teachers by total count desc
+        for g in teacher_groups.values():
+            g['students'].sort(key=lambda x: -x['absent_days'])
+            g['count'] = len(g['students'])
+        chronic_absent_by_teacher = sorted(teacher_groups.values(), key=lambda g: -g['count'])
+        if no_teacher_group['students']:
+            no_teacher_group['students'].sort(key=lambda x: -x['absent_days'])
+            no_teacher_group['count'] = len(no_teacher_group['students'])
+            chronic_absent_by_teacher.append(no_teacher_group)
 
     # Today's Hijri date for welcome banner
     from hijridate import Gregorian as HijriGregorian
@@ -441,6 +484,9 @@ def dashboard_view(request):
         'orphan_count': orphan_count,
         'hijri_date': hijri_date_str,
         'chronic_absent_students': chronic_absent_students,
+        'chronic_absent_by_teacher': chronic_absent_by_teacher,
+        'absent_teachers': absent_teachers,
+        'absent_teacher_id': absent_teacher_id,
     }
     return render(request, 'management/dashboard_main.html', context)
 
@@ -1870,7 +1916,7 @@ def attendance_list(request):
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
     if teacher_id:
-        attendances = attendances.filter(batch__teachers__pk=teacher_id)
+        attendances = attendances.filter(batch__teachers__pk=teacher_id).distinct()
     if batch_id:
         attendances = attendances.filter(batch_id=batch_id)
     if date_from:

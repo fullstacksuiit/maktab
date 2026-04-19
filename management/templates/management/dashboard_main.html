@@ -482,17 +482,34 @@
                 </div>
 
                 <div class="p-3 sm:p-4">
-                    {% if chronic_absent_students %}
-                    <div class="divide-y divide-gray-50">
-                        {% for entry in chronic_absent_students %}
-                        <a href="{% url 'student_detail' entry.student.uuid %}" class="flex items-center gap-2 px-1 py-2 hover:bg-red-50/50 transition-colors group">
-                            <span class="text-xs sm:text-sm font-semibold text-gray-800 truncate group-hover:text-red-600 transition-colors">{{ entry.student.full_name }}</span>
-                            <span class="text-[10px] text-gray-400 hidden sm:inline truncate">{% if entry.batch %}{{ entry.batch.batch_name }}{% endif %}</span>
-                            <span class="ml-auto flex items-center gap-2 flex-shrink-0">
-                                {% if entry.student.guardian_phone %}<a href="tel:{{ entry.student.guardian_phone }}" class="text-[10px] sm:text-xs text-gray-400 hover:text-primary transition-colors" onclick="event.stopPropagation()"><i class="fas fa-phone-alt text-[8px]"></i> {{ entry.student.guardian_phone }}</a>{% elif entry.student.phone %}<a href="tel:{{ entry.student.phone }}" class="text-[10px] sm:text-xs text-gray-400 hover:text-primary transition-colors" onclick="event.stopPropagation()"><i class="fas fa-phone-alt text-[8px]"></i> {{ entry.student.phone }}</a>{% endif %}
-                                <span class="text-[10px] sm:text-xs font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">{{ entry.absent_days }}d</span>
-                            </span>
-                        </a>
+                    {% if chronic_absent_by_teacher %}
+                    <div class="space-y-3 max-h-[28rem] overflow-y-auto pr-1">
+                        {% for group in chronic_absent_by_teacher %}
+                        <div class="border border-gray-100 rounded-lg overflow-hidden">
+                            <div class="flex items-center justify-between px-2.5 py-1.5 bg-gradient-to-r from-red-50/60 to-transparent border-b border-gray-100">
+                                <div class="flex items-center gap-1.5 min-w-0">
+                                    <i class="fas fa-chalkboard-teacher text-[10px] text-red-500"></i>
+                                    <span class="text-[11px] sm:text-xs font-semibold text-gray-700 truncate">
+                                        {% if group.teacher %}{{ group.teacher.first_name }} {{ group.teacher.last_name }}{% else %}Unassigned{% endif %}
+                                    </span>
+                                </div>
+                                <span class="text-[9px] sm:text-[10px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                                    {{ group.count }}
+                                </span>
+                            </div>
+                            <div class="divide-y divide-gray-50">
+                                {% for entry in group.students %}
+                                <a href="{% url 'student_detail' entry.student.uuid %}" class="flex items-center gap-2 px-2.5 py-2 hover:bg-red-50/50 transition-colors group">
+                                    <span class="text-xs sm:text-sm font-semibold text-gray-800 truncate group-hover:text-red-600 transition-colors">{{ entry.student.full_name }}</span>
+                                    <span class="text-[10px] text-gray-400 hidden sm:inline truncate">{% if entry.batch %}{{ entry.batch.batch_name }}{% endif %}</span>
+                                    <span class="ml-auto flex items-center gap-2 flex-shrink-0">
+                                        {% if entry.student.guardian_phone %}<a href="tel:{{ entry.student.guardian_phone }}" class="text-[10px] sm:text-xs text-gray-400 hover:text-primary transition-colors" onclick="event.stopPropagation()"><i class="fas fa-phone-alt text-[8px]"></i> {{ entry.student.guardian_phone }}</a>{% elif entry.student.phone %}<a href="tel:{{ entry.student.phone }}" class="text-[10px] sm:text-xs text-gray-400 hover:text-primary transition-colors" onclick="event.stopPropagation()"><i class="fas fa-phone-alt text-[8px]"></i> {{ entry.student.phone }}</a>{% endif %}
+                                        <span class="text-[10px] sm:text-xs font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">{{ entry.absent_days }}d</span>
+                                    </span>
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
                         {% endfor %}
                     </div>
                     {% else %}
